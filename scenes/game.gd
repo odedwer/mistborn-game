@@ -16,15 +16,34 @@ const MISSION_COMPLETE_SCENE := "res://src/ui/mission_complete.tscn"
 const DEATH_SCENE := "res://src/ui/death_screen.tscn"
 
 var world: Node3D
+var enemy_spawner: Node
+## Pickup marker keys already collected (never respawned) or currently present.
+var _collected_pickups: Dictionary = {}
+var _live_pickups: Dictionary = {}
 
 
 func _ready() -> void:
 	_build_world()
 	_spawn_player()
 	_build_enemy_spawner()
-	_spawn_pickups()
+	_spawn_pickups(get_tree().get_nodes_in_group("pickup_spawn"))
+	if world.has_signal(&"markers_spawned"):
+		world.connect(&"markers_spawned", _on_markers_spawned)
 	_add_ui()
 	_add_mission_director()
+
+
+## A streamed world chunk loaded: populate its enemies and pickups.
+func _on_markers_spawned(nodes: Array) -> void:
+	var pickups: Array = []
+	for n in nodes:
+		if not is_instance_valid(n):
+			continue
+		if n.is_in_group(&"enemy_spawn") and n is Marker3D and enemy_spawner != null:
+			enemy_spawner.call(&"spawn_for_marker", n)
+		elif n.is_in_group(&"pickup_spawn"):
+			pickups.append(n)
+	_spawn_pickups(pickups)
 
 
 func _build_world() -> void:
@@ -113,21 +132,32 @@ func _build_enemy_spawner() -> void:
 	spawner.name = "EnemySpawner"
 	spawner.add_to_group("enemy_spawner")
 	add_child(spawner)
+	enemy_spawner = spawner
+	spawner.call(&"spawn_all", world)
 
 
-func _spawn_pickups() -> void:
+## Spawns a pickup at each marker, parented to the marker's chunk so it
+## streams with it. Collected pickups are remembered and never come back.
+func _spawn_pickups(markers: Array) -> void:
 	if not ResourceLoader.exists(PICKUP_SCENE):
 		return
 	var scene: PackedScene = load(PICKUP_SCENE)
-	for marker in get_tree().get_nodes_in_group("pickup_spawn"):
-		if not (marker is Node3D):
+	for marker in markers:
+		if not (marker is Node3D) or not is_instance_valid(marker):
+			continue
+		var key := Vector3i(((marker as Node3D).global_position * 4.0).round())
+		if _collected_pickups.has(key) or is_instance_valid(_live_pickups.get(key)):
 			continue
 		var pickup := scene.instantiate()
-		add_child(pickup)
-		(pickup as Node3D).global_transform = (marker as Node3D).global_transform
 		var kind = marker.get_meta("pickup_kind", &"")
 		if kind != &"" and "pickup_kind" in pickup:
 			pickup.pickup_kind = kind
+		var parent: Node = marker.get_parent() if marker.get_parent() != null else self
+		parent.add_child(pickup)
+		(pickup as Node3D).global_transform = (marker as Node3D).global_transform
+		_live_pickups[key] = pickup
+		if pickup.has_signal(&"collected"):
+			pickup.connect(&"collected", func(_p: Node) -> void: _collected_pickups[key] = true)
 
 
 func _add_ui() -> void:

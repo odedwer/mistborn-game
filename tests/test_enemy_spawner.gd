@@ -16,6 +16,7 @@ func test_spawner_spawns_correct_types() -> void:
 	m2.set_meta("enemy_type", &"thug")
 	m2.add_to_group(&"enemy_spawn")
 	root.add_child(m2)
+	m2.position = Vector3(6, 0, 0)  # markers are identified by position
 
 	spawner.spawn_all(root)
 	await physics_frames(1)
@@ -69,3 +70,48 @@ func test_spawner_applies_patrol_points() -> void:
 	await physics_frames(1)
 	var guard: Guard = spawner.spawned_enemies()[0]
 	assert_eq(guard.patrol_points.size(), 2, "patrol points from the marker's meta should be applied")
+
+
+func test_chunk_reload_respawns_alive_but_not_killed() -> void:
+	var spawner := EnemySpawner.new()
+	add_child(spawner)
+	var chunk := Node3D.new()
+	add_child(chunk)
+	var m := Marker3D.new()
+	m.set_meta("enemy_type", &"guard")
+	m.add_to_group(&"enemy_spawn")
+	chunk.add_child(m)
+	var e: Node = spawner.spawn_for_marker(m)
+	assert_true(e != null)
+	assert_true(spawner.spawn_for_marker(m) == null, "no duplicate while alive")
+	# Chunk unloads (enemy freed with it), then reloads: enemy comes back.
+	chunk.free()
+	chunk = Node3D.new()
+	add_child(chunk)
+	m = Marker3D.new()
+	m.set_meta("enemy_type", &"guard")
+	chunk.add_child(m)
+	e = spawner.spawn_for_marker(m)
+	assert_true(e != null, "respawned after reload")
+	Health.find_on(e).take_damage(10000.0)
+	e.free()
+	assert_true(spawner.spawn_for_marker(m) == null, "killed enemies stay dead")
+	chunk.queue_free()
+
+
+func test_spawn_type_without_marker_does_not_duplicate() -> void:
+	var spawner := EnemySpawner.new()
+	add_child(spawner)
+	var root := Node3D.new()
+	add_child(root)
+	var m := Marker3D.new()
+	m.set_meta("enemy_type", &"inquisitor")
+	m.add_to_group(&"enemy_spawn")
+	root.add_child(m)
+	spawner.spawn_all(root)
+	assert_eq(spawner.spawned_enemies().size(), 0, "inquisitor deferred")
+	Events.objective_updated.emit(&"ledger", "", true)
+	var again: Node = spawner.spawn_type(&"inquisitor")
+	assert_eq(spawner.spawned_enemies().size(), 1, "objective hook + mission call spawn one inquisitor")
+	assert_true(again == spawner.spawned_enemies()[0])
+	root.queue_free()

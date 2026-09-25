@@ -3,6 +3,9 @@ extends Area3D
 ## Collectible spawned at `pickup_spawn` markers (vial, coins, atium,
 ## duralumin, health). Calls `add_pickup(kind, amount)` on the player body.
 
+## Emitted when the player picks this up (before it frees itself).
+signal collected(pickup: WorldPickup)
+
 const AMOUNTS := {&"coins": 10.0, &"vial": 1.0, &"atium": 25.0, &"duralumin": 100.0, &"health": 40.0}
 const COLORS := {
 	&"coins": Color(0.8, 0.8, 0.85), &"vial": Color(0.55, 0.7, 1.0), &"atium": Color(1.0, 0.95, 0.75),
@@ -75,4 +78,5 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	var amt := amount if amount > 0.0 else float(AMOUNTS.get(pickup_kind, 1.0))
 	body.call(&"add_pickup", pickup_kind, amt)
+	collected.emit(self)
 	queue_free()
