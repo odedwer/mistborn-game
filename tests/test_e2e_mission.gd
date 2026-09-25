@@ -198,8 +198,9 @@ func test_save_load_round_trip_mid_mission() -> void:
 	assert_eq(GameState.completed_objectives, saved_done, "objectives restored")
 	assert_eq(director.stage_index, saved_stage, "director resynced to the saved stage")
 	assert_true(director._active_objectives.has(&"cp_3"), "cp_3 is the active objective again")
-	assert_lt(player.global_position.distance_to(GameState.last_checkpoint_transform.origin), 3.0,
-		"player moved back to the saved checkpoint")
+	assert_true(GameState.has_open_world_position, "save captured the open-world position")
+	assert_lt(player.global_position.distance_to(GameState.open_world_position.origin), 1.0,
+		"player moved back to where the game was saved")
 	# And the mission can be finished from the loaded state.
 	for id: StringName in [&"cp_3", &"keep_courtyard", &"ledger", &"extraction"]:
 		await _reach(id)

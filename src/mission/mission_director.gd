@@ -75,6 +75,20 @@ func _on_game_loaded(_slot: int) -> void:
 	_clear_triggers()
 	_start_or_resume()
 	respawn_at_checkpoint()
+	# Save anywhere: resume at the exact saved position rather than the
+	# checkpoint, with the ground there streamed in first.
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if GameState.has_open_world_position and player != null:
+		var target := GameState.open_world_position
+		var world := _find_world_node()
+		if world != null and "streamer" in world and world.streamer != null \
+				and not world.streamer.is_area_loaded(target.origin):
+			world.streamer.load_now(target.origin, world.streamer.load_radius)
+		player.global_transform = Transform3D(Basis.IDENTITY, target.origin)
+		if player is CharacterBody3D:
+			(player as CharacterBody3D).velocity = Vector3.ZERO
+		if "camera_rig" in player and player.camera_rig != null:
+			player.camera_rig.snap()
 
 
 func _start_or_resume() -> void:

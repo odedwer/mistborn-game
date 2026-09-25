@@ -1,0 +1,12 @@
+{
+	"id": "coin_race_canal",
+	"type": "coin_race",
+	"title": "Coin Race: Canal Run",
+	"start_marker": "coin_race_canal",
+	"params": {
+		"ring_offsets": [[-15, 3, 10], [-25, 6, 25], [-10, 9, 40], [10, 5, 50], [25, 3, 60]],
+		"time_limit": 30.0,
+		"medals": {"gold": 16.0, "silver": 21.0, "bronze": 27.0}
+	},
+	"rewards": {"coins": 40, "mastery_points": 1}
+}

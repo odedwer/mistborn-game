@@ -116,6 +116,27 @@
 		{"group": "pickup_spawn", "pickup_kind": "vial", "placement": "street", "pos": [64, 0]},
 		{"group": "pickup_spawn", "pickup_kind": "atium", "placement": "rooftop", "pos": [92, 34], "floors": 4, "flat": true},
 		{"group": "pickup_spawn", "pickup_kind": "health", "placement": "street", "pos": [110, 80]},
-		{"group": "pickup_spawn", "pickup_kind": "atium", "placement": "rooftop", "pos": [128, 108], "floors": 3, "flat": true}
+		{"group": "pickup_spawn", "pickup_kind": "atium", "placement": "rooftop", "pos": [128, 108], "floors": 3, "flat": true},
+
+		{"group": "activity_start", "activity_id": "coin_race_skaa", "placement": "rooftop", "pos": [-150, 40], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "coin_race_canal", "placement": "rooftop", "pos": [150, 130], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "coin_race_keep", "placement": "rooftop", "pos": [40, -150], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "pursuit_skaa", "placement": "rooftop", "pos": [-170, -100], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "pursuit_canal", "placement": "rooftop", "pos": [160, -60], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "ambush_market", "placement": "street", "pos": [-200, 180]},
+		{"group": "activity_start", "activity_id": "ambush_canal", "placement": "street", "pos": [170, 190]},
+
+		{"group": "collectible_spawn", "collectible_id": "atium_bead_1", "collectible_kind": "atium_bead", "placement": "rooftop", "pos": [-120, 180], "floors": 3, "flat": true},
+		{"group": "collectible_spawn", "collectible_id": "atium_bead_2", "collectible_kind": "atium_bead", "placement": "street", "pos": [80, 150]},
+		{"group": "collectible_spawn", "collectible_id": "atium_bead_3", "collectible_kind": "atium_bead", "placement": "rooftop", "pos": [-60, -180], "floors": 3, "flat": true},
+		{"group": "collectible_spawn", "collectible_id": "atium_bead_4", "collectible_kind": "atium_bead", "placement": "street", "pos": [180, 60]},
+		{"group": "collectible_spawn", "collectible_id": "atium_bead_5", "collectible_kind": "atium_bead", "placement": "rooftop", "pos": [10, 180], "floors": 3, "flat": true},
+		{"group": "collectible_spawn", "collectible_id": "atium_bead_6", "collectible_kind": "atium_bead", "placement": "street", "pos": [-180, -40]},
+		{"group": "collectible_spawn", "collectible_id": "crew_note_1", "collectible_kind": "crew_note", "placement": "street", "pos": [-100, 100]},
+		{"group": "collectible_spawn", "collectible_id": "crew_note_2", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [120, -30], "floors": 3, "flat": true},
+		{"group": "collectible_spawn", "collectible_id": "crew_note_3", "collectible_kind": "crew_note", "placement": "street", "pos": [0, -200]},
+		{"group": "collectible_spawn", "collectible_id": "crew_note_4", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [-200, 50], "floors": 3, "flat": true},
+		{"group": "collectible_spawn", "collectible_id": "crew_note_5", "collectible_kind": "crew_note", "placement": "street", "pos": [200, -150]},
+		{"group": "collectible_spawn", "collectible_id": "crew_note_6", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [60, 60], "floors": 3, "flat": true}
 	]
 }

@@ -104,6 +104,10 @@ const TRIGGER_MASK := 1 << 5
 @export var starting_vials := 2
 ## Reserve restored to steel, iron, pewter and tin by one vial.
 @export var vial_amount := 40.0
+## Pouch/vial caps. Raised by the "Coin Pouch"/"Vial Capacity" mastery
+## upgrades (see `Mastery.apply_to`); 200/5 match their base (level 0) values.
+@export var coin_pouch_max := 200
+@export var vial_capacity_max := 5
 
 @export_group("Misc")
 @export var capture_mouse := true
@@ -232,10 +236,10 @@ func receive_allomantic_force(force: Vector3, delta: float, _from: Metallic) -> 
 func add_pickup(kind: StringName, amount: float) -> void:
 	match kind:
 		&"coins":
-			coins += int(amount)
+			coins = mini(coins + int(amount), coin_pouch_max)
 			_emit_inventory()
 		&"vial":
-			vials += int(amount)
+			vials = mini(vials + int(amount), vial_capacity_max)
 			_emit_inventory()
 		&"atium":
 			allomancer.add_reserve(Metal.Type.ATIUM, amount)
