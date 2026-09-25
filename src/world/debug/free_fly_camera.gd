@@ -34,8 +34,11 @@ func _run_shots() -> void:
 		_yaw = s[1]
 		_pitch = s[2]
 		rotation = Vector3(_pitch, _yaw, 0)
-		# Let streaming, textures and navigation settle.
-		for i in 150:
+		# Stream the area in synchronously, then let textures/particles settle.
+		var streamer := get_tree().get_first_node_in_group(&"world_streamer")
+		if streamer != null:
+			streamer.call(&"load_now", global_position, 260.0)
+		for i in 40:
 			await get_tree().process_frame
 		var info := "draw_calls=%d objects=%d prims=%d metals=%d fps=%d" % [
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),

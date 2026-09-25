@@ -42,6 +42,8 @@ var generation_time_ms := 0.0
 var is_navigation_ready := false
 var _pending_nav: Dictionary = {}
 var _initial_phase := false
+## Navigation map iteration to wait for before announcing navigation_ready (-1 = not waiting).
+var _nav_wait_iteration := -1
 
 
 func _ready() -> void:
@@ -164,7 +166,16 @@ func _on_unit_unloaded(key: String) -> void:
 
 func _on_unit_nav_ready(key: String) -> void:
 	_pending_nav.erase(key)
-	if not is_navigation_ready and _pending_nav.is_empty():
+	if not is_navigation_ready and _pending_nav.is_empty() and _nav_wait_iteration < 0:
+		# Wait until the navigation map has synced the new regions.
+		_nav_wait_iteration = NavigationServer3D.map_get_iteration_id(get_world_3d().navigation_map) + 2
+
+
+func _physics_process(_delta: float) -> void:
+	if _nav_wait_iteration < 0 or is_navigation_ready:
+		return
+	var map := get_world_3d().navigation_map
+	if NavigationServer3D.map_get_iteration_id(map) >= _nav_wait_iteration:
 		is_navigation_ready = true
 		navigation_ready.emit()
 

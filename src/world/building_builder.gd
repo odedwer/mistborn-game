@@ -147,7 +147,7 @@ static func _chimney(data: ChunkBuildData, rng: RandomNumberGenerator, x: float,
 	data.mb(M.TRIM).add_box(Vector3(lo.x - 0.1, top_y, lo.z - 0.1), Vector3(hi.x + 0.1, top_y + 0.14, hi.z + 0.1),
 			c * 0.5, c * 0.4, c * 0.25)
 	data.add_box_shape_lohi(lo, Vector3(hi.x, top_y + 0.14, hi.z))
-	var metal_p := 0.26 * float(lot.style.get("roof_metal", 1.0))
+	var metal_p := 0.2 * float(lot.style.get("roof_metal", 1.0))
 	if rng.randf() < metal_p:
 		var cap := Vector3(x, top_y + 0.14, z)
 		data.add_instance(&"chimney_cap", Transform3D(Basis(), cap))

@@ -169,6 +169,7 @@ func test_navigation_bakes() -> void:
 	var a := NavigationServer3D.map_get_closest_point(map, Vector3(sp.x, 0, sp.z + 12))
 	var b := NavigationServer3D.map_get_closest_point(map, Vector3(sp.x + 60, 0, sp.z - 60))
 	var path := NavigationServer3D.map_get_path(map, a, b, true)
+	print("    nav regions %d, a %s, b %s, path %d" % [NavigationServer3D.map_get_regions(map).size(), a, b, path.size()])
 	assert_gt(float(path.size()), 1.0, "street path found")
 	w.queue_free()
 	await get_tree().process_frame

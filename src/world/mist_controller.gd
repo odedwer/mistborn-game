@@ -26,7 +26,7 @@ const QUALITY := [
 @export var canal_density := 0.06
 @export var base_exposure := 1.15
 @export var base_depth_fog := 0.0045
-@export var low_quality_depth_fog := 0.016
+@export var low_quality_depth_fog := 0.011
 ## Size of the mist volume that follows the focus.
 @export var mist_volume_size := Vector3(360.0, 70.0, 360.0)
 
@@ -66,6 +66,17 @@ func setup(env: Environment) -> void:
 	fnl.fractal_octaves = 3
 	_noise.noise = fnl
 
+	_ash = AshFall.new()
+	_ash.name = "Ash"
+	add_child(_ash)
+	var ev := get_node_or_null(^"/root/Events")
+	if ev != null and ev.has_signal(&"metal_burn_changed"):
+		ev.connect(&"metal_burn_changed", _on_metal_burn_changed)
+	if _compat:
+		# Fog shaders/volumes are unsupported in the Compatibility renderer:
+		# depth fog carries the mist there.
+		set_quality(quality)
+		return
 	mist_material = _fog_material(MIST_SHADER)
 	mist_material.set_shader_parameter("density", mist_density)
 	canal_material = _fog_material(MIST_SHADER)
@@ -87,13 +98,6 @@ func setup(env: Environment) -> void:
 	add_child(_tendrils)
 	_tendrils.setup(tendril_material)
 
-	_ash = AshFall.new()
-	_ash.name = "Ash"
-	add_child(_ash)
-
-	var ev := get_node_or_null(^"/root/Events")
-	if ev != null and ev.has_signal(&"metal_burn_changed"):
-		ev.connect(&"metal_burn_changed", _on_metal_burn_changed)
 	set_quality(quality)
 
 
@@ -136,13 +140,14 @@ func _apply() -> void:
 	var q: Array = QUALITY[quality]
 	var volumetric: bool = q[0] and not _compat
 	var thin := 1.0 - 0.7 * tin
-	environment.volumetric_fog_enabled = volumetric
+	if not _compat:
+		environment.volumetric_fog_enabled = volumetric
 	environment.volumetric_fog_density = base_fog_density * thin
 	environment.volumetric_fog_length = float(q[3]) * (1.0 + tin)
 	var depth := base_depth_fog if volumetric else low_quality_depth_fog
 	environment.fog_density = depth * thin
 	environment.tonemap_exposure = base_exposure * (1.0 + 0.9 * tin)
-	environment.ambient_light_energy = 0.32 + 0.45 * tin
+	environment.ambient_light_energy = 1.0 + 0.8 * tin
 	for m: ShaderMaterial in [mist_material, canal_material]:
 		if m != null:
 			m.set_shader_parameter("density_scale", thin)

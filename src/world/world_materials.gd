@@ -126,14 +126,20 @@ static func _triplanar(tex: String, world_size: float, roughness: float, tint: C
 	if tex_set[2] != null:
 		m.roughness_texture = tex_set[2]
 		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+		# The texture carries the detail; keep the scalar as a soft multiplier.
+		m.roughness = clampf(roughness + 0.15, 0.0, 1.0)
+	if tex_set[3] != null:
+		m.ao_enabled = true
+		m.ao_texture = tex_set[3]
+		m.ao_light_affect = 0.4
 	return m
 
 
-## [albedo, normal, roughness] for a texture set name (file or procedural).
+## [albedo, normal, roughness, ao] for a texture set name (file or procedural).
 static func _textures(set_name: String) -> Array:
 	if _tex_cache.has(set_name):
 		return _tex_cache[set_name]
-	var out: Array = [null, null, null]
+	var out: Array = [null, null, null, null]
 	var base := TEX_DIR + set_name
 	if ResourceLoader.exists(base + "_albedo.png"):
 		out[0] = load(base + "_albedo.png")
@@ -141,6 +147,8 @@ static func _textures(set_name: String) -> Array:
 			out[1] = load(base + "_normal.png")
 		if ResourceLoader.exists(base + "_roughness.png"):
 			out[2] = load(base + "_roughness.png")
+		if ResourceLoader.exists(base + "_ao.png"):
+			out[3] = load(base + "_ao.png")
 	else:
 		var imgs := ProceduralTextures.generate(set_name)
 		out[0] = ImageTexture.create_from_image(imgs[0])

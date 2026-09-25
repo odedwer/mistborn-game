@@ -36,8 +36,8 @@ static func build(parent: Node3D) -> Dictionary:
 	env.sky = sky
 
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.30, 0.33, 0.42)
-	env.ambient_light_energy = 0.32
+	env.ambient_light_color = Color(0.36, 0.39, 0.5)
+	env.ambient_light_energy = 1.0
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
@@ -61,7 +61,7 @@ static func build(parent: Node3D) -> Dictionary:
 	# Depth fog: distance haze (and the only mist on the Low preset).
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
-	env.fog_light_color = Color(0.13, 0.135, 0.15)
+	env.fog_light_color = Color(0.2, 0.21, 0.24)
 	env.fog_light_energy = 1.0
 	env.fog_density = 0.0045
 	env.fog_sky_affect = 0.35
@@ -70,7 +70,7 @@ static func build(parent: Node3D) -> Dictionary:
 	env.fog_aerial_perspective = 0.2
 
 	# Volumetric fog: base haze. Local swirling mist comes from FogVolumes.
-	env.volumetric_fog_enabled = true
+	env.volumetric_fog_enabled = RenderingServer.get_current_rendering_method() != "gl_compatibility"
 	env.volumetric_fog_density = 0.012
 	env.volumetric_fog_albedo = Color(0.84, 0.86, 0.9)
 	env.volumetric_fog_emission = Color(0.03, 0.032, 0.036)
@@ -98,7 +98,7 @@ static func build(parent: Node3D) -> Dictionary:
 	var to_moon := Vector3(sin(az) * cos(el), sin(el), -cos(az) * cos(el))
 	moon.basis = Basis.looking_at(-to_moon, Vector3.UP)
 	moon.light_color = Color(0.62, 0.7, 0.92)
-	moon.light_energy = 0.55
+	moon.light_energy = 0.7
 	moon.light_indirect_energy = 0.5
 	moon.light_volumetric_fog_energy = 0.7
 	moon.shadow_enabled = true

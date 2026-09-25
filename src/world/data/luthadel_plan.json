@@ -26,7 +26,7 @@
 			"block": [26, 40], "street": [3.5, 6.5], "arterial": [6.0, 8.5],
 			"floors": [3, 5], "lot_w": [6.5, 11.0], "lot_d": [9.0, 13.0], "backgap": [0.0, 5.0],
 			"alley_chance": 0.14, "roof_flat": 0.28, "mats": [0.40, 0.40, 0.20],
-			"tint": [0.42, 0.72], "lit": 0.13, "bars": 0.06, "lamp_spacing": 22.0,
+			"tint": [0.42, 0.72], "lit": 0.13, "bars": 0.06, "lamp_spacing": 25.0,
 			"wall_lantern": 0.05, "props": 10, "plaza": 0.03, "chimneys": [1, 3],
 			"roof_metal": 0.8, "ground": "cobble"
 		},
