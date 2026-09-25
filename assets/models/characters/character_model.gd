@@ -140,7 +140,6 @@ func is_dead() -> bool:
 ## Plays a one-shot. Returns false for unknown actions. `die` is terminal until revive().
 func play_action(action: StringName) -> bool:
 	if animation_tree == null or not has_animation(action):
-		push_warning("CharacterModel: unknown action '%s'" % action)
 		return false
 	if _dead and action != &"die":
 		return false

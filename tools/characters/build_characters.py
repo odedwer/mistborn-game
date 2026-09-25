@@ -1,7 +1,7 @@
 """Builds all character GLBs with Blender-as-a-module (bpy 4.5).
 
 Usage (from the repo root):
-    tools/characters/setup_venv.sh            # once: creates .venv-bpy with bpy==4.5.4
+    tools/characters/build.sh [name ...]      # wrapper: venv setup + build + import
     tools/characters/.venv-bpy/bin/python tools/characters/build_characters.py [name ...]
 
 Outputs assets/models/characters/<name>.glb (+ <name>.tscn wrapper scenes).

@@ -518,9 +518,9 @@ def make_anims(style: str, S: Skel):
             (0.0, {}),
             (0.14, {"r_abd": 18, "r_flex": 45, "r_elbow": 115, "r_twist": -10, "r_wrist": 20, "spine_twist": -14,
                     "spine_lean": 4}),
-            (0.26, {"r_abd": 12, "r_flex": 88, "r_elbow": 0, "r_twist": -60, "r_wrist": -70, "spine_twist": 12,
+            (0.26, {"r_abd": 12, "r_flex": 88, "r_elbow": 0, "r_twist": -60, "r_wrist": 65, "spine_twist": 12,
                     "spine_lean": -6, "head_pitch": -4, "l_flex": -15, "l_elbow": 30}),
-            (0.42, {"r_abd": 12, "r_flex": 85, "r_elbow": 4, "r_twist": -60, "r_wrist": -65, "spine_twist": 10,
+            (0.42, {"r_abd": 12, "r_flex": 85, "r_elbow": 4, "r_twist": -60, "r_wrist": 60, "spine_twist": 10,
                     "spine_lean": -4}),
             (0.65, {}),
         ], t, base)
