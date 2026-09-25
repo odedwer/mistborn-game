@@ -5,3 +5,4 @@
 export_credentials.cfg
 /assets/external/
 __pycache__/
+.claude/worktrees/
