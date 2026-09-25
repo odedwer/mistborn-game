@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://assets/models/characters/character_model.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/guard.glb" id="2"]
+
+[node name="Guard" type="Node3D"]
+script = ExtResource("1")
+character_id = &"guard"
+sockets = {
+"lantern": ["LeftHand", Vector3(-0.5931, 0.9491, 0.1936)],
+"chest": ["UpperChest", Vector3(0.0000, 1.2816, -0.1119)],
+"hand_r": ["RightHand", Vector3(0.5845, 0.9594, 0.0008)],
+"hand_l": ["LeftHand", Vector3(-0.5845, 0.9594, 0.0008)],
+"head": ["Head", Vector3(0.0000, 1.6913, 0.0020)]
+}
+lantern_light = true
+
+[node name="Model" parent="." instance=ExtResource("2")]

@@ -1,0 +1,74 @@
+{
+ "name": "thug",
+ "style": "thug",
+ "tris": 2820,
+ "height": 2.1009432748298913,
+ "materials": [
+  "Cloth"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.7170286378968705,
+    -0.0009381780477343647,
+    1.1159399584382792
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.7170286378968705,
+    -0.0009381780477343647,
+    1.1159399584382792
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.12,
+    1.5855000000000001
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0024,
+    1.9953000000000003
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink"
+ ]
+}

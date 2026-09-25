@@ -1,0 +1,143 @@
+{
+ "name": "coinshot",
+ "style": "coinshot",
+ "tris": 3558,
+ "height": 1.8011612870971927,
+ "materials": [
+  "Cloak",
+  "Cloth",
+  "Metal"
+ ],
+ "tassel_chains": [
+  [
+   "Tassel_00_0",
+   "Tassel_00_1",
+   "Tassel_00_2",
+   "Tassel_00_3"
+  ],
+  [
+   "Tassel_01_0",
+   "Tassel_01_1",
+   "Tassel_01_2",
+   "Tassel_01_3"
+  ],
+  [
+   "Tassel_02_0",
+   "Tassel_02_1",
+   "Tassel_02_2",
+   "Tassel_02_3"
+  ],
+  [
+   "Tassel_03_0",
+   "Tassel_03_1",
+   "Tassel_03_2",
+   "Tassel_03_3"
+  ],
+  [
+   "Tassel_04_0",
+   "Tassel_04_1",
+   "Tassel_04_2",
+   "Tassel_04_3"
+  ],
+  [
+   "Tassel_05_0",
+   "Tassel_05_1",
+   "Tassel_05_2",
+   "Tassel_05_3"
+  ],
+  [
+   "Tassel_06_0",
+   "Tassel_06_1",
+   "Tassel_06_2",
+   "Tassel_06_3"
+  ],
+  [
+   "Tassel_07_0",
+   "Tassel_07_1",
+   "Tassel_07_2",
+   "Tassel_07_3"
+  ],
+  [
+   "Tassel_08_0",
+   "Tassel_08_1",
+   "Tassel_08_2",
+   "Tassel_08_3"
+  ],
+  [
+   "Tassel_09_0",
+   "Tassel_09_1",
+   "Tassel_09_2",
+   "Tassel_09_3"
+  ],
+  [
+   "Tassel_10_0",
+   "Tassel_10_1",
+   "Tassel_10_2",
+   "Tassel_10_3"
+  ]
+ ],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5858923421447982,
+    -0.0008041526123437484,
+    0.9702032845699801
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5858923421447982,
+    -0.0008041526123437484,
+    0.9702032845699801
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.10285714285714287,
+    1.359
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.002057142857142857,
+    1.710257142857143
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink"
+ ]
+}

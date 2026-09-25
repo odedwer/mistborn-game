@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://assets/models/characters/materials/character.gdshader" id="1"]
+
+[resource]
+resource_name = "glow"
+render_priority = 0
+shader = ExtResource("1")
+shader_parameter/roughness = 0.4
+shader_parameter/metallic = 0.0
+shader_parameter/specular = 0.5
+shader_parameter/detail_strength = 0.0
+shader_parameter/grime_strength = 0.0
+shader_parameter/rim_strength = 0.0
+shader_parameter/emission_energy = 2.2
+shader_parameter/emission_color = Color(1, 0.62, 0.28, 1)

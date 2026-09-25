@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://assets/models/characters/materials/character.gdshader" id="1"]
+
+[resource]
+resource_name = "metal"
+render_priority = 0
+shader = ExtResource("1")
+shader_parameter/roughness = 0.34
+shader_parameter/metallic = 0.7
+shader_parameter/specular = 0.6
+shader_parameter/detail_strength = 0.04
+shader_parameter/grime_strength = 0.3
+shader_parameter/rim_strength = 0.15

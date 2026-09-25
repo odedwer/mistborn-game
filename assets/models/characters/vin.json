@@ -1,0 +1,173 @@
+{
+ "name": "vin",
+ "style": "vin",
+ "tris": 3444,
+ "height": 1.6515617995419911,
+ "materials": [
+  "Cloak",
+  "Cloth",
+  "Obsidian"
+ ],
+ "tassel_chains": [
+  [
+   "Tassel_00_0",
+   "Tassel_00_1",
+   "Tassel_00_2",
+   "Tassel_00_3"
+  ],
+  [
+   "Tassel_01_0",
+   "Tassel_01_1",
+   "Tassel_01_2",
+   "Tassel_01_3"
+  ],
+  [
+   "Tassel_02_0",
+   "Tassel_02_1",
+   "Tassel_02_2",
+   "Tassel_02_3"
+  ],
+  [
+   "Tassel_03_0",
+   "Tassel_03_1",
+   "Tassel_03_2",
+   "Tassel_03_3"
+  ],
+  [
+   "Tassel_04_0",
+   "Tassel_04_1",
+   "Tassel_04_2",
+   "Tassel_04_3"
+  ],
+  [
+   "Tassel_05_0",
+   "Tassel_05_1",
+   "Tassel_05_2",
+   "Tassel_05_3"
+  ],
+  [
+   "Tassel_06_0",
+   "Tassel_06_1",
+   "Tassel_06_2",
+   "Tassel_06_3"
+  ],
+  [
+   "Tassel_07_0",
+   "Tassel_07_1",
+   "Tassel_07_2",
+   "Tassel_07_3"
+  ],
+  [
+   "Tassel_08_0",
+   "Tassel_08_1",
+   "Tassel_08_2",
+   "Tassel_08_3"
+  ],
+  [
+   "Tassel_09_0",
+   "Tassel_09_1",
+   "Tassel_09_2",
+   "Tassel_09_3"
+  ],
+  [
+   "Tassel_10_0",
+   "Tassel_10_1",
+   "Tassel_10_2",
+   "Tassel_10_3"
+  ],
+  [
+   "Tassel_11_0",
+   "Tassel_11_1",
+   "Tassel_11_2",
+   "Tassel_11_3"
+  ],
+  [
+   "Tassel_12_0",
+   "Tassel_12_1",
+   "Tassel_12_2",
+   "Tassel_12_3"
+  ],
+  [
+   "Tassel_13_0",
+   "Tassel_13_1",
+   "Tassel_13_2",
+   "Tassel_13_3"
+  ],
+  [
+   "Tassel_14_0",
+   "Tassel_14_1",
+   "Tassel_14_2",
+   "Tassel_14_3"
+  ],
+  [
+   "Tassel_15_0",
+   "Tassel_15_1",
+   "Tassel_15_2",
+   "Tassel_15_3"
+  ]
+ ],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5163251231565412,
+    -0.0007371398946484339,
+    0.8893530108558151
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5163251231565412,
+    -0.0007371398946484339,
+    0.8893530108558151
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.09428571428571429,
+    1.24575
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0018857142857142857,
+    1.5677357142857142
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink"
+ ]
+}
