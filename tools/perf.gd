@@ -17,6 +17,9 @@ func _run() -> void:
 	var rep: Dictionary = await probe.finished
 	print("\nlocation          process  physics  max    lines metals enemies")
 	for loc: String in rep:
+		if loc.begins_with("fly"):
+			print("%s: %s" % [loc, rep[loc]])
+			continue
 		var e: Dictionary = rep[loc]
 		var b: Dictionary = e["base"]
 		print("%-16s %7.2f %8.2f %6.1f %6d %6d %6d" % [loc, b["process"], b["physics"], b["max"], e["lines"],

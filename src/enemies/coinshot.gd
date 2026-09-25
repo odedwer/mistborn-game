@@ -93,20 +93,21 @@ func _throw_coin() -> void:
 		return
 	dir = dir.normalized()
 	var vel := dir * coin_speed
-	var projectile: Node = null
+	var from := global_position + Vector3.UP * 1.4
+	var m: Metallic = null
 	if ResourceLoader.exists(COIN_SCENE_PATH):
-		var scene: PackedScene = load(COIN_SCENE_PATH)
-		projectile = scene.instantiate()
+		# Pooled like the player's coins: capped and recycled (thrown coins
+		# used to be instanced into the scene and never freed).
+		var coin := CoinPool.get_for(self).spawn(Transform3D(Basis.IDENTITY, from), vel, self)
+		m = coin.metallic
 	else:
-		projectile = FallbackCoin.new()
-	var parent := get_tree().current_scene if get_tree().current_scene else get_parent()
-	parent.add_child(projectile)
-	if projectile.has_method("launch"):
-		projectile.call("launch", global_position + Vector3.UP * 1.4, vel, self)
-	if allomancer and allomancer.has_method("push"):
-		var m := projectile.get_node_or_null(^"Metallic")
-		if m:
-			allomancer.call("push", m, 1.0, get_physics_process_delta_time())
+		var projectile := FallbackCoin.new()
+		var parent := get_tree().current_scene if get_tree().current_scene else get_parent()
+		parent.add_child(projectile)
+		projectile.call("launch", from, vel, self)
+		m = projectile.get_node_or_null(^"Metallic") as Metallic
+	if m != null and allomancer and allomancer.has_method("push"):
+		allomancer.call("push", m, 1.0, get_physics_process_delta_time())
 	AudioManager.play_3d(&"javelin_throw", global_position)
 
 

@@ -20,6 +20,7 @@ const INSTANCE_RANGE := {
 const DETAIL_RANGE := 150.0
 const WINDOW_RANGE := 420.0
 const RIGID_RANGE := 110.0
+const SHAPES_PER_BODY := 48
 const NO_SHADOW_MATS := [M.WATER, M.WINDOW, M.LANTERN_GLASS]
 
 static var _lamp_shape: BoxShape3D
@@ -28,6 +29,11 @@ static var _checkpoint_shape: BoxShape3D
 var data: ChunkBuildData
 var root: Node3D
 var static_body: StaticBody3D
+## Collision is split over several StaticBodies, each filled *before* it
+## enters the tree: adding shapes one by one to a body already in the tree
+## makes Jolt rebuild its compound shape every time (O(n^2), 10+ ms stalls).
+var _shape_body: StaticBody3D
+var _shape_bodies := 0
 var nav_region: NavigationRegion3D
 ## The navmesh being baked (kept so shutdown can wait for the bake).
 var nav_mesh: NavigationMesh
@@ -78,8 +84,11 @@ func _step_once() -> void:
 			_build_meshes()
 			_stage += 1
 		2:
-			if _batch(data.shapes.size(), 96, _add_shape):
+			if _batch(data.shapes.size(), SHAPES_PER_BODY, _add_shape):
+				_flush_shape_body()
 				_stage += 1
+			else:
+				_flush_shape_body()
 		3:
 			_build_occluder()
 			_build_multimeshes()
@@ -165,7 +174,19 @@ func _add_shape(i: int) -> void:
 		c.points = s["convex"]
 		cs.shape = c
 	cs.transform = s["xf"]
-	static_body.add_child(cs)
+	if _shape_body == null:
+		_shape_body = StaticBody3D.new()
+		_shape_body.name = "Collision%d" % _shape_bodies
+		_shape_body.collision_layer = WORLD_LAYER
+		_shape_body.collision_mask = 0
+		_shape_bodies += 1
+	_shape_body.add_child(cs)
+
+
+func _flush_shape_body() -> void:
+	if _shape_body != null:
+		root.add_child(_shape_body)
+		_shape_body = null
 
 
 func _build_occluder() -> void:
@@ -399,6 +420,10 @@ func wait_for_bake(max_msec := 10000) -> void:
 
 ## Frees the unit's nodes (Metallics unregister themselves on exit).
 func free_nodes() -> void:
+	# A body still being filled is not in the tree yet: free it explicitly.
+	if _shape_body != null and is_instance_valid(_shape_body):
+		_shape_body.free()
+	_shape_body = null
 	if root != null and is_instance_valid(root):
 		root.queue_free()
 	root = null

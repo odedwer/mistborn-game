@@ -7,7 +7,9 @@ extends Node
 ## - flies around holding Push/Pull (the player's own targeting and traversal
 ##   assist), throws and drops coins, stabs, burns and flares every metal,
 ##   uses duralumin and atium, drinks vials;
-## - takes hits from enemies.
+## - takes hits from enemies;
+## - starts side activities (ActivityManager), flies through their rings,
+##   opens the pause menu (map/journal), saves and loads mid-run.
 ## It records every engine/script error and warning (through a Logger), leak
 ## counters, coin pool size, enemies that fell out of the world, the time
 ## scale after atium, and CPU frame times per route stop.
@@ -68,6 +70,10 @@ var _dura_uses := 0
 var _coins_thrown := 0
 var _hits := 0
 var _stream_hitches: Array[String] = []
+var _activities := 0
+var _saves := 0
+var _loads := 0
+const SOAK_SLOT := 8
 
 
 func _ready() -> void:
@@ -207,6 +213,36 @@ func _act(t: int) -> void:
 	if t == 100:
 		player.add_pickup(&"vial", 1.0)
 		player.drink_vial()
+	# Open-world systems: side activities, pause menu (map + journal), save/load.
+	var am := get_tree().get_first_node_in_group(&"activity_manager")
+	if am != null and t == 15:
+		var ids: Array = am.activities.keys()
+		ids.sort()
+		if not ids.is_empty():
+			var aid: StringName = ids[_stop % ids.size()]
+			if am.start_activity(aid, player.global_position):
+				_activities += 1
+	if am != null and t % 20 == 10:
+		# Fly through the next ring of a running race.
+		for aid: StringName in am._active:
+			var st: Dictionary = am._active[aid]
+			var rings: Array = st.get("rings", [])
+			var ri := int(st.get("ring_index", 0))
+			if ri < rings.size() and is_instance_valid(rings[ri]):
+				player.global_position = (rings[ri] as Node3D).global_position - Vector3.UP * 0.9
+				break
+	var pm := game.get_node_or_null(^"PauseMenu")
+	if pm != null and pm.has_method(&"set_paused"):
+		if t == 160:
+			pm.set_paused(true)
+		elif t == 163:
+			pm.set_paused(false)
+	if t == 170 and _stop % 4 == 1:
+		GameState.save_game(SOAK_SLOT)
+		_saves += 1
+	if t == 175 and _stop % 4 == 3 and GameState.has_save(SOAK_SLOT):
+		GameState.load_game(SOAK_SLOT)
+		_loads += 1
 	# Get hit by the nearest enemy (they also attack on their own).
 	if t % 50 == 25:
 		var e := _nearest_enemy(60.0)
@@ -279,6 +315,9 @@ func report() -> Dictionary:
 		"duralumin_uses": _dura_uses,
 		"coins_thrown": _coins_thrown,
 		"hits": _hits,
+		"activities_started": _activities,
+		"saves": _saves,
+		"loads": _loads,
 		"cpu_hitches": _stream_hitches,
 		"perf": perf,
 		"metals": MetalRegistry.count(),
