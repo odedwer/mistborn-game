@@ -147,7 +147,7 @@ static func _chimney(data: ChunkBuildData, rng: RandomNumberGenerator, x: float,
 	data.mb(M.TRIM).add_box(Vector3(lo.x - 0.1, top_y, lo.z - 0.1), Vector3(hi.x + 0.1, top_y + 0.14, hi.z + 0.1),
 			c * 0.5, c * 0.4, c * 0.25)
 	data.add_box_shape_lohi(lo, Vector3(hi.x, top_y + 0.14, hi.z))
-	var metal_p := 0.33 * float(lot.style.get("roof_metal", 1.0))
+	var metal_p := 0.26 * float(lot.style.get("roof_metal", 1.0))
 	if rng.randf() < metal_p:
 		var cap := Vector3(x, top_y + 0.14, z)
 		data.add_instance(&"chimney_cap", Transform3D(Basis(), cap))
@@ -183,7 +183,7 @@ static func _flat_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNu
 		var z := rng.randf_range(r.position.y + 1.2, r.end.y - 1.2)
 		_chimney(data, rng, x, z, h, h + rng.randf_range(1.2, 2.3), lot)
 	var metal_scale := float(lot.style.get("roof_metal", 1.0))
-	if rng.randf() < 0.24 * metal_scale:
+	if rng.randf() < 0.18 * metal_scale:
 		var p := Vector3(r.position.x + 0.8, h, r.position.y + 0.8)
 		if rng.randf() < 0.5:
 			p = Vector3(r.end.x - 0.8, h, r.end.y - 0.8)
@@ -250,7 +250,7 @@ static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomN
 			x = (x0 + x1) * 0.5 + side * (x1 - x0) * 0.5
 		_chimney(data, rng, x, z, h + rise * 0.3, h + rise + rng.randf_range(0.5, 1.6), lot)
 	var metal_scale := float(lot.style.get("roof_metal", 1.0))
-	if rng.randf() < 0.22 * metal_scale:
+	if rng.randf() < 0.18 * metal_scale:
 		var p: Vector3
 		if along_x:
 			p = Vector3(x0 + 0.4 if rng.randf() < 0.5 else x1 - 0.4, h + rise, (z0 + z1) * 0.5)

@@ -444,9 +444,11 @@ func _place_markers(plan: CityPlan, seed_value: int) -> void:
 func _place_marker(m: Dictionary, p: Vector2, used: Array[Lot], seed_value: int) -> void:
 	var group := StringName(str(m.get("group", "")))
 	var meta := {}
-	for key: String in ["objective_id", "enemy_type", "pickup_kind", "checkpoint"]:
+	for key: String in ["objective_id", "enemy_type", "pickup_kind"]:
 		if m.has(key):
 			meta[key] = StringName(str(m[key]))
+	if m.has("checkpoint"):
+		meta["checkpoint_id"] = StringName(str(m["checkpoint"]))
 	var placement := str(m.get("placement", "street"))
 	var pos := Vector3(p.x, 0.05, p.y)
 	match placement:

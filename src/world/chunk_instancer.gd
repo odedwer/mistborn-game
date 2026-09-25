@@ -29,6 +29,8 @@ var data: ChunkBuildData
 var root: Node3D
 var static_body: StaticBody3D
 var nav_region: NavigationRegion3D
+## The navmesh being baked (kept so shutdown can wait for the bake).
+var nav_mesh: NavigationMesh
 var fog_material: Material
 var _parent: Node3D
 var _stage := 0
@@ -313,17 +315,17 @@ func _add_marker(m: Dictionary) -> void:
 	else:
 		mk.name = String(group)
 	root.add_child(mk, true)
-	if meta.has("checkpoint"):
+	if meta.has("checkpoint_id"):
 		if _checkpoint_shape == null:
 			_checkpoint_shape = BoxShape3D.new()
 			_checkpoint_shape.size = Vector3(8, 5, 8)
 		var area := Area3D.new()
-		area.name = "Checkpoint_%s" % meta["checkpoint"]
+		area.name = "Checkpoint_%s" % meta["checkpoint_id"]
 		area.collision_layer = TRIGGER_LAYER
 		area.collision_mask = PLAYER_MASK
 		area.monitorable = false
 		area.position = m["pos"] + Vector3(0, 2.0, 0)
-		area.set_meta(&"checkpoint_id", meta["checkpoint"])
+		area.set_meta(&"checkpoint_id", meta["checkpoint_id"])
 		area.add_to_group(&"checkpoint")
 		var cs := CollisionShape3D.new()
 		cs.shape = _checkpoint_shape
@@ -351,10 +353,11 @@ func bake_navigation(on_done: Callable) -> void:
 		on_done.call_deferred()
 		return
 	var nm := NavigationMesh.new()
+	nav_mesh = nm
 	nm.cell_size = 0.25
 	nm.cell_height = 0.25
-	nm.agent_radius = 0.4
-	nm.agent_height = 1.8
+	nm.agent_radius = 0.5
+	nm.agent_height = 2.0
 	nm.agent_max_climb = 0.5
 	nm.agent_max_slope = 45.0
 	nm.border_size = ChunkGenerator.NAV_BORDER
@@ -369,8 +372,8 @@ func bake_navigation(on_done: Callable) -> void:
 	nav_region = NavigationRegion3D.new()
 	nav_region.name = "Nav"
 	root.add_child(nav_region)
-	var region_ref := weakref(nav_region)
-	var self_ref := weakref(self)
+	var region_ref: WeakRef = weakref(nav_region)
+	var self_ref: WeakRef = weakref(self)
 	NavigationServer3D.bake_from_source_geometry_data_async(nm, src, func() -> void:
 		_finish_nav.call_deferred(region_ref, nm, self_ref, on_done))
 
@@ -384,6 +387,15 @@ static func _finish_nav(region_ref: WeakRef, nm: NavigationMesh, self_ref: WeakR
 		inst.nav_ready = true
 	if on_done.is_valid():
 		on_done.call()
+
+
+## Blocks until an in-flight navmesh bake finishes (used on shutdown).
+func wait_for_bake(max_msec := 10000) -> void:
+	var t0 := Time.get_ticks_msec()
+	while nav_mesh != null and NavigationServer3D.is_baking_navigation_mesh(nav_mesh):
+		if Time.get_ticks_msec() - t0 > max_msec:
+			break
+		OS.delay_msec(2)
 
 
 ## Frees the unit's nodes (Metallics unregister themselves on exit).

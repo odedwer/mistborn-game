@@ -73,6 +73,16 @@ func is_loaded(key: String) -> bool:
 	return _units.has(key) and (_units[key] as ChunkInstancer).is_done()
 
 
+## True if the chunk under `p` is fully instantiated (colliders present).
+func is_area_loaded(p: Vector3) -> bool:
+	if plan == null:
+		return false
+	var c := plan.chunk_of(Vector2(p.x, p.z))
+	if not _range.has_point(c):
+		return true
+	return is_loaded(ChunkGenerator.chunk_key(c))
+
+
 func is_busy() -> bool:
 	return not _tasks.is_empty() or not _building.is_empty()
 
@@ -267,9 +277,11 @@ func _unload(key: String) -> void:
 	unit_unloaded.emit(key)
 
 
-## Unloads everything (e.g. before freeing the world).
+## Unloads everything (e.g. before freeing the world). Waits for worker
+## tasks and in-flight navmesh bakes so nothing outlives the world.
 func unload_all() -> void:
 	for k: String in _units.keys():
+		(_units[k] as ChunkInstancer).wait_for_bake()
 		_unload(k)
 	for k: String in _tasks:
 		WorkerThreadPool.wait_for_task_completion(_tasks[k])

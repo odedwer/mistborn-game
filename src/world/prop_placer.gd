@@ -27,7 +27,7 @@ static func _lamps(data: ChunkBuildData, L: ChunkLayout, rng: RandomNumberGenera
 	# Mission-critical lamps (near spawn and checkpoints) get the few shadowed lights.
 	var shadow_lamps: Dictionary = {}
 	for m in L.markers:
-		var important := m["group"] == &"player_spawn"
+		var important: bool = m["group"] == &"player_spawn"
 		var oid: StringName = m["meta"].get("objective_id", &"")
 		if String(oid).begins_with("cp_"):
 			important = true

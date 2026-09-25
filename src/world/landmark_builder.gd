@@ -230,5 +230,5 @@ static func _dock(data: ChunkBuildData, lm: CityPlan.Landmark, plan: CityPlan) -
 	for zz: float in [z0 - 2.0, z1 + 2.0]:
 		data.add_light(Vector3(x_edge - 1.25, 3.75, zz), PropPlacer.LAMP_LIGHT_COLOR, 10.0, 2.0)
 	var ep := Vector3(x_edge + 3.5, deck_y + 0.05, bz)
-	data.add_marker(&"objective_point", ep, {"objective_id": &"extraction", "checkpoint": &"extraction"})
+	data.add_marker(&"objective_point", ep, {"objective_id": &"extraction", "checkpoint_id": &"extraction"})
 	data.fog_volumes.append({"pos": Vector3(x_edge + 9.0, wy + 3.0, bz), "size": Vector3(20.0, 8.0, 30.0), "density": 1.3})

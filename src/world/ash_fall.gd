@@ -46,7 +46,7 @@ func _init() -> void:
 
 
 ## Sets the particle count (restarts the emitter).
-func set_amount(n: int) -> void:
+func set_flake_count(n: int) -> void:
 	if n == amount:
 		return
 	amount = maxi(n, 1)

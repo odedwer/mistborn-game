@@ -119,7 +119,7 @@ func set_quality(level: int) -> void:
 	if volumetric:
 		RenderingServer.environment_set_volumetric_fog_volume_size(q[1], q[2])
 	if _ash != null:
-		_ash.set_amount(q[4])
+		_ash.set_flake_count(q[4])
 	if _tendrils != null:
 		_tendrils.use_volume = q[5] and volumetric
 	_apply()
