@@ -345,13 +345,14 @@ func _add_fog(f: Dictionary) -> void:
 	root.add_child(fv)
 
 
-## Starts the asynchronous navmesh bake for this unit. `on_done` is called
-## (deferred, on the main thread) when finished.
-func bake_navigation(on_done: Callable) -> void:
+## Starts the asynchronous navmesh bake for this unit. Returns false if the
+## unit has no navigation (then `nav_ready` is already true). Completion is
+## detected by polling `poll_navigation()` on the main thread, so no script
+## callback ever runs on a worker thread.
+func bake_navigation() -> bool:
 	if data.nav_rect.size == Vector2.ZERO or data.nav_faces.is_empty():
 		nav_ready = true
-		on_done.call_deferred()
-		return
+		return false
 	var nm := NavigationMesh.new()
 	nav_mesh = nm
 	nm.cell_size = 0.25
@@ -362,7 +363,6 @@ func bake_navigation(on_done: Callable) -> void:
 	nm.agent_max_slope = 45.0
 	nm.border_size = ChunkGenerator.NAV_BORDER
 	nm.region_min_size = 4.0
-	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	var r := data.nav_rect.grow(ChunkGenerator.NAV_BORDER)
 	nm.filter_baking_aabb = AABB(Vector3(r.position.x, -8.0, r.position.y), Vector3(r.size.x, 120.0, r.size.y))
 	var src := NavigationMeshSourceGeometryData3D.new()
@@ -372,21 +372,20 @@ func bake_navigation(on_done: Callable) -> void:
 	nav_region = NavigationRegion3D.new()
 	nav_region.name = "Nav"
 	root.add_child(nav_region)
-	var region_ref: WeakRef = weakref(nav_region)
-	var self_ref: WeakRef = weakref(self)
-	NavigationServer3D.bake_from_source_geometry_data_async(nm, src, func() -> void:
-		_finish_nav.call_deferred(region_ref, nm, self_ref, on_done))
+	NavigationServer3D.bake_from_source_geometry_data_async(nm, src)
+	return true
 
 
-static func _finish_nav(region_ref: WeakRef, nm: NavigationMesh, self_ref: WeakRef, on_done: Callable) -> void:
-	var region := region_ref.get_ref() as NavigationRegion3D
-	if region != null and region.is_inside_tree():
-		region.navigation_mesh = nm
-	var inst := self_ref.get_ref() as ChunkInstancer
-	if inst != null:
-		inst.nav_ready = true
-	if on_done.is_valid():
-		on_done.call()
+## Call each frame while baking; returns true once the navmesh is assigned.
+func poll_navigation() -> bool:
+	if nav_ready:
+		return true
+	if nav_mesh == null or NavigationServer3D.is_baking_navigation_mesh(nav_mesh):
+		return false
+	if nav_region != null and is_instance_valid(nav_region) and nav_region.is_inside_tree():
+		nav_region.navigation_mesh = nav_mesh
+	nav_ready = true
+	return true
 
 
 ## Blocks until an in-flight navmesh bake finishes (used on shutdown).

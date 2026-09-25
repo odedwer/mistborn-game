@@ -38,6 +38,8 @@ var _results: Dictionary = {}
 var _results_mutex := Mutex.new()
 ## Pending instancers in build order.
 var _building: Array[ChunkInstancer] = []
+## Instancers whose navmesh is baking.
+var _baking: Array[ChunkInstancer] = []
 ## Prebuilt data (landmarks computed for the marker index), consumed on load.
 var _prebuilt: Dictionary = {}
 var _timer := 0.0
@@ -200,6 +202,19 @@ func _process(delta: float) -> void:
 		_update_wanted()
 	_poll_tasks()
 	_build_step()
+	_poll_baking()
+
+
+func _poll_baking() -> void:
+	var i := 0
+	while i < _baking.size():
+		var inst := _baking[i]
+		if inst.poll_navigation():
+			_baking.remove_at(i)
+			if inst.root != null:
+				unit_navigation_ready.emit(inst.data.key)
+		else:
+			i += 1
 
 
 func _update_wanted() -> void:
@@ -266,7 +281,14 @@ func _build_step() -> void:
 func _on_instanced(inst: ChunkInstancer) -> void:
 	var key := inst.data.key
 	unit_loaded.emit(key)
-	inst.bake_navigation(func() -> void: unit_navigation_ready.emit(key))
+	if inst.bake_navigation():
+		_baking.append(inst)
+	else:
+		_emit_nav_ready.call_deferred(key)
+
+
+func _emit_nav_ready(key: String) -> void:
+	unit_navigation_ready.emit(key)
 
 
 func _unload(key: String) -> void:
@@ -289,6 +311,8 @@ func unload_all() -> void:
 
 
 func _exit_tree() -> void:
+	for k: String in _units:
+		(_units[k] as ChunkInstancer).wait_for_bake()
 	for k: String in _tasks:
 		WorkerThreadPool.wait_for_task_completion(_tasks[k])
 	_tasks.clear()
