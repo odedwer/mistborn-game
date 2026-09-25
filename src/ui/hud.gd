@@ -267,11 +267,15 @@ func _update_objective_marker() -> void:
 		_objective_marker.visible = true
 		_objective_marker.rotation_degrees = 45
 	else:
-		# Off-screen: clamp to the edge of the screen, pointing toward the target.
+		# Off-screen: clamp to the edge of the screen, pointing toward the
+		# target in *camera* space (screen right = camera X, screen up =
+		# camera Y). Targets behind the camera go to the bottom half.
 		var center := screen * 0.5
-		var dir2 := Vector2(to_target.x, -to_target.z).normalized()
+		var local := cam.global_basis.inverse() * to_target
+		var dir2 := Vector2(local.x, -local.y)
 		if behind:
-			dir2 = -dir2
+			dir2.y = absf(dir2.y) + 0.25 * absf(dir2.x) + 0.001
+		dir2 = dir2.normalized() if dir2.length() > 0.0001 else Vector2.DOWN
 		var margin := 40.0
 		var half := center - Vector2(margin, margin)
 		var scale := minf(absf(half.x / maxf(absf(dir2.x), 0.0001)), absf(half.y / maxf(absf(dir2.y), 0.0001)))
