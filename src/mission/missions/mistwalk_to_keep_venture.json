@@ -1,0 +1,111 @@
+{
+	"id": "mistwalk_to_keep_venture",
+	"title": "Mistwalk to Keep Venture",
+	"act": "1",
+	"chapter": "Ashes of Luthadel",
+	"prerequisites": [],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "rooftop_lessons",
+			"label": "Rooftop Lessons",
+			"objectives": [
+				{
+					"id": "kelsier_intro",
+					"type": "cutscene_hint",
+					"text": "Kelsier: \"Feel that? That's steel in your blood. Burn it.\"",
+					"duration": 5.0
+				},
+				{
+					"id": "learn_steel",
+					"type": "use_metal",
+					"metal": 0,
+					"text": "Burn steel to see the lines"
+				},
+				{
+					"id": "rooftop_lesson_1",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "rooftop_lesson_1",
+					"text": "Push off the lamp post"
+				},
+				{
+					"id": "rooftop_lesson_2",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "rooftop_lesson_2",
+					"text": "Drop a coin and steel-jump to the next roof"
+				}
+			]
+		},
+		{
+			"id": "the_mists",
+			"label": "The Mists",
+			"objectives": [
+				{
+					"id": "cp_1",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "cp_1",
+					"text": "Reach the first checkpoint"
+				},
+				{
+					"id": "cp_2",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "cp_2",
+					"text": "Reach the second checkpoint"
+				},
+				{
+					"id": "cp_3",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "cp_3",
+					"text": "Reach the third checkpoint, near Keep Venture"
+				}
+			]
+		},
+		{
+			"id": "the_courtyard",
+			"label": "The Courtyard",
+			"objectives": [
+				{
+					"id": "keep_courtyard",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "keep_courtyard",
+					"text": "Enter Keep Venture's courtyard"
+				},
+				{
+					"id": "ledger",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "ledger",
+					"interact_kind": "ledger",
+					"text": "Retrieve the ledger from the gatehouse office",
+					"on_complete": [
+						{"action": "spawn_enemy", "enemy_type": "inquisitor"},
+						{"action": "hint", "text": "Kelsier: \"That's not a guard. Run. Now.\"", "duration": 5.0}
+					]
+				}
+			]
+		},
+		{
+			"id": "the_inquisitor",
+			"label": "The Inquisitor",
+			"objectives": [
+				{
+					"id": "extraction",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "extraction",
+					"text": "Escape to the canal extraction point",
+					"on_complete": [
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

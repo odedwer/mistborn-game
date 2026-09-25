@@ -12,12 +12,20 @@ signal allomantic_line_used(allomancer: Node, target: Node, metal: int, strength
 ## Bronze-detectable pulse. Copperclouds suppress it.
 signal allomantic_pulse(source: Node, metal: int, position: Vector3)
 signal duralumin_burst(allomancer: Node, metals: Array)
+## Atium started/stopped for an allomancer (the player's slows time to ~60%).
+signal atium_vision_changed(allomancer: Node, active: bool)
+## The local player's bronze sensed a pulse from `source`.
+signal allomantic_pulse_sensed(source: Node, metal: int, position: Vector3)
+## The Push/Pull target under the crosshair changed (null = none).
+signal line_target_changed(allomancer: Node, target: Node)
 
 # --- Combat ----------------------------------------------------------------
 signal damage_dealt(target: Node, amount: float, source: Node, kind: StringName)
 signal actor_died(actor: Node, killer: Node)
 signal player_health_changed(current: float, maximum: float)
 signal player_died
+## Player coin pouch / vial count changed.
+signal player_inventory_changed(coins: int, vials: int)
 
 # --- Stealth / AI ----------------------------------------------------------
 signal noise_emitted(position: Vector3, loudness: float, source: Node)

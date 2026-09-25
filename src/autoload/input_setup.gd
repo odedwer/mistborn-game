@@ -48,6 +48,7 @@ const DEFAULT_BINDINGS := {
 	"quick_save": [[KEY, KEY_F5]],
 	"quick_load": [[KEY, KEY_F9]],
 	"toggle_debug": [[KEY, KEY_F3]],
+	"toggle_camera": [[KEY, KEY_V], [JOY_BTN, JOY_BUTTON_BACK]],
 }
 
 ## Maps the toggle_* actions to metals, for the allomancer and the HUD.
