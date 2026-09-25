@@ -61,7 +61,7 @@ func _build_ui() -> void:
 	_root.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(900, 640)
+	panel.custom_minimum_size = Vector2(1240, 860)
 	center.add_child(panel)
 
 	var vbox := VBoxContainer.new()
@@ -70,13 +70,13 @@ func _build_ui() -> void:
 	vbox.add_child(UIHelpers.title_label("Paused"))
 
 	_tabs = TabContainer.new()
-	_tabs.custom_minimum_size = Vector2(860, 560)
+	_tabs.custom_minimum_size = Vector2(1200, 780)
 	vbox.add_child(_tabs)
 
 	_tabs.add_child(_build_menu_tab())
 	_map = MapView.new()
 	_map.name = "Map"
-	_map.custom_minimum_size = Vector2(820, 480)
+	_map.custom_minimum_size = Vector2(1160, 700)
 	_map.waypoint_picked.connect(_on_waypoint_picked)
 	_map.waypoint_cleared.connect(_on_waypoint_cleared)
 	_tabs.add_child(_map)
@@ -89,9 +89,10 @@ func _build_ui() -> void:
 
 func _build_menu_tab() -> Control:
 	var box := VBoxContainer.new()
-	box.name = "Menu"
 	box.add_theme_constant_override("separation", 8)
 	var margin := MarginContainer.new()
+	margin.name = "Menu"  # the tab title comes from the tab root's name
+	box.name = "Buttons"
 	margin.add_theme_constant_override("margin_top", 24)
 	margin.add_child(box)
 
@@ -213,6 +214,8 @@ func _refresh_journal() -> void:
 			_journal_list.add_child(UIHelpers.dim_label(stage_label + stage.get("label", "")))
 			if i == director.stage_index:
 				for obj: Dictionary in stage.get("objectives", []):
+					if obj.get("type", "") == "cutscene_hint":
+						continue  # dialogue, not a task
 					var done := GameState.completed_objectives.has(StringName(obj.get("id", "")))
 					var l := Label.new()
 					l.text = ("  [x] " if done else "  [ ] ") + obj.get("text", "")
