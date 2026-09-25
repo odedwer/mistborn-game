@@ -33,7 +33,7 @@ func enter_interior(scene_path: String) -> void:
 	if is_inside_interior() or not ResourceLoader.exists(scene_path):
 		return
 	var player := get_tree().get_first_node_in_group(&"player")
-	var host := get_tree().current_scene
+	var host := _host_node()
 	if player == null or host == null:
 		return
 	await _fade_to(1.0)
@@ -58,7 +58,7 @@ func exit_interior() -> void:
 	if not is_inside_interior():
 		return
 	var player := get_tree().get_first_node_in_group(&"player")
-	var host := get_tree().current_scene
+	var host := _host_node()
 	await _fade_to(1.0)
 	if player != null and host != null:
 		_reparent(player, host)
@@ -70,6 +70,13 @@ func exit_interior() -> void:
 	_interior_root = null
 	Events.interior_exited.emit()
 	await _fade_to(0.0)
+
+
+## The current scene, or the tree root as a fallback (e.g. in headless tests,
+## which run under a bare `SceneTree` with no `current_scene`).
+func _host_node() -> Node:
+	var cur := get_tree().current_scene
+	return cur if cur != null else get_tree().root
 
 
 func _reparent(node: Node, new_parent: Node) -> void:
