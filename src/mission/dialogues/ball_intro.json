@@ -1,0 +1,8 @@
+{
+  "id": "ball_intro",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Remember: you're Lady Valette Renoux tonight, minor house, new money, nothing worth a second look. No pushes, no pulls where a soul might notice — just eyes and ears."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "And if someone does notice?"},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Then you smile, you excuse yourself, and you leave over the roofs the way we practiced. Three nobles, three rumors. Go."}
+  ]
+}

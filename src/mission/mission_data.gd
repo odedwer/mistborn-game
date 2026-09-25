@@ -33,6 +33,7 @@ extends RefCounted
 ##   reaches `min_speed` (polled; used for pull-swing/coin-jump lessons).
 ## - `chain_pushes`: complete after `count` distinct Pushes/Pulls of `metal`
 ##   (default steel) each within `max_gap` seconds of the last.
+## - `flare_metal`: complete the first time the player flares `metal`.
 ## - `defeat_in_duel`: identical to `defeat` (an `Events.actor_died` for
 ##   `target_group`); kept as its own name for clarity in a scripted duel.
 ## - `flag_count`: complete once `count` of the story flags in `flags` are set

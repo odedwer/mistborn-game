@@ -1,0 +1,8 @@
+{
+  "id": "meet_marsh",
+  "lines": [
+    {"speaker": "Marsh", "color": "#3f5a4a", "text": "My brother tells me you're Mistborn. That's rarer than he's letting on, and more dangerous than he's letting on too."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "He didn't mention the dangerous part."},
+    {"speaker": "Marsh", "color": "#3f5a4a", "text": "He wouldn't. Learn fast, and learn who to trust slower than that. It's kept me alive this long."}
+  ]
+}

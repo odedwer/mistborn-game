@@ -1,0 +1,10 @@
+{
+  "id": "kelsier_reveal",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "You made it. Not many do, their first night out from under a crew leader's thumb."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "What do you want with me?"},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "A Mistborn who's never been trained is a knife nobody's holding by the handle. I want to teach you to hold it. And I want your help with something bigger than Camon ever dreamed of."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "And if I say no?"},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Then you walk, with a vial of metal in your pocket and my thanks for hearing me out. But I don't think you will. Drink up — steel, iron and tin are yours now. Come inside and meet the crew."}
+  ]
+}

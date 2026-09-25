@@ -1,0 +1,8 @@
+{
+  "id": "meet_clubs",
+  "lines": [
+    {"speaker": "Clubs", "color": "#4a4a4a", "text": "So you're why I've got strangers tramping through my shop at all hours."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "Sorry. I can keep to the back rooms."},
+    {"speaker": "Clubs", "color": "#4a4a4a", "text": "Don't bother. Half of Luthadel already thinks I run the best smithy in the slums. A few more shadows won't change that."}
+  ]
+}

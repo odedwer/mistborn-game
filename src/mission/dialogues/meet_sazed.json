@@ -1,0 +1,8 @@
+{
+  "id": "meet_sazed",
+  "lines": [
+    {"speaker": "Sazed", "color": "#c2a878", "text": "Welcome. I am a Terrisman in service to this crew, for now — a keeper of records that most in this city would rather forget."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "Records of what?"},
+    {"speaker": "Sazed", "color": "#c2a878", "text": "Of the skaa, mistress. Of who we were before the Lord Ruler decided we should forget. If you ever wish to know more, I am glad to share it."}
+  ]
+}

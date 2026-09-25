@@ -17,8 +17,9 @@ const QUICK_SLOT := 0
 ## from the F5/F9 quick-save slot so autosaves never clobber a manual one.
 const AUTOSAVE_SLOT := 99
 
-## Player-visible progress.
-var mission_id: StringName = &"mistwalk_to_keep_venture"
+## Player-visible progress. Starts at Act I's first mission; `MissionDirector`
+## resumes whatever `mission_id` a save actually holds.
+var mission_id: StringName = &"survivors_offer"
 var mission_stage: int = 0
 var completed_objectives: Array[StringName] = []
 
@@ -151,7 +152,7 @@ func record_mission_complete(id: StringName) -> void:
 
 
 func reset_run() -> void:
-	mission_id = &"mistwalk_to_keep_venture"
+	mission_id = &"survivors_offer"
 	mission_stage = 0
 	completed_objectives.clear()
 	last_checkpoint_id = &""

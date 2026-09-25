@@ -3,13 +3,16 @@
 	"title": "Mistwalk to Keep Venture",
 	"act": "1",
 	"chapter": "Ashes of Luthadel",
-	"prerequisites": [],
+	"prerequisites": ["the_crew"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],
 	"stages": [
 		{
 			"id": "rooftop_lessons",
 			"label": "Rooftop Lessons",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "mistwalk_open"}
+			],
 			"objectives": [
 				{
 					"id": "kelsier_intro",
@@ -102,6 +105,7 @@
 					"marker_id": "extraction",
 					"text": "Escape to the canal extraction point",
 					"on_complete": [
+						{"action": "start_dialogue", "dialogue_id": "mistwalk_close"},
 						{"action": "mission_complete"}
 					]
 				}

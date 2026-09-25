@@ -46,6 +46,7 @@ func _ready() -> void:
 	_connect_checkpoints()
 	Events.player_died.connect(_on_player_died)
 	Events.metal_burn_changed.connect(_on_metal_burn_changed)
+	Events.metal_flare_changed.connect(_on_metal_flare_changed)
 	Events.allomantic_line_used.connect(_on_allomantic_line_used)
 	Events.pickup_collected.connect(_on_pickup_collected)
 	Events.actor_died.connect(_on_actor_died)
@@ -154,7 +155,7 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes":
+		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes":
 			pass # driven by Events, see the handlers below.
 		"flag_count":
 			_check_flag_count(obj)
@@ -346,6 +347,17 @@ func _tick_chain(id: StringName, obj: Dictionary) -> void:
 	if int(st["count"]) >= int(obj.get("count", 3)):
 		_chain_state.erase(id)
 		complete_objective(obj)
+
+
+## `flare_metal` objective type: complete the first time the player flares
+## `metal` (used for the pewter-flare lesson).
+func _on_metal_flare_changed(allomancer: Node, metal: int, flaring: bool) -> void:
+	if not flaring or not _is_player_owned(allomancer):
+		return
+	for id in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[id]
+		if obj.get("type", "") == "flare_metal" and int(obj.get("metal", -1)) == metal:
+			complete_objective(obj)
 
 
 func _on_pickup_collected(kind: StringName, _amount: float) -> void:

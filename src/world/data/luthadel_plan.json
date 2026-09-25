@@ -137,6 +137,10 @@
 		{"group": "collectible_spawn", "collectible_id": "crew_note_3", "collectible_kind": "crew_note", "placement": "street", "pos": [0, -200]},
 		{"group": "collectible_spawn", "collectible_id": "crew_note_4", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [-200, 50], "floors": 3, "flat": true},
 		{"group": "collectible_spawn", "collectible_id": "crew_note_5", "collectible_kind": "crew_note", "placement": "street", "pos": [200, -150]},
-		{"group": "collectible_spawn", "collectible_id": "crew_note_6", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [60, 60], "floors": 3, "flat": true}
+		{"group": "collectible_spawn", "collectible_id": "crew_note_6", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [60, 60], "floors": 3, "flat": true},
+
+		{"group": "objective_point", "objective_id": "slum_checkpoint", "placement": "street", "pos": [-240, 290]},
+		{"group": "objective_point", "objective_id": "clubs_shop_entrance", "placement": "street", "pos": [-430, 400]},
+		{"group": "enemy_spawn", "enemy_type": "thug", "placement": "street", "pos": [-460, 400]}
 	]
 }
