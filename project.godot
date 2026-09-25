@@ -1,0 +1,72 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Mistborn: Ashes of Luthadel"
+config/description="A non-commercial fan game set in Brandon Sanderson's Mistborn world."
+config/version="0.1.0"
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+run/max_fps=0
+boot_splash/bg_color=Color(0.05, 0.05, 0.06, 1)
+config/icon="res://icon.svg"
+
+[autoload]
+
+Events="*res://src/autoload/events.gd"
+GameSettings="*res://src/autoload/game_settings.gd"
+InputSetup="*res://src/autoload/input_setup.gd"
+MetalRegistry="*res://src/autoload/metal_registry.gd"
+GameState="*res://src/autoload/game_state.gd"
+AudioManager="*res://src/autoload/audio_manager.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=0
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/vsync/vsync_mode=1
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="player"
+3d_physics/layer_3="enemies"
+3d_physics/layer_4="metal_props"
+3d_physics/layer_5="coins"
+3d_physics/layer_6="triggers"
+3d_physics/layer_7="ragdoll"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+common/physics_ticks_per_second=60
+common/max_physics_steps_per_frame=8
+3d/default_gravity=9.81
+jolt_physics_3d/simulation/max_bodies=20480
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+anti_aliasing/quality/msaa_3d=0
+anti_aliasing/quality/screen_space_aa=1
+anti_aliasing/quality/use_taa=true
+textures/default_filters/anisotropic_filtering_level=3
+lights_and_shadows/directional_shadow/size=4096
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=2
+lights_and_shadows/positional_shadow/atlas_size=4096
+environment/volumetric_fog/volume_size=128
+environment/volumetric_fog/volume_depth=96
+occlusion_culling/use_occlusion_culling=true
+mesh_lod/lod_change/threshold_pixels=1.5
+textures/vram_compression/import_etc2_astc=false

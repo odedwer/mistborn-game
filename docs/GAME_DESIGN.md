@@ -1,0 +1,56 @@
+# Game Design — Vertical Slice "Ashes of Luthadel"
+
+> Non-commercial fan game. Mistborn and all related names are © Brandon Sanderson / Dragonsteel Entertainment. This project is not affiliated with or endorsed by them.
+
+## Pillars
+1. **Allomancy is physics.** Pushes and Pulls obey Newton's third law and mass. Traversal and combat come from the same mechanic.
+2. **The mists are alive.** It's a night-time city under ashfall with thick, swirling volumetric mist. Tin lets you see through it.
+3. **Mistborn fantasy.** You're fragile but lethal. Flaring pewter lets you shrug off a blow, a coin can kill, and you arc between spires.
+
+## Camera and controls
+- Third-person over-the-shoulder camera, with a toggle to first person. The crosshair targets steel lines.
+- WASD, mouse, Space and Shift. **LMB: Push, RMB: Pull.** They target the steel line nearest the crosshair, and holding the button keeps the line locked.
+- Q throws a handful of coins (Push them to shoot). G drops a coin beneath you (the classic steel-jump anchor). Alt flares, R drinks a vial, and F is an obsidian dagger strike.
+- Keys 1–9 toggle metals and B burns steel, iron, pewter and tin together. 0 is duralumin, used once for a massive enhanced Push/Pull.
+
+## Metals in the slice
+| Metal | Player effect |
+|---|---|
+| Steel | Blue lines to metals in range (~40 m, ~60 m flared). Push. |
+| Iron | Same lines. Pull. |
+| Pewter | +50% speed and jump. Takes 50% less damage (70% flared). No fall damage. Stamina-free sprint. Flaring drains fast. |
+| Tin | Sees through mist (fog density drops, exposure rises), hears enemies through walls (outline markers), sees in the dark. Flaring near bright light causes a brief glare. |
+| Bronze | Shows allomantic pulses from enemy allomancers (Coinshots, the Inquisitor) as ripples on screen, unless they burn copper. |
+| Copper | Hides your own pulses from enemy Seekers and the Inquisitor, which lowers detection. |
+| Zinc | Riot the targeted enemy: they rush aggressively. |
+| Brass | Soothe the targeted enemy: they calm down or lose track of you. |
+| Atium | For ~8 s, enemies show golden "shadows" of their next move, and time slows to 60%. Very scarce. |
+| Duralumin | One-shot enhancement. It burns away every other burning metal in a ×10 burst. |
+
+Reserves run from 0–100 per metal. Vials (pickups) restore steel, iron, pewter and tin. Atium beads and duralumin are rare pickups.
+
+## Enemies
+| Type | Description |
+|---|---|
+| **Guard (Obligator's guard)** | Spear and steel breastplate. You can Push them off roofs. Patrols with a lantern. |
+| **Hazekiller** | Wooden weapons, no metal, and a wooden shield that blocks coins. Throws wooden javelins. Counters coinshots. |
+| **Thug (Pewterarm)** | Big and fast melee. Burns pewter. Has no metal, so only coins can hurt them. |
+| **Coinshot** | Enemy allomancer. Throws and Pushes coins, steel-jumps between roofs, and Pushes your coins back. |
+| **Steel Inquisitor** | Boss/chaser. Spikes are shielded (can't be pushed). Burns all metals, Pushes and Pulls aggressively, and regenerates. It can only be escaped or slowed in the slice. |
+
+Guards and thugs are standard AI. Hazekillers use cover and flanking. Coinshots and the Inquisitor use the same `Allomancer` component as the player.
+
+## Mission: "Mistwalk to Keep Venture"
+1. **Rooftop lessons.** You start on a rooftop in the Skaa quarter. Kelsier's voice appears as text hints. Burn steel and see the lines. Push off the lamp post to jump. Pull a coin back. Drop a coin and steel-jump to the next roof.
+2. **The mists.** Cross the district over rooftops toward Keep Venture's spire, reaching three checkpoints. Burn tin to see through the thick mist. Patrol guards are in the streets below.
+3. **The courtyard.** Keep Venture's walled courtyard holds guards, 2 hazekillers and a thug. Sneak in or fight. Retrieve the ledger from the gatehouse office, which is the objective.
+4. **The Inquisitor.** A Steel Inquisitor arrives (bronze reveals its pulses). Escape to the canal extraction point 300 m away with the Inquisitor chasing you. Atium pickups are placed along the route.
+5. **Extraction.** Reach the canal boat. Mission complete and stats screen.
+
+Failure: death sends you back to the last checkpoint.
+
+## Look and feel
+- The palette is ash grey, soot black, cold moonlight and warm orange lanterns. The mist is off-white and lit by lanterns.
+- Luthadel is dense 3–6 storey soot-stained stone and brick with pitched slate roofs and chimneys. Narrow cobbled streets, canals, and Kredik Shaw's black spires dominate the skyline.
+- Steel lines are thin, glowing blue lines from the chest to each metal. Their brightness scales with metal mass and they fade with distance.
+- Ash drifts constantly. Mist tendrils coil around allomancers while they burn.
