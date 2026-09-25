@@ -43,6 +43,11 @@ var activity_records: Dictionary = {}
 var mastery_points: int = 0
 var mastery_levels: Dictionary = {}   # upgrade id (String) -> level (int)
 
+## Act I story flags set by dialogue choices and mission actions (e.g. which
+## nobles Valette has talked to). Key is the flag name (String); value is
+## free-form, usually `true`. See `set_dialogue_flag`/`get_dialogue_flag`.
+var dialogue_flags: Dictionary = {}
+
 ## Last checkpoint reached.
 var last_checkpoint_id: StringName = &""
 var last_checkpoint_transform: Transform3D = Transform3D.IDENTITY
@@ -125,6 +130,21 @@ func record_death() -> void:
 	stat_deaths += 1
 
 
+## Sets story flag `flag` and notifies listeners (dialogue UI, mission
+## `flag_count` objectives). Idempotent to call repeatedly with the same value.
+func set_dialogue_flag(flag: StringName, value: Variant = true) -> void:
+	dialogue_flags[String(flag)] = value
+	Events.dialogue_flag_set.emit(flag, value)
+
+
+func get_dialogue_flag(flag: StringName, default_value: Variant = false) -> Variant:
+	return dialogue_flags.get(String(flag), default_value)
+
+
+func has_dialogue_flag(flag: StringName) -> bool:
+	return bool(dialogue_flags.get(String(flag), false))
+
+
 func record_mission_complete(id: StringName) -> void:
 	if not completed_missions.has(id):
 		completed_missions.append(id)
@@ -153,6 +173,7 @@ func reset_run() -> void:
 	activity_records.clear()
 	mastery_points = 0
 	mastery_levels.clear()
+	dialogue_flags.clear()
 
 
 # --- Side activities ---------------------------------------------------------
@@ -271,6 +292,7 @@ func to_dict() -> Dictionary:
 		"activity_records": activity_records,
 		"mastery_points": mastery_points,
 		"mastery_levels": _stringname_keys_to_str(mastery_levels),
+		"dialogue_flags": dialogue_flags,
 	}
 
 
@@ -303,6 +325,7 @@ func from_dict(data: Dictionary) -> void:
 	activity_records = data.get("activity_records", {})
 	mastery_points = data.get("mastery_points", 0)
 	mastery_levels = _str_keys_to_stringname(data.get("mastery_levels", {}))
+	dialogue_flags = data.get("dialogue_flags", {})
 	if version != SAVE_VERSION:
 		push_warning("GameState: loaded save version %d, current is %d" % [version, SAVE_VERSION])
 
