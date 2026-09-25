@@ -147,9 +147,11 @@ func test_slice_metal_density_and_streaming() -> void:
 	var before := MetalRegistry.count()
 	w.streamer.fallback_focus = Vector3(-1800, 0, -700)
 	w.streamer.update_interval = 0.0
-	for i in 10:
+	# Unloading is spread over frames and depends on streamer load; wait for
+	# it (bounded) instead of a fixed frame count.
+	var t1 := Time.get_ticks_msec()
+	while MetalRegistry.count() >= before and Time.get_ticks_msec() - t1 < 15000:
 		await get_tree().process_frame
-	await get_tree().process_frame
 	assert_lt(float(MetalRegistry.count()), float(before), "unloaded chunks free their metals")
 	w.queue_free()
 	await get_tree().process_frame
