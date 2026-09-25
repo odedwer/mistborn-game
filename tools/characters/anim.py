@@ -188,7 +188,7 @@ STYLES = {
                        "spine_lean": 9, "head_pitch": -6, "r_shrug": 6, "l_shrug": 6},
                  stride=1.1, swing=0.8, hunch=9.0, wide=0.035),
     "coinshot": dict(base={"r_elbow": 20, "l_elbow": 18, "r_abd": 6, "l_abd": 6}, stride=1.0, swing=1.0, hunch=0.0),
-    "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 28, "l_elbow": 20, "spine_lean": 6,
+    "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 58, "r_flex": 6, "l_elbow": 20, "spine_lean": 6,
                              "head_pitch": 8, "r_wrist": -10},
                        stride=1.12, swing=0.7, hunch=6.0),
 }
@@ -265,7 +265,7 @@ def make_anims(style: str, S: Skel):
         p["r_shrug"] = base.get("r_shrug", 0.0) + 1.5 * br
         p["l_shrug"] = base.get("l_shrug", 0.0) + 1.5 * br
         p["head_pitch"] = base.get("head_pitch", 0.0) + 1.2 * br
-        p["hips_z"] = -0.012 * k + 0.003 * k * math.sin(ph)
+        p["hips_z"] = -0.005 * k + 0.002 * k * math.sin(ph)
         p["hips_x"] = 0.01 * k * math.sin(ph / 1.0 + 1)
         p["hips_roll"] = -0.8 * math.sin(ph + 1)
         p["r_fx"], p["l_fx"] = base["r_fx"] + 0.01 * k, base["l_fx"] - 0.01 * k
@@ -276,14 +276,14 @@ def make_anims(style: str, S: Skel):
 
     add("idle", 3.0, idle, True)
 
-    add("walk", 1.05, lambda t: gait(t, 1.05, base, S, stride=0.62 * k, lift=0.1 * k, duty=0.6, bob=0.012 * k,
-                                     drop=0.035 * k, lean=3, arm_amp=16, elbow_add=5, sway=0.018 * k, yaw=6,
+    add("walk", 1.05, lambda t: gait(t, 1.05, base, S, stride=0.62 * k, lift=0.1 * k, duty=0.6, bob=0.008 * k,
+                                     drop=0.01 * k, lean=3, arm_amp=16, elbow_add=5, sway=0.018 * k, yaw=6,
                                      style=style), True)
-    add("run", 0.72, lambda t: gait(t, 0.72, base, S, stride=1.05 * k, lift=0.26 * k, duty=0.4, bob=0.025 * k,
-                                    drop=0.06 * k, lean=10, arm_amp=38, elbow_add=62, sway=0.012 * k, yaw=10,
+    add("run", 0.72, lambda t: gait(t, 0.72, base, S, stride=1.05 * k, lift=0.22 * k, duty=0.4, bob=0.02 * k,
+                                    drop=0.035 * k, lean=10, arm_amp=38, elbow_add=62, sway=0.012 * k, yaw=10,
                                     style=style, pitch_on=10, pitch_off=-40, arm_flex_add=8), True)
-    add("sprint", 0.6, lambda t: gait(t, 0.6, base, S, stride=1.35 * k, lift=0.36 * k, duty=0.34, bob=0.03 * k,
-                                      drop=0.07 * k, lean=20, arm_amp=55, elbow_add=75, sway=0.008 * k, yaw=12,
+    add("sprint", 0.6, lambda t: gait(t, 0.6, base, S, stride=1.35 * k, lift=0.28 * k, duty=0.34, bob=0.022 * k,
+                                      drop=0.045 * k, lean=20, arm_amp=55, elbow_add=75, sway=0.008 * k, yaw=12,
                                       style=style, pitch_on=5, pitch_off=-50, arm_flex_add=12), True)
 
     def crouch_base(p, t, T):

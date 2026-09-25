@@ -124,9 +124,9 @@ class Body:
              color=color, weights=self.W(["UpperChest", "Neck", "Head"], {"UpperChest": 0.5}))
 
     def head(self, skin, *, hair=None, brow=None, lips=None, eye=(0.12, 0.09, 0.08, 1),
-             ears=True, jaw=1.0, n=20, gaunt=0.0):
+             ears=True, jaw=1.0, n=20, gaunt=0.0, eyes=True):
         """Builds head; returns dict of landmark positions."""
-        s = self.s * self.P["head"]
+        s = self.s * self.P["head"] * 1.06
         H = self.H
         chin_z = H - 0.232 * s
         # (dz from chin, rx, rf, rb, yc)
@@ -146,8 +146,12 @@ class Body:
         eye_z = chin_z + 0.118 * s
         brow_z = chin_z + 0.138 * s
         mouth_z = chin_z + 0.04 * s
-        centers = [v3(0, t[4] * s, chin_z + t[0] * s) for t in tab]
-        radii = [(t[1] * s, t[1] * s, t[2] * s, t[3] * s) for t in tab]
+        tab = np.array(tab)
+        dzs = np.concatenate([np.linspace(0.0, 0.035, 4), np.linspace(0.045, 0.2, 13), [0.212, 0.222, 0.228]])
+        rows = [[np.interp(dz, tab[:, 0], tab[:, k]) for k in range(5)] for dz in dzs]
+        centers = [v3(0, t[4] * s, chin_z + t[0] * s) for t in rows]
+        radii = [(t[1] * s, t[1] * s, t[2] * s, t[3] * s) for t in rows]
+        nose_z = chin_z + 0.08 * s
 
         def shape(i, th):
             k = 1.0
@@ -158,7 +162,15 @@ class Body:
                 k -= 0.075 * math.exp(-(dth * dth + dz * dz))
             # brow ridge
             if 55 < th < 125:
-                k += 0.025 * math.exp(-((z - brow_z) / (0.012 * s)) ** 2)
+                k += 0.03 * math.exp(-((z - brow_z) / (0.01 * s)) ** 2)
+            # cheekbones
+            for cx in (48.0, 132.0):
+                k += 0.03 * math.exp(-(((th - cx) / 18) ** 2 + ((z - (eye_z - 0.022 * s)) / (0.015 * s)) ** 2))
+            # lips and chin
+            k += 0.03 * math.exp(-(((th - 90) / 16) ** 2 + ((z - mouth_z) / (0.008 * s)) ** 2))
+            k += 0.03 * math.exp(-(((th - 90) / 22) ** 2 + ((z - (chin_z + 0.012 * s)) / (0.01 * s)) ** 2))
+            # flatten the sides of the face a little (less cylindrical)
+            k -= 0.03 * math.exp(-(((th - 90) / 60) ** 2)) * math.exp(-((z - eye_z) / (0.04 * s)) ** 2) * (1 - math.exp(-((th - 90) / 25) ** 2))
             # cheek hollow for gaunt faces
             if gaunt > 0:
                 for cx in (40.0, 140.0):
@@ -178,16 +190,28 @@ class Body:
             return tuple(c)
 
         hw = self.W(["Head", "Neck"], {"Neck": 0.05})
-        tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, weights=hw, cap1=0.006 * s,
+        tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, weights=hw, cap1=0.004 * s,
              cap0=0.004 * s)
         face_y = lambda zz: np.interp(zz, [c[2] for c in centers], [c[1] + r[2] for c, r in zip(centers, radii)])
-        # nose
-        ny = face_y(eye_z) - 0.006 * s
-        nz_tip = chin_z + 0.078 * s
-        tube(self.m, [v3(0, ny, eye_z + 0.004 * s), v3(0, ny + 0.01 * s, chin_z + 0.095 * s),
-                      v3(0, ny + 0.017 * s, nz_tip)],
-             [(0.005 * s, 0.004 * s), (0.007 * s, 0.006 * s), (0.009 * s, 0.008 * s)], n=6,
-             hint=(0, 0, -1), color=skin, weights={"Head": 1.0}, cap1=0.006 * s)
+        # nose: diamond-section wedge whose back half sits inside the face
+        fy = face_y(eye_z)
+        pts = [v3(0, fy - 0.008 * s, eye_z + 0.006 * s), v3(0, fy + 0.002 * s, eye_z - 0.012 * s),
+               v3(0, fy + 0.012 * s, nose_z + 0.012 * s), v3(0, fy + 0.016 * s, nose_z + 0.002 * s)]
+        tube(self.m, pts, [(0.005 * s, 0.007 * s), (0.007 * s, 0.009 * s), (0.01 * s, 0.011 * s), (0.013 * s, 0.01 * s)],
+             n=6, hint=(0, 1, 0.2), color=skin, weights={"Head": 1.0}, cap1=0.008 * s, cap0=0.002 * s)
+        if eyes:
+            for side in (1, -1):
+                ex_ = side * 0.031 * s
+                ey = face_y(eye_z) - 0.013 * s
+                tube(self.m, [v3(ex_, ey - 0.004 * s, eye_z), v3(ex_, ey + 0.004 * s, eye_z)],
+                     [(0.012 * s, 0.006 * s), (0.011 * s, 0.0055 * s)], n=8, hint=(0, 0, 1), color=eye,
+                     weights={"Head": 1.0}, cap1=0.003 * s)
+                if brow is not None:
+                    by = face_y(brow_z) - 0.004 * s
+                    tube(self.m, [v3(side * 0.012 * s, by, brow_z + 0.002 * s), v3(side * 0.03 * s, by + 0.001 * s, brow_z + 0.005 * s),
+                                  v3(side * 0.05 * s, by - 0.01 * s, brow_z + 0.002 * s)],
+                         [(0.003 * s, 0.004 * s), (0.0035 * s, 0.0045 * s), (0.0025 * s, 0.0035 * s)], n=6, hint=(0, 1, 0),
+                         color=brow, weights={"Head": 1.0})
         if ears:
             for side in (1, -1):
                 ex_x = side * 0.074 * s
@@ -208,13 +232,13 @@ class Body:
         bz = back_z if back_z is not None else lm["chin_z"] + 0.03 * s
         cs, rs = lm["centers"], lm["radii"]
         zs = [c[2] for c in cs]
-        rings_z = list(np.linspace(bz, lm["top"] - 0.006 * s, 9))
+        rings_z = list(np.linspace(bz, lm["top"] - 0.008 * s, 12))
         centers, radii = [], []
         for z in rings_z:
             yc = np.interp(z, zs, [c[1] for c in cs])
             r = [np.interp(z, zs, [rr[k] for rr in rs]) for k in range(4)]
             centers.append(v3(0, yc - 0.004 * s, z))
-            radii.append(tuple(max(x, 0.03 * s) * puff + 0.004 * s for x in r))
+            radii.append(tuple(max(x, 0.032 * s) * puff + 0.007 * s for x in r))
 
         def shape(i, th):
             z = rings_z[i]
@@ -230,7 +254,7 @@ class Body:
             return k
 
         tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape,
-             weights={"Head": 1.0}, cap1=0.01 * s)
+             weights={"Head": 1.0}, cap1=0.022 * s)
 
     def arm(self, side, radii_scale=1.0, color=None, sleeve=None, bare_from=None, n=12,
             cuff=None, flare=0.0, skin=None):
@@ -239,9 +263,9 @@ class Body:
         ua, la = side_name(side, "UpperArm"), side_name(side, "LowerArm")
         sh, el, wr = S.head(ua), S.head(la), S.tail(la)
         d1, d2 = S.dir(ua), S.dir(la)
-        pts = [sh - d1 * 0.035 * s, sh + (el - sh) * 0.12, sh + (el - sh) * 0.4, sh + (el - sh) * 0.75,
+        pts = [sh - d1 * 0.01 * s, sh + (el - sh) * 0.12, sh + (el - sh) * 0.4, sh + (el - sh) * 0.75,
                el, el + (wr - el) * 0.25, el + (wr - el) * 0.6, wr - d2 * 0.005]
-        base = [0.056, 0.058, 0.048, 0.043, 0.039, 0.042, 0.035, 0.027]
+        base = [0.047, 0.055, 0.048, 0.043, 0.039, 0.042, 0.035, 0.027]
         rr = []
         for i, r in enumerate(base):
             r *= s

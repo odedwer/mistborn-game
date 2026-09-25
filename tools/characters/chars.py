@@ -19,9 +19,9 @@ TORSO_M = [
     (0.700, 0.160, 0.104, 0.090, 0.002),
     (0.745, 0.172, 0.105, 0.095, 0.000),
     (0.785, 0.182, 0.090, 0.092, -0.006),
-    (0.810, 0.168, 0.072, 0.076, -0.010),
-    (0.828, 0.110, 0.058, 0.062, -0.012),
-    (0.842, 0.058, 0.050, 0.050, -0.010),
+    (0.810, 0.165, 0.074, 0.078, -0.010),
+    (0.826, 0.128, 0.064, 0.068, -0.012),
+    (0.842, 0.075, 0.056, 0.058, -0.010),
 ]
 
 
@@ -103,7 +103,7 @@ def lantern(b: Body, side):
     tube(b.m, [top, top - g * 0.04 * s], [0.018 * s, 0.058 * s], n=8, mat=METAL, color=iron, weights=W,
          cap0=0.005 * s, cap1="flat")
     tube(b.m, [top - g * 0.045 * s, top - g * 0.2 * s], [0.045 * s, 0.045 * s], n=6, mat=GLOW,
-         color=hexcol("ffc070"), weights=W, cap0="flat", cap1="flat", smooth=False)
+         color=hexcol("b07838"), weights=W, cap0="flat", cap1="flat", smooth=False)
     for k in range(3):
         a = math.radians(k * 120 + 30)
         off = (M[:, 0] * math.cos(a) + M[:, 1] * math.sin(a)) * 0.05 * s
@@ -181,7 +181,7 @@ def round_shield(b: Body, side):
 # ------------------------------------------------------------------ characters
 def build_vin():
     b = Body(H=1.65, sh_w=0.158, hip_w=0.088, apose=40, head=1.06, neck=0.85, limb=0.84, female=True)
-    shirt, pants, boots = hexcol("4a4549"), hexcol("3e3a3f"), hexcol("33291f")
+    shirt, pants, boots = hexcol("57525a"), hexcol("4a4550"), hexcol("3b3027")
     skin, hair = hexcol("dcb49c"), hexcol("221a15")
     belt = hexcol("3d2b1f")
     H = b.H
@@ -218,14 +218,14 @@ def build_guard():
     b.torso(t, band(tunic, [(0, 0.5 * H, pants)]))
     b.neck(skin)
     b.head(skin, brow=hexcol("3b2a20"), lips=hexcol("8c5d50"))
-    b.hair_shell(hexcol("2e241c"), puff=1.04, jag=0.0, back_z=b.head_lm["chin_z"] + 0.06 * s)
+    b.hair_shell(hexcol("2e241c"), puff=1.0, jag=0.0, back_z=b.head_lm["chin_z"] + 0.06 * s, fringe_z=b.head_lm["top"])
     for side in (1, -1):
         b.arm(side, color=band(tunic, [(0, 0.66 * H, hexcol("3a2c20"))]))
         b.hand(side, hexcol("3a2c20"))
         b.leg(side, pants, boot_z=0.24 * H, boot_col=boots)
         b.foot(side, boots, sole=hexcol("120e0b"))
     # tunic skirt
-    b.skirt(0.6 * H, 0.42 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.2 * s, 0.14 * s, 0.15 * s), tunic, rows=5)
+    b.skirt(0.6 * H, 0.42 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.2 * s, 0.14 * s, 0.15 * s), tunic, rows=5, leg_share=0.7)
     # belt
     tube(b.m, [v3(0, -0.004 * s, 0.585 * H), v3(0, -0.004 * s, 0.615 * H)], [(0.152 * s, 0.09 * s, 0.092 * s)] * 2,
          n=16, ex=2.3, color=hexcol("2a1d14"), weights=b.W(["Hips", "Spine"]))
@@ -252,7 +252,7 @@ def build_guard():
     bz = lm["brow_z"] + 0.01 * s
     top = lm["top"] + 0.015 * s
     zs = [bz - 0.012 * s, bz - 0.004 * s, bz, bz + 0.03 * s, bz + 0.06 * s, top - 0.02 * s, top]
-    rs = [0.19, 0.19, 0.098, 0.1, 0.096, 0.07, 0.03]
+    rs = [0.19, 0.19, 0.112, 0.114, 0.108, 0.08, 0.035]
     tube(b.m, [v3(0, -0.01 * s, z) for z in zs], [(r * s, r * s, r * s * 1.05, r * s * 1.1) for r in rs], n=18,
          mat=METAL, color=hexcol("9ca1a8"), weights={"Head": 1.0}, cap0="flat", cap1=0.01 * s)
     tube(b.m, [v3(0, -0.01 * s, top - 0.03 * s), v3(0, -0.01 * s, top + 0.012 * s)], [(0.015 * s, 0.1 * s), (0.008 * s, 0.075 * s)],
@@ -289,8 +289,8 @@ def build_hazekiller():
              hint=(0, 0, 1), arc=(0, 180), color=wood, weights=b.W([ua, side_name(side, "Shoulder")]))
         # knee guards
         kn = b.S.head(side_name(side, "LowerLeg"))
-        tube(b.m, [kn + v3(0, 0.03 * s, 0.05 * s), kn + v3(0, 0.04 * s, -0.06 * s)], [(0.055 * s, 0.03 * s)] * 2,
-             n=8, hint=(0, 1, 0), arc=(20, 160), color=wood,
+        tube(b.m, [kn + v3(0, 0.03 * s, 0.05 * s), kn + v3(0, 0.04 * s, -0.06 * s)], [(0.05 * s, 0.028 * s)] * 2,
+             n=8, hint=(0, 1, 0), arc=(20, 160), color=hexcol("5a3f28"),
              weights=b.W([side_name(side, "UpperLeg"), side_name(side, "LowerLeg")]))
     # leather tabard skirt
     b.skirt(0.6 * H, 0.44 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.19 * s, 0.13 * s, 0.14 * s), leather, rows=5,
@@ -330,7 +330,7 @@ def build_hazekiller():
 
 
 def build_thug():
-    b = Body(H=2.1, sh_w=0.225, hip_w=0.1, apose=38, head=0.92, neck=1.45, width=1.18, limb=1.28)
+    b = Body(H=2.1, sh_w=0.225, hip_w=0.1, apose=38, head=1.0, neck=1.12, width=1.18, limb=1.28)
     skin, vest, pants, boots = hexcol("a87c62"), hexcol("4e3a2b"), hexcol("5a4e44"), hexcol("3a2a1e")
     wrap = hexcol("8a7a62")
     H, s = b.H, b.s
@@ -351,7 +351,7 @@ def build_thug():
     b.torso(t, tcol, n=18)
     b.neck(skin, r=0.062)
     b.head(skin, brow=hexcol("4a3024"), lips=hexcol("7d5145"), jaw=1.15)
-    b.hair_shell(hexcol("3a2a20"), puff=1.02, jag=0.0, back_z=b.head_lm["eye_z"])
+    b.hair_shell(hexcol("5a4234"), puff=1.0, jag=0.0, back_z=b.head_lm["eye_z"], fringe_z=b.head_lm["brow_z"] + 0.03 * b.s)
     for side in (1, -1):
         def acol(p, i, th, side=side):
             la = b.S.head(side_name(side, "LowerArm"))
@@ -369,7 +369,7 @@ def build_thug():
 
 def build_coinshot():
     b = Body(H=1.8, sh_w=0.18, hip_w=0.094, apose=40, limb=0.95)
-    coat, shirt, pants, boots = hexcol("3a3844"), hexcol("a9a296"), hexcol("35333d"), hexcol("24211f")
+    coat, shirt, pants, boots = hexcol("45434f"), hexcol("a9a296"), hexcol("403e48"), hexcol("2e2a27")
     skin, hair = hexcol("c7a088"), hexcol("3a2618")
     H, s = b.H, b.s
     t = torso_table(waist=0.95, shoulders=1.02)
@@ -386,7 +386,7 @@ def build_coinshot():
     b.torso(t, tcol)
     b.neck(shirt, r=0.055)
     b.head(skin, brow=hexcol("3a2618"), lips=hexcol("9a6a5c"))
-    b.hair_shell(hair, puff=1.06, jag=0.01, back_z=b.head_lm["chin_z"] + 0.05 * s, spikes=5)
+    b.hair_shell(hair, puff=1.05, jag=0.01, back_z=b.head_lm["chin_z"] + 0.05 * s, spikes=5, fringe_z=b.head_lm["brow_z"] + 0.028 * s)
     for side in (1, -1):
         b.arm(side, color=band(coat, [(0, 0.0, coat)]), flare=0.006)
         b.hand(side, hexcol("1a1818"))
@@ -394,7 +394,7 @@ def build_coinshot():
         b.foot(side, boots, sole=hexcol("0a0808"))
     # long coat tails (open front)
     b.skirt(0.6 * H, 0.27 * H, (0.155 * s, 0.092 * s, 0.1 * s), (0.2 * s, 0.15 * s, 0.17 * s), coat, rows=7,
-            arc=(106, 434), leg_share=0.9)
+            arc=(106, 434), leg_share=0.6)
     # coin pouch + buckle
     tube(b.m, [v3(0.13 * s, 0.05 * s, 0.575 * H), v3(0.13 * s, 0.05 * s, 0.53 * H)], [(0.03 * s, 0.022 * s), (0.034 * s, 0.026 * s)],
          n=8, color=hexcol("4a3526"), weights={"Hips": 1.0}, cap0="flat", cap1=0.01 * s)
@@ -430,7 +430,7 @@ def build_inquisitor():
     def tattoo_skin(p, i, th):
         return skin
 
-    b.head(skin, brow=hexcol("403836"), lips=hexcol("6a5552"), eye=(0.05, 0.03, 0.03, 1), gaunt=1.0, jaw=0.95)
+    b.head(skin, brow=None, lips=hexcol("6a5552"), eye=(0.25, 0.05, 0.05, 1), gaunt=1.0, jaw=0.95, eyes=False)
     for side in (1, -1):
         def scol(p, i, th, side=side):
             la = b.S.head(side_name(side, "LowerArm"))
@@ -454,7 +454,7 @@ def build_inquisitor():
         return robe
 
     b.skirt(0.6 * H, 0.03 * H, (0.145 * s, 0.085 * s, 0.095 * s), (0.25 * s, 0.22 * s, 0.26 * s), robe_col,
-            rows=9, n=20, leg_share=0.95)
+            rows=9, n=20, leg_share=0.55)
     # high collar
     tube(b.m, [v3(0, -0.01 * s, 0.82 * H), v3(0, -0.02 * s, 0.875 * H)], [(0.085 * s, 0.07 * s, 0.08 * s), (0.08 * s, 0.06 * s, 0.08 * s)],
          n=14, arc=(115, 425), color=under, weights=b.W(["UpperChest", "Neck"]), mat=CLOTH)
@@ -463,8 +463,8 @@ def build_inquisitor():
     sp = hexcol("8d9199")
     for e in (lm["eye_l"], lm["eye_r"]):
         fwd = v3(0, 1, 0)
-        tube(b.m, [e + fwd * 0.0 * s, e + fwd * 0.018 * s, e + fwd * 0.024 * s], [0.03 * s, 0.03 * s, 0.024 * s], n=12,
-             hint=(0, 0, 1), mat=METAL, color=sp, weights={"Head": 1.0}, cap0="flat", cap1=0.006 * s)
+        tube(b.m, [e - fwd * 0.004 * s, e + fwd * 0.014 * s, e + fwd * 0.017 * s], [0.021 * s, 0.021 * s, 0.017 * s], n=12,
+             hint=(0, 0, 1), mat=METAL, color=sp, weights={"Head": 1.0}, cap0="flat", cap1=0.002 * s, smooth=False)
         back = v3(e[0] * 0.6, -0.11 * s, e[2] + 0.006 * s)
         tip = back + norm(back - e) * 0.11 * s
         tube(b.m, [back - norm(back - e) * 0.01 * s, back, tip], [0.016 * s, 0.013 * s, 0.0005 * s], n=6, mat=METAL,

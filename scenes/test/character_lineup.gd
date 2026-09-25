@@ -63,7 +63,7 @@ func _build_environment(mode: String) -> void:
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		env.ambient_light_color = Color(0.55, 0.56, 0.6)
 		env.ambient_light_energy = 0.7
-		sun.rotation_degrees = Vector3(-35, 160, 0)
+		sun.rotation_degrees = Vector3(-35, -20, 0)
 		sun.light_energy = 1.6
 	else:
 		env.background_color = Color(0.05, 0.055, 0.07)
@@ -104,18 +104,18 @@ func _setup_camera(count: int) -> void:
 	var dist := 2.6 if count == 1 else 8.8
 	var h := 1.05 if count == 1 else 1.1
 	var cam: String = opts.get("cam", "34")
-	var dir := Vector3(0, 0, -1)  # models face -Z, camera looks from the front
+	var dir := Vector3(0, 0, 1)  # models face +Z, camera looks from the front
 	match cam:
 		"front":
-			dir = Vector3(0, 0, -1)
-		"back":
 			dir = Vector3(0, 0, 1)
+		"back":
+			dir = Vector3(0, 0, -1)
 		"side":
-			dir = Vector3(-1, 0, 0)
+			dir = Vector3(1, 0, 0)
 		"34":
-			dir = Vector3(-0.55, 0, -0.85).normalized()
+			dir = Vector3(0.55, 0, 0.85).normalized()
 		"top":
-			dir = Vector3(0, 0.8, -0.6).normalized()
+			dir = Vector3(0, 0.8, 0.6).normalized()
 	var target := Vector3(0, h * (0.9 if count == 1 else 1.0), 0)
 	if count == 1 and models.size() == 1:
 		target.y = models[0].get_model_height() * 0.55
@@ -141,7 +141,7 @@ func _process(delta: float) -> void:
 			m.position = Vector3(cos(a) * r, 0, sin(a) * r)
 			var vel := (m.position - prev) / maxf(delta, 1e-4)
 			if vel.length() > 0.01:
-				m.look_at(m.position + vel.normalized(), Vector3.UP)
+				m.rotation.y = atan2(vel.x, vel.z)  # CharacterModel roots face +Z
 			m.set_locomotion(r * w, true, 0.0)
 	elif not opts.has("anim"):
 		for m in models:

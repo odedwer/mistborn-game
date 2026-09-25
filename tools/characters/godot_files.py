@@ -88,9 +88,12 @@ def to_godot(p):
 
 
 def write_scene(name, meta):
+    # The glTF faces -Z; the Model child is rotated 180 degrees so the CharacterModel root
+    # faces +Z (the convention of player.gd / enemy_base.gd: yaw = atan2(dir.x, dir.z)).
     socks = {}
     for k, s in meta["sockets"].items():
         x, y, z = to_godot(s["pos"])
+        x, z = -x, -z  # sockets are in root space (model rotated 180 deg)
         socks[k] = f'["{s["bone"]}", Vector3({x:.4f}, {y:.4f}, {z:.4f})]'
     sock_txt = "{\n" + ",\n".join(f'"{k}": {v}' for k, v in socks.items()) + "\n}"
     node = name.capitalize()
@@ -104,7 +107,8 @@ def write_scene(name, meta):
         f"sockets = {sock_txt}",
         f"lantern_light = {'true' if 'lantern' in meta['sockets'] else 'false'}",
         "",
-        '[node name="Model" parent="." instance=ExtResource("2")]', "",
+        '[node name="Model" parent="." instance=ExtResource("2")]',
+        "transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)", "",
     ]
     with open(os.path.join(OUT, name + ".tscn"), "w") as f:
         f.write("\n".join(lines))
