@@ -1,0 +1,77 @@
+{
+	"id": "survivors_offer",
+	"title": "The Survivor's Offer",
+	"act": "1",
+	"chapter": "A Canton Office",
+	"prerequisites": [],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "canton_office",
+			"label": "The Canton Office",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/canton_office.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "kelsier_rescue"},
+				{"action": "set_allowed_metals", "metals": [2]}
+			],
+			"objectives": [
+				{
+					"id": "burn_pewter_first_time",
+					"type": "use_metal",
+					"metal": 2,
+					"text": "Burn pewter for the first time"
+				},
+				{
+					"id": "reach_office_exit",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "office_exit",
+					"text": "Slip out before the guards come back",
+					"on_complete": [
+						{"action": "exit_interior"}
+					]
+				}
+			]
+		},
+		{
+			"id": "slum_streets",
+			"label": "Through the Slums",
+			"objectives": [
+				{
+					"id": "reach_slum_checkpoint",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "slum_checkpoint",
+					"text": "Follow Kelsier through the back alleys"
+				},
+				{
+					"id": "reach_clubs_shop",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "clubs_shop_entrance",
+					"text": "Reach Clubs' shop",
+					"on_complete": [
+						{"action": "start_dialogue", "dialogue_id": "kelsier_reveal"},
+						{"action": "set_allowed_metals", "metals": [0, 1, 2, 3]}
+					]
+				}
+			]
+		},
+		{
+			"id": "first_lines",
+			"label": "First Lines",
+			"objectives": [
+				{
+					"id": "burn_steel_first_time",
+					"type": "use_metal",
+					"metal": 0,
+					"text": "Burn steel and see the lines Kelsier described",
+					"on_complete": [
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}
