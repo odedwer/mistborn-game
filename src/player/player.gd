@@ -863,9 +863,9 @@ func _dead_process(delta: float) -> void:
 
 # --- Model / events -------------------------------------------------------------
 
-func _setup_model() -> void:
-	if ResourceLoader.exists(MODEL_PATH):
-		var ps := load(MODEL_PATH) as PackedScene
+func _setup_model(path: String = MODEL_PATH) -> void:
+	if ResourceLoader.exists(path):
+		var ps := load(path) as PackedScene
 		if ps != null:
 			model = ps.instantiate() as Node3D
 	if model == null:
@@ -874,6 +874,22 @@ func _setup_model() -> void:
 	_visual.add_child(model)
 	_model_locomotion = model.has_method(&"set_locomotion")
 	_model_actions = model.has_method(&"play_action")
+
+
+## Swaps the visual model, e.g. to Vin's ball gown while disguised as Lady
+## Valette (keep_venture_ballroom.gd). "" restores the default model.
+func set_model_scene(path: String) -> void:
+	if path == "":
+		path = MODEL_PATH
+	if model != null and model.scene_file_path == path:
+		return
+	if model != null:
+		_visual.remove_child(model)
+		model.queue_free()
+		model = null
+	_setup_model(path)
+	if model.has_method(&"set_crouching"):
+		model.call(&"set_crouching", crouching)
 
 
 func _model_action(action: StringName) -> void:

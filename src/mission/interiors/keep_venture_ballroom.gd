@@ -14,13 +14,24 @@ extends Node3D
 const HALL_SIZE := Vector3(26.0, 8.0, 17.0)
 
 const NOBLES := [
-	{"id": "1", "name": "Lord Fedren", "color": Color("#7a5c8f"), "pos": Vector2(-7.0, -2.0)},
-	{"id": "2", "name": "Lady Hesting", "color": Color("#a26b7a"), "pos": Vector2(6.0, 1.0)},
-	{"id": "3", "name": "Lord Elariel", "color": Color("#6b8f7c"), "pos": Vector2(0.0, 5.0)},
+	{"id": "1", "name": "Lord Fedren", "color": Color("#7a5c8f"), "pos": Vector2(-7.0, -2.0), "model": &"noble_man_1"},
+	{"id": "2", "name": "Lady Hesting", "color": Color("#a26b7a"), "pos": Vector2(6.0, 1.0), "model": &"noble_woman_2"},
+	{"id": "3", "name": "Lord Elariel", "color": Color("#6b8f7c"), "pos": Vector2(0.0, 5.0), "model": &"noble_man_3"},
 ]
+## Unnamed guests milling about (no dialogue): base models with a re-rolled variant each.
+const GUESTS := [
+	{"model": &"noble_woman", "pos": Vector2(-3.0, -4.5)}, {"model": &"noble_man", "pos": Vector2(-2.0, -5.2)},
+	{"model": &"noble_woman", "pos": Vector2(3.5, -3.0)}, {"model": &"noble_man", "pos": Vector2(8.5, -1.5)},
+	{"model": &"noble_woman", "pos": Vector2(-8.0, 3.0)}, {"model": &"noble_man", "pos": Vector2(-6.5, 3.8)},
+	{"model": &"noble_woman", "pos": Vector2(2.0, 1.5)}, {"model": &"noble_man", "pos": Vector2(-1.5, 1.0)},
+]
+## Vin's ball gown while she is disguised as Lady Valette (see _on_child_entered).
+const VALETTE_MODEL := "res://assets/models/characters/vin_gown.tscn"
 
 
 func _ready() -> void:
+	child_entered_tree.connect(_on_child_entered)
+	child_exiting_tree.connect(_on_child_exiting)
 	_build_hall()
 	_build_stained_glass()
 	_build_chandeliers()
@@ -204,11 +215,39 @@ func _build_nobles() -> void:
 		npc.display_name = n["name"]
 		npc.dialogue_id = "ball_noble_%s" % n["id"]
 		npc.body_color = n["color"]
+		npc.model_id = n["model"]
 		npc.wander_radius = 3.0
 		npc.wander_speed = 0.8
+		npc.idle_chatter = true
 		var p: Vector2 = n["pos"]
 		npc.position = Vector3(p.x, 0.0, p.y)
 		add_child(npc)
+	for i in GUESTS.size():
+		var g: Dictionary = GUESTS[i]
+		var guest := NPCTalker.new()
+		guest.model_id = g["model"]
+		guest.variant_seed = 101 + i * 37
+		guest.idle_chatter = true
+		guest.wander_radius = 1.5 if i % 3 == 0 else 0.0
+		guest.wander_speed = 0.6
+		var gp: Vector2 = g["pos"]
+		guest.position = Vector3(gp.x, 0.0, gp.y)
+		# guests stand in pairs, facing each other
+		var other: Vector2 = GUESTS[i ^ 1]["pos"]
+		guest.facing_deg = rad_to_deg(atan2(other.x - gp.x, other.y - gp.y))
+		add_child(guest)
+
+
+## Lady Valette: the player wears Vin's ball gown inside the keep, and her usual
+## clothes again once she leaves (SceneTransition reparents the player in/out).
+func _on_child_entered(node: Node) -> void:
+	if node.is_in_group(&"player") and node.has_method(&"set_model_scene"):
+		node.call(&"set_model_scene", VALETTE_MODEL)
+
+
+func _on_child_exiting(node: Node) -> void:
+	if node.is_in_group(&"player") and node.has_method(&"set_model_scene"):
+		node.call_deferred(&"set_model_scene", "")
 
 
 func _build_markers() -> void:

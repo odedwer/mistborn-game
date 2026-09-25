@@ -123,8 +123,13 @@ func _build_crew() -> void:
 		npc.display_name = member["name"]
 		npc.dialogue_id = "meet_%s" % member["id"]
 		npc.body_color = member["color"]
+		npc.model_id = StringName(member["id"])  # res://assets/models/characters/<id>.tscn
+		npc.idle_chatter = true
 		var p: Vector2 = member["pos"]
 		npc.position = Vector3(p.x, 0.0, p.y)
+		# gathered round the room: face its middle
+		var to_mid := Vector2(0.0, 0.5) - p
+		npc.facing_deg = rad_to_deg(atan2(to_mid.x, to_mid.y))
 		add_child(npc)
 
 

@@ -16,6 +16,20 @@ func _ready() -> void:
 	_build_furniture()
 	_build_lighting()
 	_build_markers()
+	_build_rescuers()
+
+
+## Kelsier and Dockson at the broken-through doorway (they speak through the
+## `kelsier_rescue` dialogue, so no interact dialogue of their own). They stand
+## to either side of the gap so the way out stays clear.
+func _build_rescuers() -> void:
+	for r: Array in [[&"kelsier", "Kelsier", Vector3(-1.05, 0.0, 2.55)], [&"dockson", "Dockson", Vector3(1.1, 0.0, 2.85)]]:
+		var npc := NPCTalker.new()
+		npc.model_id = r[0]
+		npc.display_name = r[1]
+		npc.position = r[2]
+		npc.facing_deg = 180.0 + (-15.0 if r[2].x < 0.0 else 15.0)  # into the room, towards Vin
+		add_child(npc)
 
 
 func _build_room() -> void:
