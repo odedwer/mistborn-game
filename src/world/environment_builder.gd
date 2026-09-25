@@ -37,11 +37,11 @@ static func build(parent: Node3D) -> Dictionary:
 
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.36, 0.39, 0.5)
-	env.ambient_light_energy = 1.0
+	env.ambient_light_energy = 1.6
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.15
+	env.tonemap_exposure = 1.3
 	env.tonemap_white = 6.0
 
 	env.ssao_enabled = true
@@ -98,7 +98,7 @@ static func build(parent: Node3D) -> Dictionary:
 	var to_moon := Vector3(sin(az) * cos(el), sin(el), -cos(az) * cos(el))
 	moon.basis = Basis.looking_at(-to_moon, Vector3.UP)
 	moon.light_color = Color(0.62, 0.7, 0.92)
-	moon.light_energy = 0.7
+	moon.light_energy = 0.9
 	moon.light_indirect_energy = 0.5
 	moon.light_volumetric_fog_energy = 0.7
 	moon.shadow_enabled = true

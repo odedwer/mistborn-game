@@ -44,7 +44,7 @@ func _ready() -> void:
 	add_child(_mesh)
 	_light = OmniLight3D.new()
 	_light.omni_range = 2.5
-	_light.light_energy = 0.8
+	_light.light_energy = 0.45
 	_light.position = Vector3(0, 0.7, 0)
 	add_child(_light)
 	_refresh()
@@ -59,7 +59,7 @@ func _refresh() -> void:
 	mat.albedo_color = c
 	mat.emission_enabled = true
 	mat.emission = c
-	mat.emission_energy_multiplier = 2.5
+	mat.emission_energy_multiplier = 0.9
 	mat.metallic = 0.6
 	mat.roughness = 0.3
 	_mesh.material_override = mat
