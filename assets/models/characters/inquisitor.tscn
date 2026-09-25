@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://assets/models/characters/character_model.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/inquisitor.glb" id="2"]
+
+[node name="Inquisitor" type="Node3D"]
+script = ExtResource("1")
+character_id = &"inquisitor"
+sockets = {
+"chest": ["UpperChest", Vector3(-0.0000, 1.4900, 0.1143)],
+"hand_r": ["RightHand", Vector3(-0.6563, 1.0237, 0.0010)],
+"hand_l": ["LeftHand", Vector3(0.6563, 1.0237, 0.0010)],
+"head": ["Head", Vector3(-0.0000, 1.9003, -0.0023)]
+}
+lantern_light = false
+
+[node name="Model" parent="." instance=ExtResource("2")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)

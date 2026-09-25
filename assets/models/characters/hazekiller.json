@@ -1,0 +1,74 @@
+{
+ "name": "hazekiller",
+ "style": "haze",
+ "tris": 3678,
+ "height": 1.7872844677044843,
+ "materials": [
+  "Cloth"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5728725123193582,
+    -0.0007862825542916623,
+    0.948643211579536
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5728725123193582,
+    -0.0007862825542916623,
+    0.948643211579536
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.10057142857142859,
+    1.3288
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0020114285714285716,
+    1.6722514285714285
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink"
+ ]
+}

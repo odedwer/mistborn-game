@@ -1,0 +1,84 @@
+{
+ "name": "guard",
+ "style": "guard",
+ "tris": 4310,
+ "height": 1.804543089902425,
+ "materials": [
+  "Cloth",
+  "Glow",
+  "Metal"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "lantern": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5931425459811644,
+    -0.19358061340463095,
+    0.9490854953919193
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.11188571428571428,
+    1.2816
+   ]
+  },
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5844681415177926,
+    -0.0007952175833176989,
+    0.959423248074758
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5844681415177926,
+    -0.0007952175833176989,
+    0.959423248074758
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.002034285714285714,
+    1.6912542857142856
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink"
+ ]
+}

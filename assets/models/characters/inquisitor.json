@@ -1,0 +1,76 @@
+{
+ "name": "inquisitor",
+ "style": "inquisitor",
+ "tris": 3468,
+ "height": 1.9944059496716777,
+ "materials": [
+  "Cloth",
+  "Metal",
+  "Obsidian"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.11428571428571428,
+    1.49
+   ]
+  },
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.6562999594183686,
+    0.0009639518942135524,
+    1.02368699266294
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.6562999594183686,
+    0.0009639518942135524,
+    1.02368699266294
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0022857142857142855,
+    1.9002857142857144
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink"
+ ]
+}

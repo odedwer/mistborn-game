@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://assets/models/characters/character_model.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/thug.glb" id="2"]
+
+[node name="Thug" type="Node3D"]
+script = ExtResource("1")
+character_id = &"thug"
+sockets = {
+"hand_r": ["RightHand", Vector3(-0.7170, 1.1159, -0.0009)],
+"hand_l": ["LeftHand", Vector3(0.7170, 1.1159, -0.0009)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.5855, 0.1200)],
+"head": ["Head", Vector3(-0.0000, 1.9953, -0.0024)]
+}
+lantern_light = false
+
+[node name="Model" parent="." instance=ExtResource("2")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
