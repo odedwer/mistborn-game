@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://src/world/luthadel.tscn" id="1_world"]
+[ext_resource type="Script" path="res://src/world/debug/free_fly_camera.gd" id="2_cam"]
+
+[node name="WorldPreview" type="Node3D"]
+
+[node name="LuthadelWorld" parent="." instance=ExtResource("1_world")]
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.955336, 0.29552, 0, -0.29552, 0.955336, -40, 22, 215)
+far = 4000.0
+current = true
+script = ExtResource("2_cam")
