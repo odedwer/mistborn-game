@@ -26,6 +26,8 @@ var stage_index: int = 0
 ## objective id (StringName) -> objective dict, for the current stage's
 ## not-yet-completed objectives.
 var _active_objectives: Dictionary = {}
+## Remaining objectives of a sequential stage, activated one at a time.
+var _pending_objectives: Array[Dictionary] = []
 var _triggers: Array[Area3D] = []
 var _hinted_metal_use := false
 var _fade_layer: CanvasLayer
@@ -86,23 +88,42 @@ func _activate_stage(index: int) -> void:
 		return
 	var stage: Dictionary = mission.stages[index]
 	stage_advanced.emit(index, stage.get("label", ""))
-	# Register every not-yet-completed objective as active *before* activating
-	# any of them, so an objective that completes instantly (cutscene_hint)
-	# doesn't see a still-partially-built `_active_objectives` and advance the
-	# stage early.
-	var to_activate: Array[Dictionary] = []
+	# Stages are sequential by default (tutorial beats one at a time); set
+	# "parallel": true on a stage to activate all its objectives together.
+	_pending_objectives.clear()
 	for obj: Dictionary in stage.get("objectives", []):
-		var id := StringName(obj.get("id", ""))
-		if GameState.completed_objectives.has(id):
-			continue
-		_active_objectives[id] = obj
-		to_activate.append(obj)
-	for obj in to_activate:
-		_activate_objective(obj)
+		if not GameState.completed_objectives.has(StringName(obj.get("id", ""))):
+			_pending_objectives.append(obj)
+	if _pending_objectives.is_empty():
+		_advance_stage.call_deferred()
+		return
+	if stage.get("parallel", false):
+		var batch := _pending_objectives.duplicate()
+		_pending_objectives.clear()
+		# Register all as active *before* activating any, so one that completes
+		# instantly (cutscene_hint) can't advance the stage early.
+		for obj: Dictionary in batch:
+			_active_objectives[StringName(obj.get("id", ""))] = obj
+		for obj: Dictionary in batch:
+			_activate_objective(obj)
+	else:
+		_activate_next_pending()
+
+
+## Activates the next queued objective of a sequential stage.
+func _activate_next_pending() -> void:
+	var obj: Dictionary = _pending_objectives.pop_front()
+	_active_objectives[StringName(obj.get("id", ""))] = obj
+	_activate_objective(obj)
 
 
 func _activate_objective(obj: Dictionary) -> void:
 	var type: String = obj.get("type", "")
+	# Announce before activating: instant objectives (cutscene_hint) complete
+	# inside the match and chain into the next one, which must be the last
+	# "not done" update the tracker sees.
+	if type != "cutscene_hint":
+		Events.objective_updated.emit(StringName(obj.get("id", "")), obj.get("text", ""), false)
 	match type:
 		"cutscene_hint":
 			Events.hint_requested.emit(obj.get("text", ""), obj.get("duration", 4.0))
@@ -111,7 +132,6 @@ func _activate_objective(obj: Dictionary) -> void:
 			_spawn_trigger_for(obj)
 		"use_metal", "defeat", "collect":
 			pass # driven by Events, see the handlers below.
-	Events.objective_updated.emit(StringName(obj.get("id", "")), obj.get("text", ""), false)
 
 
 func _spawn_trigger_for(obj: Dictionary) -> void:
@@ -172,11 +192,16 @@ func complete_objective(obj: Dictionary) -> void:
 	if GameState.completed_objectives.has(id):
 		return
 	_active_objectives.erase(id)
+	_pending_objectives.erase(obj)
 	Events.objective_updated.emit(id, obj.get("text", ""), true)
 	AudioManager.play_ui(&"objective_complete")
 	for action: Dictionary in obj.get("on_complete", []):
 		_run_action(action)
-	if _active_objectives.is_empty():
+	if not _active_objectives.is_empty():
+		return
+	if not _pending_objectives.is_empty():
+		_activate_next_pending()
+	else:
 		_advance_stage()
 
 

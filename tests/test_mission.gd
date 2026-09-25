@@ -36,6 +36,16 @@ func test_use_metal_objective_completes_on_burn() -> void:
 	fake_player.queue_free()
 
 
+func test_stage_objectives_activate_one_at_a_time() -> void:
+	# Stage 0 is sequential: after the intro hint only "learn_steel" is active;
+	# the rooftop markers wait until steel has been burned.
+	assert_true(_director._active_objectives.has(&"learn_steel"))
+	assert_false(_director._active_objectives.has(&"rooftop_lesson_1"))
+	_director.complete_objective(_director._active_objectives[&"learn_steel"])
+	assert_true(_director._active_objectives.has(&"rooftop_lesson_1"))
+	assert_false(_director._active_objectives.has(&"rooftop_lesson_2"))
+
+
 func test_completing_all_stage_objectives_advances_stage() -> void:
 	# Manually complete every objective of stage 0 (skipping trigger geometry,
 	# which needs real markers) and confirm the director moves to stage 1.

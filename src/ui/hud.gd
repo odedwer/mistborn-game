@@ -53,6 +53,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _player == null or not is_instance_valid(_player):
 		_player = get_tree().get_first_node_in_group("player")
+		if _player != null:
+			_sync_from_player()
 	_update_counts()
 	_update_objective_marker()
 	_update_vignette(delta)
@@ -309,13 +311,34 @@ func _on_health_changed(current: float, maximum: float) -> void:
 	_health_bar.value = current
 
 
-func _on_reserve_changed(_allomancer: Node, metal: int, amount: float) -> void:
+## Pulls the full current state from a newly found player, since the HUD only
+## hears about changes after it connects.
+func _sync_from_player() -> void:
+	var al: Node = _player.get("allomancer")
+	if al != null:
+		for metal: int in _vials:
+			(_vials[metal] as ProgressBar).value = al.get_reserve(metal)
+			_on_burn_changed(al, metal, al.is_burning(metal))
+	var h: Health = Health.find_on(_player)
+	if h != null:
+		_on_health_changed(h.current, h.max_health)
+
+
+## True if the signal came from the local player's allomancer (enemies emit the
+## same metal signals).
+func _is_player_allomancer(allomancer: Node) -> bool:
+	return _player != null and is_instance_valid(_player) and (allomancer == _player or allomancer == _player.get("allomancer"))
+
+
+func _on_reserve_changed(allomancer: Node, metal: int, amount: float) -> void:
+	if not _is_player_allomancer(allomancer):
+		return
 	if _vials.has(metal):
 		(_vials[metal] as ProgressBar).value = amount
 
 
-func _on_burn_changed(_allomancer: Node, metal: int, burning: bool) -> void:
-	if not _vial_glow.has(metal):
+func _on_burn_changed(allomancer: Node, metal: int, burning: bool) -> void:
+	if not _is_player_allomancer(allomancer) or not _vial_glow.has(metal):
 		return
 	var glow: Panel = _vial_glow[metal]
 	var style: StyleBoxFlat = glow.get_theme_stylebox("panel")
@@ -323,8 +346,8 @@ func _on_burn_changed(_allomancer: Node, metal: int, burning: bool) -> void:
 	tw.tween_property(style, "bg_color:a", 0.55 if burning else 0.0, 0.25)
 
 
-func _on_flare_changed(_allomancer: Node, metal: int, flaring: bool) -> void:
-	if not flaring or not _vial_glow.has(metal):
+func _on_flare_changed(allomancer: Node, metal: int, flaring: bool) -> void:
+	if not _is_player_allomancer(allomancer) or not flaring or not _vial_glow.has(metal):
 		return
 	var glow: Panel = _vial_glow[metal]
 	var style: StyleBoxFlat = glow.get_theme_stylebox("panel")
@@ -333,8 +356,8 @@ func _on_flare_changed(_allomancer: Node, metal: int, flaring: bool) -> void:
 	tw.tween_property(style, "bg_color:a", 0.55, 0.3)
 
 
-func _on_depleted(_allomancer: Node, metal: int) -> void:
-	if not _vials.has(metal):
+func _on_depleted(allomancer: Node, metal: int) -> void:
+	if not _is_player_allomancer(allomancer) or not _vials.has(metal):
 		return
 	var bar: ProgressBar = _vials[metal]
 	var style: StyleBoxFlat = bar.get_theme_stylebox("fill")
@@ -344,8 +367,8 @@ func _on_depleted(_allomancer: Node, metal: int) -> void:
 	tw.tween_property(style, "bg_color", base_color, 0.3)
 
 
-func _on_line_used(_allomancer: Node, _target: Node, metal: int, strength: float) -> void:
-	if metal != Metal.Type.STEEL:
+func _on_line_used(allomancer: Node, _target: Node, metal: int, strength: float) -> void:
+	if not _is_player_allomancer(allomancer) or metal != Metal.Type.STEEL:
 		return
 	_steel_locked = strength > 0.0
 	_crosshair.color = Color(0.4, 0.7, 1.0, 1.0) if _steel_locked else Color(1, 1, 1, 0.85)
