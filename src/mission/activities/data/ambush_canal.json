@@ -1,0 +1,11 @@
+{
+	"id": "ambush_canal",
+	"type": "obligator_ambush",
+	"title": "Obligator Ambush: Canal Watch",
+	"start_marker": "ambush_canal",
+	"params": {
+		"enemy_types": ["guard", "thug"],
+		"spawn_radius": 8.0
+	},
+	"rewards": {"coins": 80, "vials": 1, "mastery_points": 2}
+}

@@ -1,0 +1,12 @@
+{
+	"id": "coin_race_skaa",
+	"type": "coin_race",
+	"title": "Coin Race: Skaa Rooftops",
+	"start_marker": "coin_race_skaa",
+	"params": {
+		"ring_offsets": [[10, 4, 0], [20, 2, 10], [15, 6, 25], [0, 8, 35], [-10, 5, 45]],
+		"time_limit": 26.0,
+		"medals": {"gold": 14.0, "silver": 19.0, "bronze": 24.0}
+	},
+	"rewards": {"coins": 40, "mastery_points": 1}
+}

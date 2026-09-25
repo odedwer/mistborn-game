@@ -1,0 +1,12 @@
+{
+	"id": "coin_race_keep",
+	"type": "coin_race",
+	"title": "Coin Race: Keep Approach",
+	"start_marker": "coin_race_keep",
+	"params": {
+		"ring_offsets": [[12, 5, -10], [24, 3, -22], [18, 7, -38], [0, 9, -48], [-14, 4, -55]],
+		"time_limit": 28.0,
+		"medals": {"gold": 15.0, "silver": 20.0, "bronze": 26.0}
+	},
+	"rewards": {"coins": 40, "mastery_points": 1}
+}

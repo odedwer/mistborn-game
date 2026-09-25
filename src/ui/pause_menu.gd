@@ -6,6 +6,7 @@ var _root: Control
 var _tabs: TabContainer
 var _map: MapView
 var _journal_list: VBoxContainer
+var _skills_list: VBoxContainer
 var _settings_instance: CanvasLayer
 var _slot_popup: PopupPanel
 var _slot_mode := "save"  # or "load"
@@ -38,6 +39,7 @@ func set_paused(paused: bool) -> void:
 	if paused:
 		_refresh_map()
 		_refresh_journal()
+		_refresh_skills()
 		AudioManager.play_ui(&"ui_click")
 	else:
 		AudioManager.play_ui(&"ui_back")
@@ -79,6 +81,7 @@ func _build_ui() -> void:
 	_map.waypoint_cleared.connect(_on_waypoint_cleared)
 	_tabs.add_child(_map)
 	_tabs.add_child(_build_journal_tab())
+	_tabs.add_child(_build_skills_tab())
 
 	_slot_popup = PopupPanel.new()
 	add_child(_slot_popup)
@@ -133,6 +136,43 @@ func _build_journal_tab() -> Control:
 	return scroll
 
 
+func _build_skills_tab() -> Control:
+	var scroll := ScrollContainer.new()
+	scroll.name = "Skills"
+	_skills_list = VBoxContainer.new()
+	_skills_list.add_theme_constant_override("separation", 6)
+	_skills_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_skills_list)
+	return scroll
+
+
+func _refresh_skills() -> void:
+	for c in _skills_list.get_children():
+		c.queue_free()
+	_skills_list.add_child(UIHelpers.heading_label("Allomantic Mastery — %d point(s)" % GameState.mastery_points))
+	for id in Mastery.ids():
+		var level := GameState.mastery_level(id)
+		var max_l := Mastery.max_level(id)
+		var u: Dictionary = Mastery.UPGRADES[id]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var label := Label.new()
+		label.custom_minimum_size = Vector2(420, 0)
+		label.text = "%s (Lv %d/%d) — %s" % [u.get("label", String(id)), level, max_l, u.get("desc", "")]
+		row.add_child(label)
+		var cost := Mastery.cost_for_next(id, level)
+		var btn := UIHelpers.button("Maxed" if cost < 0 else "Upgrade (%d pt)" % cost)
+		btn.disabled = cost < 0 or GameState.mastery_points < cost
+		btn.pressed.connect(_on_buy_mastery.bind(id))
+		row.add_child(btn)
+		_skills_list.add_child(row)
+
+
+func _on_buy_mastery(id: StringName) -> void:
+	if GameState.buy_mastery(id):
+		_refresh_skills()
+
+
 func _refresh_map() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player is Node3D:
@@ -140,10 +180,21 @@ func _refresh_map() -> void:
 		_map.player_forward = Vector2((player as Node3D).global_transform.basis.z.x, (player as Node3D).global_transform.basis.z.z)
 	var director := get_tree().get_first_node_in_group("mission_director")
 	_map.mission_icons.clear()
+	_map.waypoint = director.waypoint if director != null and "waypoint" in director else Vector3.INF
 	if director != null and director.has_method("current_marker_position"):
 		var pos: Vector3 = director.call("current_marker_position")
 		if pos != Vector3.INF:
 			_map.mission_icons.append({"position": pos, "label": "Objective"})
+	_map.activity_icons.clear()
+	var activities := get_tree().get_first_node_in_group("activity_manager")
+	if activities != null:
+		for id: StringName in activities.activities:
+			var a: ActivityData = activities.activities[id]
+			var pos: Vector3 = activities.call("start_marker_position", id)
+			if pos == Vector3.INF:
+				continue
+			var rec: Dictionary = GameState.activity_record(id)
+			_map.activity_icons.append({"position": pos, "label": a.title, "kind": a.type, "completed": rec.get("completed", false)})
 	_map.refresh()
 
 
@@ -167,9 +218,54 @@ func _refresh_journal() -> void:
 					l.text = ("  [x] " if done else "  [ ] ") + obj.get("text", "")
 					_journal_list.add_child(l)
 	_journal_list.add_child(UIHelpers.vsep(10))
-	_journal_list.add_child(UIHelpers.heading_label("Completed"))
+	_journal_list.add_child(UIHelpers.heading_label("Completed Missions"))
 	for m in GameState.completed_missions:
 		_journal_list.add_child(UIHelpers.dim_label(String(m)))
+
+	_journal_list.add_child(UIHelpers.vsep(10))
+	_journal_list.add_child(UIHelpers.heading_label("Side Activities"))
+	var activities := get_tree().get_first_node_in_group("activity_manager")
+	if activities == null:
+		_journal_list.add_child(UIHelpers.dim_label("None discovered yet."))
+	else:
+		for id: StringName in activities.activities:
+			var a: ActivityData = activities.activities[id]
+			var rec: Dictionary = GameState.activity_record(id)
+			var medal: String = rec.get("medal", "")
+			var best: float = rec.get("best_time", -1.0)
+			var status := "not attempted"
+			if rec.get("completed", false):
+				status = "%s medal, best %.1fs" % [medal.capitalize(), best]
+			elif int(rec.get("attempts", 0)) > 0:
+				status = "attempted, not finished"
+			var row := UIHelpers.button("%s — %s" % [a.title, status])
+			row.pressed.connect(_on_journal_waypoint.bind(activities.call("start_marker_position", id)))
+			_journal_list.add_child(row)
+
+	_journal_list.add_child(UIHelpers.vsep(10))
+	var found := 0
+	for cid in CollectibleLore.all_ids():
+		if GameState.is_collected(StringName(cid)):
+			found += 1
+	_journal_list.add_child(UIHelpers.heading_label("Collectibles (%d / %d)" % [found, CollectibleLore.total_count()]))
+	for cid in CollectibleLore.all_ids():
+		var got := GameState.is_collected(StringName(cid))
+		var text: String = ("[x] " if got else "[ ] ") + (CollectibleLore.text_for(cid) if got else "???")
+		if got:
+			var row := UIHelpers.button(text)
+			var pos := Vector3.INF
+			if activities != null:
+				pos = activities.call("collectible_marker_position", StringName(cid))
+			row.pressed.connect(_on_journal_waypoint.bind(pos))
+			_journal_list.add_child(row)
+		else:
+			_journal_list.add_child(UIHelpers.dim_label(text))
+
+
+func _on_journal_waypoint(pos: Vector3) -> void:
+	if pos == Vector3.INF:
+		return
+	_on_waypoint_picked(pos)
 
 
 func _on_waypoint_picked(world_pos: Vector3) -> void:
@@ -235,6 +331,10 @@ func _on_slot_chosen(slot: int) -> void:
 	else:
 		if GameState.load_game(slot):
 			var player := get_tree().get_first_node_in_group("player")
+			var target := GameState.open_world_position if GameState.has_open_world_position else GameState.last_checkpoint_transform
+			var world := get_tree().get_first_node_in_group("world")
+			if world != null and "streamer" in world and world.streamer != null:
+				world.streamer.load_now(target.origin, world.streamer.load_radius)
 			if player is Node3D:
-				(player as Node3D).global_transform = GameState.last_checkpoint_transform
+				(player as Node3D).global_transform = target
 	_slot_popup.hide()

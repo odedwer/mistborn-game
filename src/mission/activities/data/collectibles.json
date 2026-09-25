@@ -1,0 +1,14 @@
+[
+	{"id": "atium_bead_1", "kind": "atium_bead", "text": "An atium bead, still warm from a Seeker's care."},
+	{"id": "atium_bead_2", "kind": "atium_bead", "text": "An atium bead, wrapped in oilcloth and hidden in a drainpipe."},
+	{"id": "atium_bead_3", "kind": "atium_bead", "text": "An atium bead, dropped by a Coinshot mid-flight."},
+	{"id": "atium_bead_4", "kind": "atium_bead", "text": "An atium bead, sewn into the hem of a beggar's coat."},
+	{"id": "atium_bead_5", "kind": "atium_bead", "text": "An atium bead, left as payment for a debt no one will name."},
+	{"id": "atium_bead_6", "kind": "atium_bead", "text": "An atium bead, tucked behind a loose brick above a canal lock."},
+	{"id": "crew_note_1", "kind": "crew_note", "text": "A cook's tally of missed meals, scratched in charcoal on a pantry wall."},
+	{"id": "crew_note_2", "kind": "crew_note", "text": "A runner's route, memorized then burned, but the ash still holds the shape of the letters."},
+	{"id": "crew_note_3", "kind": "crew_note", "text": "A note pinned under a loose cobble: 'Two lanterns out means the watch changed early tonight.'"},
+	{"id": "crew_note_4", "kind": "crew_note", "text": "A ledger page torn free, listing names in a hand too careful to be honest."},
+	{"id": "crew_note_5", "kind": "crew_note", "text": "A child's chalk drawing of a rooftop, with a stick figure jumping between chimneys."},
+	{"id": "crew_note_6", "kind": "crew_note", "text": "A scrap reading: 'Trust the mists. They keep secrets better than any of us do.'"}
+]

@@ -74,6 +74,17 @@ const MAX_INTERNAL_STRENGTH := 3.0
 ## Fallback mass when the body does not implement get_allomantic_mass().
 @export var default_mass := 60.0
 
+@export_group("Mastery")
+## Multiplies the flare burn-rate penalty (1.0 = no change). Set by
+## `Mastery.apply_to` from the "Flare Efficiency" upgrade.
+@export var flare_burn_efficiency := 1.0
+## Multiplies pewter's burn rate (1.0 = no change, <1 = lasts longer). Set by
+## `Mastery.apply_to` from the "Pewter Endurance" upgrade.
+@export var pewter_burn_efficiency := 1.0
+## Multiplies `tin_strength()` (1.0 = no change). Set by `Mastery.apply_to`
+## from the "Tin Range" upgrade.
+@export var tin_strength_mult := 1.0
+
 @export_group("Pewter")
 @export var pewter_speed_bonus := 0.5
 @export var pewter_jump_bonus := 0.5
@@ -312,6 +323,10 @@ func tick(delta: float) -> void:
 		if _burning[i] == 0 or i == Metal.Type.DURALUMIN:
 			continue
 		var rate: float = Metal.BURN_RATE[i] * flare_mult
+		if flaring:
+			rate *= flare_burn_efficiency
+		if i == Metal.Type.PEWTER:
+			rate *= pewter_burn_efficiency
 		if _dura_active and _dura_flags[i] != 0:
 			rate = maxf(rate, _dura_rate[i])
 		_drain(i, rate * delta)
@@ -609,7 +624,7 @@ func _modify_damage(amount: float, _kind: StringName, _source: Node) -> float:
 
 ## 0..1 tin sense strength: 0 off, 0.65 burning, 1 flared.
 func tin_strength() -> float:
-	return clampf(effect_strength(Metal.Type.TIN) * 0.65, 0.0, 1.0)
+	return clampf(effect_strength(Metal.Type.TIN) * 0.65 * tin_strength_mult, 0.0, 1.0)
 
 
 func _update_tin() -> void:

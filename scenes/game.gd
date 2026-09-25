@@ -14,6 +14,7 @@ const HUD_SCENE := "res://src/ui/hud.tscn"
 const PAUSE_SCENE := "res://src/ui/pause_menu.tscn"
 const MISSION_COMPLETE_SCENE := "res://src/ui/mission_complete.tscn"
 const DEATH_SCENE := "res://src/ui/death_screen.tscn"
+const ACTIVITY_MANAGER_SCRIPT := "res://src/mission/activities/activity_manager.gd"
 
 var world: Node3D
 var enemy_spawner: Node
@@ -31,6 +32,7 @@ func _ready() -> void:
 		world.connect(&"markers_spawned", _on_markers_spawned)
 	_add_ui()
 	_add_mission_director()
+	_add_activity_manager()
 
 
 ## A streamed world chunk loaded: populate its enemies and pickups.
@@ -113,6 +115,13 @@ func _build_fallback_world() -> Node3D:
 func _spawn_player() -> void:
 	if not ResourceLoader.exists(PLAYER_SCENE):
 		return
+	# "Save anywhere": restore the player's exact open-world position (not
+	# just the last mission checkpoint), with the surrounding chunks streamed
+	# in synchronously first so they never spawn over unloaded ground.
+	if GameState.has_open_world_position and world != null and "streamer" in world and world.streamer != null:
+		var target: Vector3 = GameState.open_world_position.origin
+		if not world.streamer.is_area_loaded(target):
+			world.streamer.load_now(target, world.streamer.load_radius)
 	var scene: PackedScene = load(PLAYER_SCENE)
 	var player := scene.instantiate()
 	add_child(player)
@@ -121,6 +130,9 @@ func _spawn_player() -> void:
 		(player as Node3D).global_transform = (spawn as Node3D).global_transform
 	if GameState.last_checkpoint_id != &"" and player is Node3D:
 		(player as Node3D).global_transform = GameState.last_checkpoint_transform
+	if GameState.has_open_world_position and player is Node3D:
+		(player as Node3D).global_transform = GameState.open_world_position
+	Mastery.apply_to(player, GameState.mastery_levels)
 
 
 func _build_enemy_spawner() -> void:
@@ -175,3 +187,12 @@ func _add_mission_director() -> void:
 	var director := MissionDirector.new()
 	director.name = "MissionDirector"
 	add_child(director)
+
+
+func _add_activity_manager() -> void:
+	if not ResourceLoader.exists(ACTIVITY_MANAGER_SCRIPT):
+		return
+	var manager := Node.new()
+	manager.set_script(load(ACTIVITY_MANAGER_SCRIPT))
+	manager.name = "ActivityManager"
+	add_child(manager)

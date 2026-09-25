@@ -1,0 +1,14 @@
+{
+	"id": "pursuit_skaa",
+	"type": "rooftop_pursuit",
+	"title": "Rooftop Pursuit: Cutpurse",
+	"start_marker": "pursuit_skaa",
+	"params": {
+		"path_offsets": [[0, 0, 0], [15, 0, 10], [30, 2, 25], [20, 4, 45], [5, 2, 60], [-15, 0, 75]],
+		"thief_speed": 5.5,
+		"catch_distance": 3.0,
+		"time_limit": 45.0,
+		"medals": {"gold": 18.0, "silver": 28.0, "bronze": 40.0}
+	},
+	"rewards": {"coins": 60, "vials": 1, "mastery_points": 1}
+}
