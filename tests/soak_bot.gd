@@ -55,7 +55,8 @@ var _f := 0
 var _stop := -1
 var _stop_name := ""
 var _rng := RandomNumberGenerator.new()
-var _last_usec := 0
+const FrameTimer := preload("res://tests/frame_timer.gd")
+var _timer: RefCounted
 ## stop name -> {frames, proc, phys, max_frame_ms, max_phys_ms}
 var _perf: Dictionary = {}
 var _time_scale_violations := 0
@@ -86,11 +87,15 @@ func _ready() -> void:
 	player.capture_mouse = false
 	Events.player_died.connect(func() -> void: _deaths += 1)
 	get_tree().physics_frame.connect(_on_physics_frame)
-	_last_usec = Time.get_ticks_usec()
+	_timer = FrameTimer.new(get_tree())
+	_timer.hitch_hook = func(a: float, b: float) -> void:
+		_stream_hitches.append("%s f%d: proc %.1f + phys %.1f ms" % [_stop_name, _f, a, b])
 
 
 func _exit_tree() -> void:
 	OS.remove_logger(catcher)
+	if _timer != null:
+		_timer.stop()
 	if get_tree().physics_frame.is_connected(_on_physics_frame):
 		get_tree().physics_frame.disconnect(_on_physics_frame)
 	_release_all()
@@ -102,25 +107,16 @@ func _release_all() -> void:
 
 
 func _process(_delta: float) -> void:
-	var now := Time.get_ticks_usec()
-	var frame_ms := float(now - _last_usec) / 1000.0
-	_last_usec = now
-	if _stop_name == "":
+	# Skip the frames right after a teleport (a deliberate jump across the city).
+	if _timer != null:
+		_timer.paused = _f % dwell < 3
+
+
+func _close_stop() -> void:
+	if _timer == null or _stop_name == "":
 		return
-	var p: Dictionary = _perf.get(_stop_name, {"frames": 0, "proc": 0.0, "phys": 0.0, "max_frame_ms": 0.0,
-			"max_cpu_ms": 0.0})
-	var proc := Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
-	var phys := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
-	p["frames"] += 1
-	p["proc"] += proc
-	p["phys"] += phys
-	# Skip the teleport frame itself (a deliberate jump across the city).
-	if _f % dwell > 2:
-		p["max_frame_ms"] = maxf(p["max_frame_ms"], frame_ms)
-		p["max_cpu_ms"] = maxf(p["max_cpu_ms"], proc + phys)
-		if proc + phys > 30.0:
-			_stream_hitches.append("%s f%d: %.1f ms (proc %.1f, phys %.1f)" % [_stop_name, _f, proc + phys, proc, phys])
-	_perf[_stop_name] = p
+	_perf[_stop_name] = _timer.summary()
+	_timer.reset()
 
 
 func _on_physics_frame() -> void:
@@ -139,6 +135,7 @@ func _on_physics_frame() -> void:
 
 
 func _next_stop() -> void:
+	_close_stop()
 	_stop = (_stop + 1) % STOPS.size()
 	var s := STOPS[_stop]
 	var pos := Vector3.INF
@@ -291,13 +288,8 @@ func report() -> Dictionary:
 	var errors := catcher.errors.duplicate()
 	var warnings := catcher.warnings.duplicate()
 	catcher.mutex.unlock()
-	var perf := {}
-	for k: String in _perf:
-		var p: Dictionary = _perf[k]
-		var n := maxf(float(p["frames"]), 1.0)
-		perf[k] = {"frames": p["frames"], "avg_process_ms": p["proc"] / n, "avg_physics_ms": p["phys"] / n,
-				"avg_cpu_ms": (p["proc"] + p["phys"]) / n, "max_cpu_ms": p["max_cpu_ms"],
-				"max_frame_ms": p["max_frame_ms"]}
+	_close_stop()
+	var perf := _perf
 	return {
 		"frames": _f,
 		"errors": errors,

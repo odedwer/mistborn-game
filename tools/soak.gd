@@ -41,13 +41,13 @@ func _run() -> void:
 	print("cpu hitches > 30 ms (%d):" % rep["cpu_hitches"].size())
 	for h: String in rep["cpu_hitches"]:
 		print("  ", h)
-	print("perf per stop (ms): avg process / avg physics / avg cpu / max cpu / max frame")
+	print("perf per stop (ms): avg process / avg physics tick / avg cpu / max frame / max physics tick")
 	var keys: Array = rep["perf"].keys()
 	keys.sort()
 	for k: String in keys:
 		var p: Dictionary = rep["perf"][k]
-		print("  %-22s %6.2f %6.2f %6.2f %7.1f %7.1f" % [k, p["avg_process_ms"], p["avg_physics_ms"],
-				p["avg_cpu_ms"], p["max_cpu_ms"], p["max_frame_ms"]])
+		print("  %-22s %6.2f %6.2f %6.2f %7.1f %7.1f" % [k, p["avg_process_ms"], p["avg_physics_tick_ms"],
+				p["avg_cpu_ms"], p["max_frame_ms"], p["max_physics_tick_ms"]])
 	var bad: int = rep["errors"].size() + rep["time_scale_violations"] + rep["fallen_enemies"].size()
 	bot.queue_free()
 	await process_frame

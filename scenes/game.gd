@@ -24,6 +24,7 @@ var _live_pickups: Dictionary = {}
 
 
 func _ready() -> void:
+	add_to_group(&"game_scene")
 	_build_world()
 	_spawn_player()
 	_build_enemy_spawner()
