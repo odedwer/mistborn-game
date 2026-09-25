@@ -274,6 +274,8 @@ func respawn(xform: Transform3D) -> void:
 	var fwd := -camera_rig.yaw_basis().z
 	_visual.rotation.y = atan2(fwd.x, fwd.z) + deg_to_rad(model_yaw_offset_deg)
 	Engine.time_scale = 1.0
+	if model != null and model.has_method(&"revive"):
+		model.call(&"revive")
 	Events.player_health_changed.emit(health.current, health.max_health)
 
 
@@ -653,6 +655,8 @@ func _update_crouch() -> void:
 	_shape.height = crouch_height if crouching else stand_height
 	_collision.position.y = _shape.height * 0.5
 	camera_rig.crouching = crouching
+	if model != null and model.has_method(&"set_crouching"):
+		model.call(&"set_crouching", crouching)
 
 
 func _can_stand() -> bool:

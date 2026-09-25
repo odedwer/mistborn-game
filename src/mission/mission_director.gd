@@ -317,8 +317,19 @@ func _respawn_player() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null:
 		return
-	if player is Node3D and GameState.last_checkpoint_id != &"":
-		(player as Node3D).global_transform = GameState.last_checkpoint_transform
+	var xform := (player as Node3D).global_transform
+	if GameState.last_checkpoint_id != &"":
+		xform = GameState.last_checkpoint_transform
+	else:
+		var spawn := get_tree().get_first_node_in_group("player_spawn") as Node3D
+		if spawn != null:
+			xform = spawn.global_transform
+	# player.respawn() clears the dead state, physics and death animation;
+	# health is then set to the checkpoint snapshot below.
+	if player.has_method("respawn"):
+		player.call("respawn", xform)
+	else:
+		(player as Node3D).global_transform = xform
 	if "health" in player and player.health != null:
 		player.health.revive(GameState.checkpoint_health / maxf(player.health.max_health, 1.0))
 	if "coins" in player:

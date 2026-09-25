@@ -86,3 +86,24 @@ func test_mission_complete_emits_events() -> void:
 			_director.complete_objective(obj)
 	assert_true(got[0])
 	assert_true(GameState.completed_missions.has(&"mistwalk_to_keep_venture"))
+
+
+func test_respawn_after_death_restores_control() -> void:
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(40, 1, 40)
+	shape.shape = box
+	floor_body.add_child(shape)
+	add_child(floor_body)
+	floor_body.position = Vector3(0, -0.5, 0)
+	var player: Node3D = (load("res://src/player/player.tscn") as PackedScene).instantiate()
+	add_child(player)
+	await physics_frames(2)
+	player.health.take_damage(10000.0, null, &"blunt")
+	assert_true(player.dead, "player died")
+	_director._respawn_player()
+	assert_false(player.dead, "player.dead cleared on respawn")
+	assert_false(player.health.dead, "health revived")
+	player.queue_free()
+	floor_body.queue_free()
