@@ -1,0 +1,50 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/combat/coin.gd" id="1_coin"]
+[ext_resource type="Script" path="res://src/allomancy/metallic.gd" id="2_metallic"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_coin"]
+friction = 0.9
+bounce = 0.15
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_coin"]
+size = Vector3(0.05, 0.014, 0.05)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_coin"]
+albedo_color = Color(0.78, 0.68, 0.45, 1)
+metallic = 1.0
+roughness = 0.3
+emission_enabled = true
+emission = Color(0.35, 0.3, 0.2, 1)
+emission_energy_multiplier = 0.25
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_coin"]
+material = SubResource("StandardMaterial3D_coin")
+top_radius = 0.024
+bottom_radius = 0.024
+height = 0.005
+radial_segments = 12
+rings = 1
+
+[node name="Coin" type="RigidBody3D" groups=["coin"]]
+collision_layer = 16
+collision_mask = 29
+mass = 0.1
+physics_material_override = SubResource("PhysicsMaterial_coin")
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 2
+linear_damp = 0.02
+angular_damp = 0.5
+script = ExtResource("1_coin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_coin")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylinderMesh_coin")
+cast_shadow = 0
+
+[node name="Metallic" type="Node3D" parent="."]
+script = ExtResource("2_metallic")
+metal_mass = 1.0

@@ -1,0 +1,97 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://src/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://src/allomancy/allomancer.gd" id="2_allo"]
+[ext_resource type="Script" path="res://src/combat/health.gd" id="3_health"]
+[ext_resource type="Script" path="res://src/player/player_camera.gd" id="4_cam"]
+[ext_resource type="Script" path="res://src/allomancy/steel_lines.gd" id="5_lines"]
+[ext_resource type="Shader" path="res://src/player/speed_lines.gdshader" id="6_speed"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+resource_local_to_scene = true
+radius = 0.35
+height = 1.8
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_arm"]
+radius = 0.2
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_melee"]
+radius = 0.45
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_speed"]
+render_priority = 10
+shader = ExtResource("6_speed")
+shader_parameter/amount = 0.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_speed"]
+size = Vector2(2.2, 1.3)
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
+collision_layer = 2
+collision_mask = 13
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Chest" type="Node3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+
+[node name="Allomancer" type="Node" parent="."]
+script = ExtResource("2_allo")
+starting_reserves = Dictionary[int, float]({
+0: 100.0,
+1: 100.0,
+2: 100.0,
+3: 100.0,
+4: 40.0,
+5: 40.0,
+6: 50.0,
+7: 50.0,
+8: 0.0,
+9: 0.0
+})
+controls_local_view = true
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("3_health")
+max_health = 100.0
+regen_per_second = 1.5
+regen_delay = 6.0
+
+[node name="MeleeCast" type="ShapeCast3D" parent="."]
+enabled = false
+shape = SubResource("SphereShape3D_melee")
+target_position = Vector3(0, 0, -1.4)
+collision_mask = 13
+
+[node name="SteelLines" type="Node3D" parent="."]
+script = ExtResource("5_lines")
+
+[node name="CameraRig" type="Node3D" parent="."]
+top_level = true
+script = ExtResource("4_cam")
+
+[node name="Pitch" type="Node3D" parent="CameraRig"]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraRig/Pitch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0, 0)
+collision_mask = 1
+shape = SubResource("SphereShape3D_arm")
+spring_length = 3.2
+margin = 0.05
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig/Pitch/SpringArm3D"]
+current = true
+fov = 80.0
+near = 0.05
+far = 4000.0
+
+[node name="SpeedLines" type="MeshInstance3D" parent="CameraRig/Pitch/SpringArm3D/Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_speed")
+material_override = SubResource("ShaderMaterial_speed")
