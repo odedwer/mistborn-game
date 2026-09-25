@@ -54,3 +54,19 @@ Failure: death sends you back to the last checkpoint.
 - Luthadel is dense 3–6 storey soot-stained stone and brick with pitched slate roofs and chimneys. Narrow cobbled streets, canals, and Kredik Shaw's black spires dominate the skyline.
 - Steel lines are thin, glowing blue lines from the chest to each metal. Their brightness scales with metal mass and they fade with distance.
 - Ash drifts constantly. Mist tendrils coil around allomancers while they burn.
+
+## Long-term vision: the full story in an open-world Luthadel
+The end goal is to play the whole story of *The Final Empire* in a seamless, traversal-first open world in the style of Spider-Man 2. Later books can follow as expansions.
+
+- **World.** All of Luthadel, several kilometres across and streamed in chunks. It has the Skaa slums, the merchant quarters, the noble keeps (Venture, Hasting, Lekal, Elariel), Fountain Square, the canals, the city wall, and Kredik Shaw at the centre. The Ashmounts sit on the horizon. The Pits of Hathsin and the rebel caves are separate mission spaces. The layout is a data-driven city plan with hand-placed landmarks, and procedural generation fills in the rest. See `docs/OPEN_WORLD.md`.
+- **Traversal first.** Steel and iron are the web-swinging. Momentum-preserving Push/Pull chains, coin-jumps and Pull-swings toward spires are optionally assisted by automatic anchor selection.
+- **Story.** Missions are data files, grouped into acts that follow the book's arc: recruitment, training, the crew's plans, noble balls, the Pits, the skaa army, Kredik Shaw, and the Lord Ruler. The dialogue and hint text is original; book passages are never copied.
+- **Open-world activities.** Coin races through rings, rooftop pursuits, obligator patrol ambushes, Hazekiller hideouts, and collectibles (atium beads, crew notes, lost metal caches). Kelsier's training challenges double as skill trees.
+- **Progression.** Allomantic mastery upgrades cover Push strength, range, flare efficiency, pewter endurance and tin range. Coin-pouch and vial capacity also grow. The noble-ball disguise sections are a social stealth mode.
+
+## Roadmap
+1. **Vertical slice**, in progress: core allomancy, one mission, the streamed city core around the slice route.
+2. **Open-world foundation**: full city plan and streaming, map/journal, side activities, save anywhere.
+3. **Act I**: Vin's recruitment, training with Kelsier, the first noble ball.
+4. **Acts II–III**: the heists, the Pits of Hathsin, the skaa army, and the Kredik Shaw finale against the Lord Ruler.
+5. **Polish**: authored hero assets to replace procedural ones, voice, cinematics, accessibility, performance passes.
