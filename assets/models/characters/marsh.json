@@ -1,0 +1,77 @@
+{
+ "name": "marsh",
+ "style": "marsh",
+ "tris": 3656,
+ "height": 1.8522118849203102,
+ "garments": {},
+ "tris_max": 3656,
+ "materials": [
+  "Cloth"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5878839508946375,
+    -0.0008220226703958226,
+    0.9846912374736707
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5878839508946375,
+    -0.0008220226703958226,
+    0.9846912374736707
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.10514285714285715,
+    1.3892
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.002102857142857143,
+    1.7482628571428573
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

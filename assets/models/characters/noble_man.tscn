@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://assets/models/characters/character_model.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/noble_man.glb" id="2"]
+
+[node name="NobleMan" type="Node3D"]
+script = ExtResource("1")
+character_id = &"noble_man"
+sockets = {
+"hand_r": ["RightHand", Vector3(-0.5879, 0.9702, -0.0008)],
+"hand_l": ["LeftHand", Vector3(0.5879, 0.9702, -0.0008)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.3590, 0.1029)],
+"head": ["Head", Vector3(-0.0000, 1.7103, -0.0021)]
+}
+lantern_light = false
+garments = PackedStringArray("tails")
+dye_colors = Array[Color]([Color(0.1725, 0.1725, 0.2039, 1), Color(0.6588, 0.5333, 0.2275, 1), Color(0.2275, 0.1647, 0.1176, 1)])
+body_scale = 1.0
+variant_pool = {
+"garment_groups": [["hat_top", "hat_bowler", ""], ["tails", "longcoat"], ["cape", "", "", ""]],
+"palettes": [[Color(0.3686, 0.1020, 0.1569, 1), Color(0.1098, 0.1647, 0.3059, 1), Color(0.1098, 0.2275, 0.1647, 1), Color(0.1725, 0.1725, 0.2039, 1), Color(0.2902, 0.1333, 0.2745, 1), Color(0.2902, 0.1882, 0.1255, 1), Color(0.4157, 0.3529, 0.1647, 1), Color(0.1255, 0.2510, 0.2902, 1)], [Color(0.6588, 0.5333, 0.2275, 1), Color(0.6118, 0.6118, 0.6431, 1), Color(0.7843, 0.7373, 0.6275, 1), Color(0.5412, 0.1333, 0.1333, 1), Color(0.1647, 0.4157, 0.4157, 1), Color(0.3529, 0.2275, 0.4157, 1), Color(0.8157, 0.7843, 0.7216, 1)], [Color(0.1098, 0.0784, 0.0627, 1), Color(0.2275, 0.1647, 0.1176, 1), Color(0.4157, 0.2902, 0.1647, 1), Color(0.5412, 0.5098, 0.4706, 1), Color(0.1647, 0.1412, 0.1255, 1), Color(0.6039, 0.4392, 0.2510, 1), Color(0.2902, 0.1647, 0.1020, 1)]],
+"scale": Vector2(0.95, 1.05)
+}
+
+[node name="Model" parent="." instance=ExtResource("2")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)

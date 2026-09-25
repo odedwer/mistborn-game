@@ -1,0 +1,78 @@
+{
+ "name": "obligator",
+ "style": "obligator",
+ "tris": 3500,
+ "height": 1.8148429340177101,
+ "garments": {},
+ "tris_max": 3500,
+ "materials": [
+  "Cloth",
+  "Metal"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5752539079501306,
+    -0.0008130876413697868,
+    0.973988071848957
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5752539079501306,
+    -0.0008130876413697868,
+    0.973988071848957
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.10400000000000001,
+    1.3741
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0020800000000000003,
+    1.7292600000000002
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

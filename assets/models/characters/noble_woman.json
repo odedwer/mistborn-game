@@ -1,0 +1,84 @@
+{
+ "name": "noble_woman",
+ "style": "gown",
+ "tris": 3862,
+ "height": 1.6746145703688247,
+ "garments": {
+  "bustle": 80,
+  "hat_wide": 216,
+  "hat_small": 108,
+  "shawl": 160
+ },
+ "tris_max": 4426,
+ "materials": [
+  "Cloak",
+  "Cloth",
+  "Metal"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5175572234700441,
+    -0.0007416074091614513,
+    0.8947430291034258
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5175572234700441,
+    -0.0007416074091614513,
+    0.8947430291034258
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.09485714285714286,
+    1.2532999999999999
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.001897142857142857,
+    1.5772371428571428
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

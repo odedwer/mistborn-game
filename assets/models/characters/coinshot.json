@@ -3,6 +3,8 @@
  "style": "coinshot",
  "tris": 4152,
  "height": 1.8123020508708658,
+ "garments": {},
+ "tris_max": 4152,
  "materials": [
   "Cloak",
   "Cloth",
@@ -138,6 +140,7 @@
   "alert",
   "push",
   "pull",
-  "drink"
+  "drink",
+  "talk"
  ]
 }

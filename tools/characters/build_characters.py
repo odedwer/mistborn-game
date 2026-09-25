@@ -24,7 +24,10 @@ import numpy as np  # noqa: E402
 
 from anim import ANIM_NAMES, FPS, LOOPING, Rig, make_anims  # noqa: E402
 from body import MAT_NAMES  # noqa: E402
-from chars import BUILDERS  # noqa: E402
+import chars  # noqa: E402
+import chars_npc  # noqa: E402
+
+BUILDERS = {**chars.BUILDERS, **chars_npc.BUILDERS}
 
 MAT_PBR = {  # name: (base rgba, metallic, roughness, emission)
     "Cloth": ((0.5, 0.5, 0.5, 1), 0.0, 0.85, None),
@@ -56,8 +59,10 @@ def make_material(name):
         bsdf.inputs["Emission Strength"].default_value = 2.0
     ca = nt.nodes.new("ShaderNodeVertexColor")
     ca.layer_name = "Col"
-    if name != "Glow":
-        nt.links.new(ca.outputs["Color"], bsdf.inputs["Base Color"])
+    # The vertex colour is deliberately NOT linked in the node tree: with export_vertex_color
+    # ="ACTIVE" the exporter then writes the active attribute as RGBA COLOR_0, keeping the
+    # alpha dye-slot tags (body.dyed). Godot replaces these materials with the external
+    # .tres ones, which read COLOR directly.
     if name == "Cloak":
         mat.use_backface_culling = False
     return mat
@@ -176,6 +181,8 @@ def build(name):
     lo, hi = m.bounds()
     arm = build_armature(body.S)
     build_mesh(name.capitalize(), m, arm, matmap)
+    for gname, gm in body.garments.items():
+        build_mesh("G_" + gname, gm, arm, matmap)
     rig = Rig(body.S)
     anims = make_anims(info["style"], body.S)
     bake_actions(arm, rig, anims)
@@ -196,16 +203,21 @@ def build(name):
         z = body.S.head("UpperChest")[2]
         body.sockets["chest"] = ("UpperChest", np.array([0.0, 0.1 * body.s, z]))
     body.sockets["head"] = ("Head", body.S.head("Head") + np.array([0, 0, 0.1 * body.s]))
+    gtris = {g: gm.tri_count() for g, gm in body.garments.items()}
+    used_mats = set(m.face_mat)
+    for gm in body.garments.values():
+        used_mats |= set(gm.face_mat)
     meta = dict(
         name=name, style=info["style"], tris=m.tri_count(), height=float(hi[2] - lo[2]),
-        materials=sorted(set(matmap[i] for i in set(m.face_mat))),
+        garments=gtris, tris_max=m.tri_count() + sum(gtris.values()),
+        materials=sorted(set(matmap[i] for i in used_mats)),
         tassel_chains=body.extra_chains,
         sockets={k: dict(bone=b, pos=[float(x) for x in p]) for k, (b, p) in body.sockets.items()},
         loops=sorted(LOOPING), animations=ANIM_NAMES,
     )
     with open(os.path.join(OUT, name + ".json"), "w") as f:
         json.dump(meta, f, indent=1)
-    print(f"[{name}] tris={m.tri_count()} height={hi[2]-lo[2]:.3f} bones={len(body.S.order)} "
+    print(f"[{name}] tris={m.tri_count()} (+garments {gtris}) height={hi[2]-lo[2]:.3f} bones={len(body.S.order)} "
           f"mats={meta['materials']} ({time.time()-t0:.1f}s)")
     return meta
 

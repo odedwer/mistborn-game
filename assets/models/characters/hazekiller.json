@@ -3,6 +3,8 @@
  "style": "haze",
  "tris": 3678,
  "height": 1.7872844677044843,
+ "garments": {},
+ "tris_max": 3678,
  "materials": [
   "Cloth"
  ],
@@ -69,6 +71,7 @@
   "alert",
   "push",
   "pull",
-  "drink"
+  "drink",
+  "talk"
  ]
 }

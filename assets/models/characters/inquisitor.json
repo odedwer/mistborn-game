@@ -3,6 +3,8 @@
  "style": "inquisitor",
  "tris": 3468,
  "height": 1.9944059496716777,
+ "garments": {},
+ "tris_max": 3468,
  "materials": [
   "Cloth",
   "Metal",
@@ -71,6 +73,7 @@
   "alert",
   "push",
   "pull",
-  "drink"
+  "drink",
+  "talk"
  ]
 }

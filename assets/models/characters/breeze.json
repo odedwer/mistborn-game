@@ -1,0 +1,78 @@
+{
+ "name": "breeze",
+ "style": "breeze",
+ "tris": 3592,
+ "height": 1.7518895688157192,
+ "garments": {},
+ "tris_max": 3592,
+ "materials": [
+  "Cloth",
+  "Metal"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5663625974066383,
+    -0.0007773475252656203,
+    0.9378631750843143
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5663625974066383,
+    -0.0007773475252656203,
+    0.9378631750843143
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.09942857142857144,
+    1.3137
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0019885714285714285,
+    1.6532485714285714
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}
