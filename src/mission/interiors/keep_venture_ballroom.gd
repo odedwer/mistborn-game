@@ -56,11 +56,14 @@ func _build_hall() -> void:
 	wall_mat.albedo_color = Color(0.42, 0.4, 0.4)
 	var half_x := HALL_SIZE.x * 0.5
 	var half_z := HALL_SIZE.z * 0.5
+	var door_half_w := 1.4
 	var walls := [
 		{"size": Vector3(HALL_SIZE.x, HALL_SIZE.y, 0.4), "pos": Vector3(0, HALL_SIZE.y * 0.5, -half_z)},
 		{"size": Vector3(0.4, HALL_SIZE.y, HALL_SIZE.z), "pos": Vector3(-half_x, HALL_SIZE.y * 0.5, 0)},
 		{"size": Vector3(0.4, HALL_SIZE.y, HALL_SIZE.z), "pos": Vector3(half_x, HALL_SIZE.y * 0.5, 0)},
-		{"size": Vector3(HALL_SIZE.x, HALL_SIZE.y, 0.4), "pos": Vector3(0, HALL_SIZE.y * 0.5, half_z)},
+		# South wall has a doorway gap onto the terrace (the mistwalk exit).
+		{"size": Vector3(half_x - door_half_w, HALL_SIZE.y, 0.4), "pos": Vector3(-(half_x + door_half_w) * 0.5, HALL_SIZE.y * 0.5, half_z)},
+		{"size": Vector3(half_x - door_half_w, HALL_SIZE.y, 0.4), "pos": Vector3((half_x + door_half_w) * 0.5, HALL_SIZE.y * 0.5, half_z)},
 	]
 	for w: Dictionary in walls:
 		var body := StaticBody3D.new()
@@ -99,7 +102,8 @@ func _build_hall() -> void:
 			add_child(pillar)
 
 
-## Tall emissive panels along the far wall, standing in for stained glass.
+## Tall emissive panels on the north wall (opposite the entrance), standing
+## in for stained glass.
 func _build_stained_glass() -> void:
 	var colors := [Color(0.7, 0.2, 0.25), Color(0.2, 0.4, 0.7), Color(0.8, 0.65, 0.2), Color(0.25, 0.55, 0.35)]
 	var half_x := HALL_SIZE.x * 0.5
@@ -115,8 +119,7 @@ func _build_stained_glass() -> void:
 		mat.emission_energy_multiplier = 1.6
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		panel.material_override = mat
-		panel.position = Vector3(-half_x + 4.0 + float(i) * 6.0, 4.5, HALL_SIZE.z * 0.5 - 0.35)
-		panel.rotation_degrees.y = 180.0
+		panel.position = Vector3(-half_x + 4.0 + float(i) * 6.0, 4.5, -HALL_SIZE.z * 0.5 + 0.35)
 		add_child(panel)
 
 
@@ -190,6 +193,7 @@ func _build_lighting() -> void:
 	e.background_color = Color(0.05, 0.04, 0.06)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.ambient_light_color = Color(0.25, 0.22, 0.2)
+	e.ambient_light_energy = 1.4
 	env.environment = e
 	add_child(env)
 

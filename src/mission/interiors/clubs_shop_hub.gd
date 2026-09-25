@@ -48,11 +48,14 @@ func _build_room() -> void:
 	wall_mat.albedo_color = Color(0.26, 0.22, 0.18)
 	var half_x := ROOM_SIZE.x * 0.5
 	var half_z := ROOM_SIZE.z * 0.5
+	var door_half_w := 1.2
 	var walls := [
 		{"size": Vector3(ROOM_SIZE.x, ROOM_SIZE.y, 0.3), "pos": Vector3(0, ROOM_SIZE.y * 0.5, -half_z)},
 		{"size": Vector3(0.3, ROOM_SIZE.y, ROOM_SIZE.z), "pos": Vector3(-half_x, ROOM_SIZE.y * 0.5, 0)},
 		{"size": Vector3(0.3, ROOM_SIZE.y, ROOM_SIZE.z), "pos": Vector3(half_x, ROOM_SIZE.y * 0.5, 0)},
-		{"size": Vector3(ROOM_SIZE.x, ROOM_SIZE.y, 0.3), "pos": Vector3(0, ROOM_SIZE.y * 0.5, half_z)},
+		# South wall has a doorway gap (the exit back to the open world).
+		{"size": Vector3(half_x - door_half_w, ROOM_SIZE.y, 0.3), "pos": Vector3(-(half_x + door_half_w) * 0.5, ROOM_SIZE.y * 0.5, half_z)},
+		{"size": Vector3(half_x - door_half_w, ROOM_SIZE.y, 0.3), "pos": Vector3((half_x + door_half_w) * 0.5, ROOM_SIZE.y * 0.5, half_z)},
 	]
 	for w: Dictionary in walls:
 		var body := StaticBody3D.new()
@@ -101,6 +104,7 @@ func _build_lighting() -> void:
 	e.background_color = Color(0.03, 0.03, 0.03)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.ambient_light_color = Color(0.14, 0.12, 0.1)
+	e.ambient_light_energy = 1.6
 	env.environment = e
 	add_child(env)
 
