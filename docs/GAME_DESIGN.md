@@ -67,6 +67,14 @@ The end goal is to play the whole story of *The Final Empire* in a seamless, tra
 ## Roadmap
 1. **Vertical slice**, in progress: core allomancy, one mission, the streamed city core around the slice route.
 2. **Open-world foundation**: full city plan and streaming, map/journal, side activities, save anywhere.
-3. **Act I**: Vin's recruitment, training with Kelsier, the first noble ball.
+3. **Act I**, in progress: Vin's recruitment ("The Survivor's Offer"), meeting
+   the crew at Clubs' shop ("The Crew"), the rooftop mistwalk to Keep
+   Venture, advanced training with Kelsier ("Lessons in the Mists"), and the
+   first noble ball as Lady Valette — five chained mission JSONs under
+   `src/mission/missions/`, plus a lightweight dialogue system
+   (`src/dialogue/`), interior scene transitions (`src/world/scene_transition.gd`),
+   cutscene-lite letterboxing, and the ball's suspicion meter. Crew/noble
+   NPCs are placeholder tinted capsules pending real `CharacterModel` GLB
+   variants.
 4. **Acts II–III**: the heists, the Pits of Hathsin, the skaa army, and the Kredik Shaw finale against the Lord Ruler.
 5. **Polish**: authored hero assets to replace procedural ones, voice, cinematics, accessibility, performance passes.
