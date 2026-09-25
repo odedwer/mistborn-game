@@ -1,0 +1,46 @@
+{
+	"id": "soothing_the_masses",
+	"title": "Soothing the Masses",
+	"act": "2",
+	"chapter": "The Skaa Quarter",
+	"prerequisites": ["the_canton_of_resource"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_square",
+			"label": "A Crowd on Edge",
+			"parallel": true,
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/street_confrontation.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "breeze_lesson"}
+			],
+			"objectives": [
+				{
+					"id": "calm_the_crowd",
+					"type": "crowd_mood",
+					"mood_group": "crowd_mood",
+					"target": 30,
+					"direction": "below",
+					"text": "Soothe the crowd before the guards arrive (burn brass)"
+				},
+				{
+					"id": "recruit_soldiers",
+					"type": "dialogue",
+					"dialogue_id": "street_recruit",
+					"text": "Find a skaa willing to fight for the rebellion"
+				}
+			]
+		},
+		{
+			"id": "regroup",
+			"label": "Back to Clubs' Shop",
+			"on_enter": [
+				{"action": "exit_interior"},
+				{"action": "hint", "text": "The square's quiet again — for now. Word of tonight will travel fast.", "duration": 4.0},
+				{"action": "mission_complete"}
+			],
+			"objectives": []
+		}
+	]
+}

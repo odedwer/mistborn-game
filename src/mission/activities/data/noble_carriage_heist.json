@@ -1,0 +1,14 @@
+{
+	"id": "noble_carriage_heist",
+	"type": "rooftop_pursuit",
+	"title": "Noble Carriage Coin-Heist",
+	"start_marker": "noble_carriage_heist",
+	"params": {
+		"path_offsets": [[0, 0, 0], [-20, 0, 10], [-38, 2, 22], [-30, 4, 42], [-12, 1, 58]],
+		"thief_speed": 5.0,
+		"catch_distance": 4.0,
+		"time_limit": 35.0,
+		"medals": {"gold": 14.0, "silver": 22.0, "bronze": 30.0}
+	},
+	"rewards": {"coins": 90, "vials": 0, "mastery_points": 1}
+}

@@ -1,0 +1,8 @@
+{
+  "id": "kelsier_pits_backstory",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "I spent a year down here, once. Before the mists, before any of this. You don't forget the sound the crevasses make at night — like the whole mountain's still settling into the hole they cut for it."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "You never talk about it."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Not much worth saying that isn't scars. What matters is I got out, and I'm not planning on either of us staying long this time. Watch the ledges — the spikes hold, but the rock around them doesn't always."}
+  ]
+}

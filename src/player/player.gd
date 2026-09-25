@@ -510,7 +510,14 @@ func _update_emotional_target(delta: float) -> void:
 	var d := camera_rig.aim_direction()
 	var best: Node3D = null
 	var best_angle := deg_to_rad(12.0)
-	for n in get_tree().get_nodes_in_group(&"enemy"):
+	# "crowd_npc" (Act II crowd scenes) are not in "enemy"'s attack-target
+	# sense, but zinc/brass still needs to reach them (CrowdMember also joins
+	# "enemy" itself; the extra group covers any future non-enemy target).
+	var candidates := get_tree().get_nodes_in_group(&"enemy")
+	for n in get_tree().get_nodes_in_group(&"crowd_npc"):
+		if not candidates.has(n):
+			candidates.append(n)
+	for n in candidates:
 		var e := n as Node3D
 		if e == null:
 			continue

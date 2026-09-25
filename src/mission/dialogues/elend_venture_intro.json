@@ -1,0 +1,16 @@
+{
+  "id": "elend_venture_intro",
+  "lines": [
+    {"speaker": "Elend Venture", "color": "#8f7fbf", "text": "Lady Renoux. Forgive me, I'd rather finish this chapter than pretend to care about the seating arrangements — sit, please, if you don't mind an unfashionable dinner companion."},
+    {"speaker": "Valette", "color": "#8fa6c4", "text": "What are you reading?",
+      "choices": [
+        {"text": "\"An old philosophy — the kind that questions the Lord Ruler's histories.\"", "set_flag": "elend_curious", "goto": 2},
+        {"text": "\"Nothing you'd expect a Venture heir to bother with.\"", "set_flag": "elend_guarded", "goto": 3},
+        {"text": "\"Whatever it is, it seems to matter more to you than this table does.\"", "set_flag": "elend_warm", "goto": 4}
+      ]},
+    {"speaker": "Elend Venture", "color": "#8f7fbf", "text": "You noticed that without me saying it outright. Most nobles I dine with wouldn't. I find I'm curious what else you notice, Lady Renoux.", "goto": 5},
+    {"speaker": "Elend Venture", "color": "#8f7fbf", "text": "Fair enough. Most of court would say the same, and mean it as an insult. You didn't, quite.", "goto": 5},
+    {"speaker": "Elend Venture", "color": "#8f7fbf", "text": "Careful — say things like that at Kredik Shaw and people will start expecting honesty out of you.", "goto": 5},
+    {"speaker": "Elend Venture", "color": "#8f7fbf", "text": "In any case. Stay as long as you like, my lady. The wine's better than the conversation usually deserves."}
+  ]
+}

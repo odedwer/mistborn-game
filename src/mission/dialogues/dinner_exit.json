@@ -1,0 +1,8 @@
+{
+  "id": "dinner_exit",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "You got a purse and a name for the house steward without anyone counting the silver. Not bad for an evening of small talk."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "Elend Venture isn't what I expected."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Nobody important ever is, until they matter. Keep that one in your pocket — we may need a Venture who isn't his father before this is over."}
+  ]
+}

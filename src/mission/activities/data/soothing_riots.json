@@ -1,0 +1,14 @@
+{
+	"id": "soothing_riots",
+	"type": "crowd_riot",
+	"title": "Soothing Riots",
+	"start_marker": "soothing_riots",
+	"params": {
+		"start_mood": 82.0,
+		"calm_threshold": 25.0,
+		"member_count": 6,
+		"spawn_radius": 6.0,
+		"time_limit": 35.0
+	},
+	"rewards": {"coins": 50, "vials": 1, "mastery_points": 1}
+}

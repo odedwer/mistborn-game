@@ -1,0 +1,11 @@
+{
+  "id": "street_recruit",
+  "lines": [
+    {"speaker": "A Wary Skaa", "color": "#8a8a8a", "text": "You're the one who calmed the square down. Or riled it up, depends who you ask. Either way, folk are saying your name like it means something now."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "It doesn't have to mean anything. Not yet.",
+      "choices": [
+        {"text": "\"There's a place for people willing to fight, when the time comes.\"", "set_flag": "soldiers_recruited", "goto": 2}
+      ]},
+    {"speaker": "A Wary Skaa", "color": "#8a8a8a", "text": "Fight who — the Lord Ruler? You're either mad or you mean it. I'll bring the ones who'll listen. Find us when you're ready."}
+  ]
+}

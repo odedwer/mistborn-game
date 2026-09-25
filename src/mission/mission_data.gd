@@ -38,6 +38,18 @@ extends RefCounted
 ##   `target_group`); kept as its own name for clarity in a scripted duel.
 ## - `flag_count`: complete once `count` of the story flags in `flags` are set
 ##   (see `GameState.dialogue_flags`); used for "talk to 3 nobles".
+## - `crowd_mood` (Act II): complete once the first node in group
+##   `mood_group` (default `"crowd_mood"`, see `CrowdMoodMeter`) has its
+##   `mood` property past `target`, in the direction given by `direction`
+##   (`"above"` or `"below"`); used for "soothe the crowd below 30" /
+##   "riot the crowd above 70".
+## - `push_target` (Act II): complete the first time
+##   `Events.allomantic_line_used` fires with a `target` whose meta
+##   `objective_id` matches `marker_id` — any Push/Pull counts, any metal.
+##   Used for the House War set piece (topple the iron gate/chandelier).
+## - `survive` (Act II): complete `duration` seconds after the objective
+##   activates, purely by elapsed time (used for "survive the Inquisitor's
+##   first strike").
 ## `interact`/`reach_marker`/`escape` also accept an optional `require_metal`
 ## (a `Metal.Type`): the trigger only completes the objective while that
 ## metal is burning (tin to eavesdrop on a rumor), otherwise it shows
@@ -53,6 +65,17 @@ extends RefCounted
 ## (`dialogue_id`), `start_cutscene` (`cutscene_id`), `enter_interior`/
 ## `exit_interior` (`scene`, via `SceneTransition`), `set_flag` (`flag`,
 ## `value`).
+##
+## `fail_conditions` (Act II on): a stage may carry `"fail_conditions"`, a
+## list of dictionaries checked whenever `Events.alert_level_changed` fires
+## while that stage is active. Exceeding `max` fails the mission
+## (`Events.mission_failed`):
+## - `{"type": "alert_level", "max": <0-2>}`: the district alert level itself.
+## - `{"type": "combat_count", "max": <n>}`: how many `enemy`-group actors are
+##   simultaneously in `EnemyBase.State.COMBAT` — lets one guard be quietly
+##   taken down without instantly failing a stealth heist, only failing once
+##   the alarm has genuinely spread to several at once. Used by the Canton of
+##   Resource heist.
 
 var id: StringName
 var title: String

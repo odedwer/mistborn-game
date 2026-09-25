@@ -1,0 +1,55 @@
+{
+	"id": "the_canton_of_resource",
+	"title": "The Canton of Resource",
+	"act": "2",
+	"chapter": "A Night Heist",
+	"prerequisites": ["dinner_at_keep_venture"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "infiltration",
+			"label": "Into the Canton",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/canton_resource.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "canton_briefing"}
+			],
+			"fail_conditions": [
+				{"type": "combat_count", "max": 1, "reason": "The alarm has spread — every guard in the Canton is hunting you now. Pull back!"}
+			],
+			"objectives": [
+				{
+					"id": "canton_get_ledger",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "canton_ledger",
+					"interact_kind": "ledger",
+					"text": "Steal the Canton's ledgers",
+					"on_complete": [
+						{"action": "start_dialogue", "dialogue_id": "canton_ledger_found"}
+					]
+				}
+			]
+		},
+		{
+			"id": "getaway",
+			"label": "Slip Out",
+			"fail_conditions": [
+				{"type": "combat_count", "max": 1, "reason": "The alarm has spread — every guard in the Canton is hunting you now. Pull back!"}
+			],
+			"objectives": [
+				{
+					"id": "canton_escape",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "canton_exit",
+					"text": "Slip back out before the alarm spreads",
+					"on_complete": [
+						{"action": "exit_interior"},
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}
