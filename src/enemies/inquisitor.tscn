@@ -1,0 +1,53 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/enemies/inquisitor.gd" id="1"]
+[ext_resource type="Script" path="res://src/combat/health.gd" id="2"]
+[ext_resource type="Script" path="res://src/allomancy/metallic.gd" id="3"]
+[ext_resource type="Script" path="res://src/combat/melee_hitbox.gd" id="4"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.5
+height = 2.3
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(1.2, 1.3, 2.7)
+
+[node name="Inquisitor" type="CharacterBody3D" groups=["enemy"]]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="NavAgent" type="NavigationAgent3D" parent="."]
+radius = 0.5
+height = 2.3
+path_desired_distance = 0.5
+target_desired_distance = 0.5
+avoidance_enabled = true
+neighbor_distance = 4.0
+max_neighbors = 6
+time_horizon_agents = 1.5
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2")
+max_health = 600.0
+
+[node name="Metallic" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+script = ExtResource("3")
+metal_mass = 8.0
+shielded = true
+
+[node name="MeleeHitbox" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("4")
+
+[node name="HitboxShape" type="CollisionShape3D" parent="MeleeHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -1.5)
+shape = SubResource("BoxShape3D_1")
+
+[node name="Model" type="Node3D" parent="."]

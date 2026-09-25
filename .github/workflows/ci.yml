@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot and export templates
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-${{ runner.os }}-v2
+
+      - name: Download Godot and export templates
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot-bin
+          curl -fsSL "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d ~/godot-bin
+          mv ~/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot-bin/godot
+          chmod +x ~/godot-bin/godot
+          curl -fsSL "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -o /tmp/templates.tpz
+          dest=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$dest"
+          # .tpz is a zip archive; keep only the x86_64 Linux/Windows templates.
+          unzip -ojq /tmp/templates.tpz templates/version.txt 'templates/linux_*.x86_64' 'templates/windows_*_x86_64*.exe' -d "$dest"
+          rm /tmp/templates.tpz /tmp/godot.zip
+          ls -la "$dest"
+
+      - name: Add Godot to PATH
+        run: echo "$HOME/godot-bin" >> "$GITHUB_PATH"
+
+      - name: Import project
+        run: godot --headless --import || true
+
+      - name: Run tests
+        run: bash tools/run_tests.sh
+
+      - name: Export Linux and Windows
+        run: |
+          mkdir -p build/linux build/windows
+          godot --headless --export-release "Linux" build/linux/MistbornAshesOfLuthadel.x86_64
+          godot --headless --export-release "Windows Desktop" build/windows/MistbornAshesOfLuthadel.exe
+
+      - name: Smoke-test Linux build
+        run: ./build/linux/MistbornAshesOfLuthadel.x86_64 --headless --quit-after 120
+
+      - name: Package
+        run: |
+          mkdir -p build/dist
+          tar -C build/linux -czf build/dist/MistbornAshesOfLuthadel-linux-x86_64.tar.gz .
+          (cd build/windows && zip -qr ../dist/MistbornAshesOfLuthadel-windows-x86_64.zip .)
+          ls -lh build/dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mistborn-builds
+          path: build/dist/
+          retention-days: 14
