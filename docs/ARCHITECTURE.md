@@ -68,15 +68,20 @@ func receive_allomantic_force(force: Vector3, delta: float, from: Metallic) -> v
 ```
 Enemies wearing metal armour carry a `Metallic` child on the armour. The player can Push them off their feet, and a Push on an armoured guard also pushes the player away from them.
 
-### Push/Pull physics (Newton's third law)
+### Push/Pull physics (Newton's third law, mass-weighted)
 When an allomancer at `A` Pushes metal at `M`:
 - `dir = (M - A).normalized()`
 - `F = base_force * strength * falloff(distance)`
+  - `base_force` defaults to 3000 N.
   - `strength` is 1.0, or `Metal.FLARE_EFFECT_MULT` while flaring (×10 with duralumin).
-  - `falloff` is a smoothstep from 1.0 at close range to 0 at `max_range`.
-- The target receives `+dir * F` and the allomancer receives `-dir * F`. A Pull uses the opposite signs.
-- Anchored/static targets, or targets heavier than the allomancer, therefore launch the allomancer. Light coins fly away.
-- Weight matters: the physics engine resolves it through `mass`. The player body applies `F / player_mass` to its velocity.
+  - `falloff` is full strength to 10 m, fading to zero at `current_range()` (40 m, or 60 m flared).
+- The reaction is split by mass: the lighter side takes the motion.
+  - A free coin flies away and barely moves the allomancer.
+  - An anchored or braced target gives the allomancer the full reaction. That covers `anchored`, static bodies, and a coin pressed against the world along the push direction (checked with a short raycast).
+  - Metal heavier than the allomancer moves the allomancer mostly.
+- The reaction on the allomancer fades once their speed along the line passes ~34 m/s (higher when flaring). This keeps steel-jumps controllable. Flaring, duralumin and dives are how you reach 60–80 m/s.
+- Pulling a heavy anchor (>60 kg) while airborne tethers the allomancer, which gives a swing/zip.
+See `src/allomancy/allomancer.gd` for the exact code; the tuning values are `@export`.
 
 ### `Allomancer` (src/allomancy/allomancer.gd)
 This is a generic component used by the player **and** by enemy allomancers (coinshots, Inquisitor):
