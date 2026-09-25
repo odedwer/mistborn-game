@@ -25,10 +25,33 @@ extends RefCounted
 ##   `kind`; used for atium beads / Kelsier's notes / other collectibles.
 ## - `cutscene_hint`: no player action; fires `Events.hint_requested` with
 ##   `text` and completes immediately (used for Kelsier's tutorial lines).
+## - `dialogue`: complete when `Events.dialogue_finished` fires for
+##   `dialogue_id` (see `DialogueSystem`, `res://src/mission/dialogues/*.json`).
+##   Usually started by an NPC's own interact script, not the objective
+##   itself.
+## - `reach_speed`: complete once the player's `CharacterBody3D.velocity`
+##   reaches `min_speed` (polled; used for pull-swing/coin-jump lessons).
+## - `chain_pushes`: complete after `count` distinct Pushes/Pulls of `metal`
+##   (default steel) each within `max_gap` seconds of the last.
+## - `defeat_in_duel`: identical to `defeat` (an `Events.actor_died` for
+##   `target_group`); kept as its own name for clarity in a scripted duel.
+## - `flag_count`: complete once `count` of the story flags in `flags` are set
+##   (see `GameState.dialogue_flags`); used for "talk to 3 nobles".
+## `interact`/`reach_marker`/`escape` also accept an optional `require_metal`
+## (a `Metal.Type`): the trigger only completes the objective while that
+## metal is burning (tin to eavesdrop on a rumor), otherwise it shows
+## `hint_locked`.
 ##
 ## `on_complete` is an array of action dictionaries applied when the
 ## objective completes, e.g. `{"action": "spawn_enemy", "type": "inquisitor"}`
-## or `{"action": "mission_complete"}`.
+## or `{"action": "mission_complete"}`. A stage may also carry `"on_enter"`,
+## the same action list, run once when the stage activates (used to lock/
+## unlock metals, start a cutscene or dialogue, or enter/exit an interior).
+## Actions: `spawn_enemy`, `hint`, `mission_complete`, `set_allowed_metals`
+## (`metals`: list of `Metal.Type`, empty = unlock all), `start_dialogue`
+## (`dialogue_id`), `start_cutscene` (`cutscene_id`), `enter_interior`/
+## `exit_interior` (`scene`, via `SceneTransition`), `set_flag` (`flag`,
+## `value`).
 
 var id: StringName
 var title: String

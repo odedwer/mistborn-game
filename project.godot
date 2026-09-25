@@ -27,6 +27,9 @@ InputSetup="*res://src/autoload/input_setup.gd"
 MetalRegistry="*res://src/autoload/metal_registry.gd"
 GameState="*res://src/autoload/game_state.gd"
 AudioManager="*res://src/autoload/audio_manager.gd"
+DialogueSystem="*res://src/dialogue/dialogue_system.gd"
+CutsceneSystem="*res://src/dialogue/cutscene_system.gd"
+SceneTransition="*res://src/world/scene_transition.gd"
 
 [display]
 

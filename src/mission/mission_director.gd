@@ -30,6 +30,8 @@ var _active_objectives: Dictionary = {}
 var _pending_objectives: Array[Dictionary] = []
 var _triggers: Array[Area3D] = []
 var _hinted_metal_use := false
+## `chain_pushes` objective id -> {last: float (ticks sec), count: int}.
+var _chain_state: Dictionary = {}
 var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
 ## Optional player-set waypoint (from the map screen) overriding the current
@@ -47,8 +49,26 @@ func _ready() -> void:
 	Events.allomantic_line_used.connect(_on_allomantic_line_used)
 	Events.pickup_collected.connect(_on_pickup_collected)
 	Events.actor_died.connect(_on_actor_died)
+	Events.dialogue_finished.connect(_on_dialogue_finished)
+	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
 	_build_fade_layer()
 	_start_or_resume()
+
+
+## Polls `reach_speed` objectives (e.g. "hit a coin-jump chain at 12 m/s");
+## everything else here is event-driven, so this stays a cheap no-op most of
+## the time.
+func _process(_delta: float) -> void:
+	if _active_objectives.is_empty():
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if not (player is CharacterBody3D):
+		return
+	var speed := (player as CharacterBody3D).velocity.length()
+	for id in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[id]
+		if obj.get("type", "") == "reach_speed" and speed >= float(obj.get("min_speed", 10.0)):
+			complete_objective(obj)
 
 
 func _start_or_resume() -> void:
@@ -88,6 +108,10 @@ func _activate_stage(index: int) -> void:
 		return
 	var stage: Dictionary = mission.stages[index]
 	stage_advanced.emit(index, stage.get("label", ""))
+	# Stage-level setup actions (locking/unlocking metals, starting a cutscene
+	# or dialogue) run once, before the stage's own objectives activate.
+	for action: Dictionary in stage.get("on_enter", []):
+		_run_action(action)
 	# Stages are sequential by default (tutorial beats one at a time); set
 	# "parallel": true on a stage to activate all its objectives together.
 	_pending_objectives.clear()
@@ -130,8 +154,10 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "defeat", "collect":
+		"use_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes":
 			pass # driven by Events, see the handlers below.
+		"flag_count":
+			_check_flag_count(obj)
 
 
 func _spawn_trigger_for(obj: Dictionary) -> void:
@@ -151,14 +177,35 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 	area.global_position = pos
 	area.body_entered.connect(_on_objective_trigger_entered.bind(obj))
 	_triggers.append(area)
+	# Mark the mission's opening objective with a subtle beacon (story
+	# gating: tells the player where to go before they've picked up the
+	# invisible trigger radius), reusing the side-activity beacon visual.
+	if stage_index == 0:
+		var beacon := ActivityBeacon.new()
+		beacon.beacon_color = Color(0.55, 0.78, 0.95)
+		area.add_child(beacon)
 
 
 func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 	if not body.is_in_group("player"):
 		return
+	# Optional gate (the ball's eavesdropping): the objective only completes
+	# while a given metal is burning, e.g. tin to make out a hushed rumor.
+	var req_metal := int(obj.get("require_metal", -1))
+	if req_metal >= 0:
+		var allomancer := _find_allomancer(body)
+		if allomancer == null or not allomancer.call("is_burning", req_metal):
+			Events.hint_requested.emit(obj.get("hint_locked", "Burn %s to make it out." % Metal.NAMES.get(req_metal, "that metal")), 3.0)
+			return
 	if obj.get("type", "") == "interact":
 		Events.pickup_collected.emit(StringName(obj.get("interact_kind", "")), 1.0)
 	complete_objective(obj)
+
+
+func _find_allomancer(player: Node) -> Node:
+	if "allomancer" in player:
+		return player.allomancer
+	return player.get_node_or_null("Allomancer")
 
 
 ## Finds a marker's world position. Prefers live `Marker3D`/`Area3D` nodes in
@@ -223,6 +270,31 @@ func _run_action(action: Dictionary) -> void:
 			Events.hint_requested.emit(action.get("text", ""), action.get("duration", 4.0))
 		"mission_complete":
 			_finish_mission()
+		"set_allowed_metals":
+			_set_allowed_metals(action.get("metals", []))
+		"start_dialogue":
+			DialogueSystem.play(StringName(action.get("dialogue_id", "")))
+		"start_cutscene":
+			CutsceneSystem.play(StringName(action.get("cutscene_id", "")))
+		"enter_interior":
+			SceneTransition.enter_interior(String(action.get("scene", "")))
+		"exit_interior":
+			SceneTransition.exit_interior()
+		"set_flag":
+			GameState.set_dialogue_flag(StringName(action.get("flag", "")), action.get("value", true))
+
+
+## Restricts the player's `Allomancer` to `metals` (a list of `Metal.Type`
+## ints); an empty list unlocks every metal again. Drives the pewter-only
+## tutorial opening and any story-mandated allomancy lock/unlock.
+func _set_allowed_metals(metals: Array) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var arr: Array[int] = []
+	for m in metals:
+		arr.append(int(m))
+	player.allomancer.allowed_metals = arr
 
 
 func _finish_mission() -> void:
@@ -249,8 +321,31 @@ func _on_allomantic_line_used(allomancer: Node, _target: Node, metal: int, _stre
 		return
 	for id in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[id]
-		if obj.get("type", "") == "use_metal" and int(obj.get("metal", -1)) == metal:
+		var t: String = obj.get("type", "")
+		if t == "use_metal" and int(obj.get("metal", -1)) == metal:
 			complete_objective(obj)
+		elif t == "chain_pushes" and int(obj.get("metal", Metal.Type.STEEL)) == metal:
+			_tick_chain(id, obj)
+
+
+## Counts distinct Pushes/Pulls (debounced so one held button-press is one
+## count, not one per physics frame) toward a `chain_pushes` objective, e.g.
+## "chain 3 pushes within 1.5s of each other" for the coin-jump lesson.
+func _tick_chain(id: StringName, obj: Dictionary) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var st: Dictionary = _chain_state.get(id, {"last": -999.0, "count": 0})
+	var max_gap := float(obj.get("max_gap", 1.5))
+	var debounce := 0.2
+	var last: float = st["last"]
+	if now - last > max_gap:
+		st["count"] = 0
+	if now - last > debounce:
+		st["count"] = int(st["count"]) + 1
+	st["last"] = now
+	_chain_state[id] = st
+	if int(st["count"]) >= int(obj.get("count", 3)):
+		_chain_state.erase(id)
+		complete_objective(obj)
 
 
 func _on_pickup_collected(kind: StringName, _amount: float) -> void:
@@ -266,10 +361,38 @@ func _on_pickup_collected(kind: StringName, _amount: float) -> void:
 func _on_actor_died(actor: Node, _killer: Node) -> void:
 	for id in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[id]
-		if obj.get("type", "") == "defeat" and actor.is_in_group(obj.get("target_group", "enemy")):
+		var t: String = obj.get("type", "")
+		if (t == "defeat" or t == "defeat_in_duel") and actor.is_in_group(obj.get("target_group", "enemy")):
 			complete_objective(obj)
 	if actor.is_in_group("enemy"):
 		GameState.record_kill()
+
+
+func _on_dialogue_finished(id: StringName) -> void:
+	for oid in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[oid]
+		if obj.get("type", "") == "dialogue" and StringName(obj.get("dialogue_id", "")) == id:
+			complete_objective(obj)
+
+
+func _on_dialogue_flag_set(_flag: StringName, _value: Variant) -> void:
+	for oid in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[oid]
+		if obj.get("type", "") == "flag_count":
+			_check_flag_count(obj)
+
+
+## "Talk to 3 nobles"-style objective: complete once `count` of `flags` are
+## set in `GameState.dialogue_flags`.
+func _check_flag_count(obj: Dictionary) -> void:
+	var flags: Array = obj.get("flags", [])
+	var need := int(obj.get("count", flags.size()))
+	var have := 0
+	for f in flags:
+		if GameState.has_dialogue_flag(StringName(f)):
+			have += 1
+	if have >= need:
+		complete_objective(obj)
 
 
 func _is_player_owned(node: Node) -> bool:

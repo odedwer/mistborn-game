@@ -46,7 +46,9 @@ signal settings_changed
 # --- Act I: dialogue / cutscenes / social stealth ---------------------------
 ## A `DialogueData` started/finished playing (see `src/dialogue/`).
 signal dialogue_started(id: StringName)
-signal dialogue_line_shown(dialogue_id: StringName, speaker: String, text: String)
+signal dialogue_line_shown(dialogue_id: StringName, speaker: String, text: String, color: Color)
+## A line offered choices; `choices` is the raw JSON array (each with `text`).
+signal dialogue_choices_shown(dialogue_id: StringName, choices: Array)
 signal dialogue_finished(id: StringName)
 ## A story flag changed (dialogue choice, mission action). `value` is
 ## free-form (usually `true`, sometimes a count or string).
