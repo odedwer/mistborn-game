@@ -137,6 +137,7 @@ var steel_lines: SteelLines
 var model: Node3D
 
 var _visual: Node3D
+var _model_path := MODEL_PATH
 var _chest: Node3D
 var _shape: CapsuleShape3D
 var _collision: CollisionShape3D
@@ -863,7 +864,9 @@ func _dead_process(delta: float) -> void:
 
 # --- Model / events -------------------------------------------------------------
 
-func _setup_model(path: String = MODEL_PATH) -> void:
+func _setup_model(path: String = "") -> void:
+	if path == "":
+		path = _model_path
 	if ResourceLoader.exists(path):
 		var ps := load(path) as PackedScene
 		if ps != null:
@@ -881,6 +884,9 @@ func _setup_model(path: String = MODEL_PATH) -> void:
 func set_model_scene(path: String) -> void:
 	if path == "":
 		path = MODEL_PATH
+	_model_path = path
+	if not is_node_ready():
+		return  # _ready() builds this model
 	if model != null and model.scene_file_path == path:
 		return
 	if model != null:

@@ -15,7 +15,7 @@ const CREW := [
 	{"id": "clubs", "name": "Clubs", "color": Color("#4a4a4a"), "pos": Vector2(5.5, 2.0)},
 	{"id": "spook", "name": "Spook", "color": Color("#5c7a99"), "pos": Vector2(-2.0, 3.5)},
 	{"id": "sazed", "name": "Sazed", "color": Color("#c2a878"), "pos": Vector2(2.0, 3.5)},
-	{"id": "marsh", "name": "Marsh", "color": Color("#3f5a4a"), "pos": Vector2(0.0, 4.5)},
+	{"id": "marsh", "name": "Marsh", "color": Color("#3f5a4a"), "pos": Vector2(-6.2, -3.6)},  # aloof in a corner, clear of the door/spawn
 ]
 
 
