@@ -22,9 +22,16 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause") and _settings_instance == null:
+	# Don't toggle over another screen that paused the game (mission complete).
+	if event.is_action_pressed("pause") and _settings_instance == null \
+			and (visible or not get_tree().paused):
 		toggle()
 		get_viewport().set_input_as_handled()
+
+
+func _exit_tree() -> void:
+	if visible and is_inside_tree():
+		get_tree().paused = false
 
 
 func toggle() -> void:
@@ -187,9 +194,11 @@ func _on_waypoint_cleared() -> void:
 
 
 func _on_restart_checkpoint() -> void:
-	var player := get_tree().get_first_node_in_group("player")
-	if player is Node3D and GameState.last_checkpoint_id != &"":
-		(player as Node3D).global_transform = GameState.last_checkpoint_transform
+	# The director restores the checkpoint snapshot (health, coins, reserves)
+	# along with the position.
+	var director := get_tree().get_first_node_in_group("mission_director")
+	if director != null and director.has_method("respawn_at_checkpoint"):
+		director.call("respawn_at_checkpoint")
 	set_paused(false)
 
 
@@ -233,8 +242,7 @@ func _on_slot_chosen(slot: int) -> void:
 	if _slot_mode == "save":
 		GameState.save_game(slot)
 	else:
-		if GameState.load_game(slot):
-			var player := get_tree().get_first_node_in_group("player")
-			if player is Node3D:
-				(player as Node3D).global_transform = GameState.last_checkpoint_transform
+		# MissionDirector listens to GameState.load_completed and resyncs the
+		# mission and the player to the loaded state.
+		GameState.load_game(slot)
 	_slot_popup.hide()

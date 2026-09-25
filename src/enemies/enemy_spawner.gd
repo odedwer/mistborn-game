@@ -28,6 +28,39 @@ var _objective_unlocked: bool = false
 
 func _ready() -> void:
 	Events.objective_updated.connect(_on_objective_updated)
+	GameState.load_completed.connect(_on_game_loaded)
+	# Resuming a save made after the unlocking objective.
+	_objective_unlocked = GameState.completed_objectives.has(defer_objective_id)
+
+
+func _on_game_loaded(_slot: int) -> void:
+	var unlocked := GameState.completed_objectives.has(defer_objective_id)
+	if unlocked == _objective_unlocked:
+		return
+	_objective_unlocked = unlocked
+	if unlocked:
+		for m in _pending_inquisitor_markers.duplicate():
+			if is_instance_valid(m):
+				spawn_for_marker(m)
+		_pending_inquisitor_markers.clear()
+	else:
+		# Loaded back to before the ledger: the Inquisitor hasn't arrived yet.
+		for key: Vector3i in _alive_keys.keys():
+			var e: Node = _alive_keys[key]
+			if is_instance_valid(e) and e is Inquisitor:
+				var m := _marker_at_key(key)
+				if m != null and not _pending_inquisitor_markers.has(m):
+					_pending_inquisitor_markers.append(m)
+				e.queue_free()
+
+
+func _marker_at_key(key: Vector3i) -> Marker3D:
+	if not is_inside_tree():
+		return null
+	for m in get_tree().get_nodes_in_group(&"enemy_spawn"):
+		if m is Marker3D and marker_key(m) == key:
+			return m
+	return null
 
 
 ## Spawns one enemy per "enemy_spawn" marker found under `root`'s tree.

@@ -41,8 +41,16 @@ func _build_ui() -> void:
 	box.add_child(stats_label)
 
 	var continue_btn := UIHelpers.button("Main Menu")
-	continue_btn.pressed.connect(func(): get_tree().change_scene_to_file(MAIN_MENU_SCENE))
+	continue_btn.pressed.connect(func():
+		get_tree().paused = false
+		get_tree().change_scene_to_file(MAIN_MENU_SCENE))
 	box.add_child(continue_btn)
+
+
+## Never leave the tree paused behind when the game scene goes away.
+func _exit_tree() -> void:
+	if visible and is_inside_tree():
+		get_tree().paused = false
 
 
 func _on_mission_completed(_id: StringName) -> void:

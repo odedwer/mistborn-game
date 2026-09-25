@@ -47,8 +47,34 @@ func _ready() -> void:
 	Events.allomantic_line_used.connect(_on_allomantic_line_used)
 	Events.pickup_collected.connect(_on_pickup_collected)
 	Events.actor_died.connect(_on_actor_died)
+	GameState.load_completed.connect(_on_game_loaded)
+	# Checkpoint areas stream in with their chunks: connect them as they load.
+	var world := _find_world_node()
+	if world != null and world.has_signal(&"unit_loaded"):
+		world.connect(&"unit_loaded", _on_unit_loaded)
 	_build_fade_layer()
 	_start_or_resume()
+	if GameState.last_checkpoint_id != &"":
+		_restore_checkpoint_snapshot(get_tree().get_first_node_in_group("player"))
+
+
+func _exit_tree() -> void:
+	_clear_triggers()
+	Engine.time_scale = 1.0
+
+
+func _on_unit_loaded(_key: String) -> void:
+	_connect_checkpoints()
+
+
+## A save was loaded while playing: resync the mission to the loaded
+## progress and put the player back at the saved checkpoint.
+func _on_game_loaded(_slot: int) -> void:
+	_pending_objectives.clear()
+	_active_objectives.clear()
+	_clear_triggers()
+	_start_or_resume()
+	respawn_at_checkpoint()
 
 
 func _start_or_resume() -> void:
@@ -139,6 +165,7 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 	if pos == Vector3.INF:
 		return
 	var area := Area3D.new()
+	area.name = "Objective_%s" % obj.get("id", "")
 	area.collision_layer = 0
 	area.collision_mask = 1 << 1  # "player" physics layer
 	area.monitorable = false
@@ -147,7 +174,10 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 	sphere.radius = TRIGGER_RADIUS
 	shape.shape = sphere
 	area.add_child(shape)
-	get_tree().root.add_child(area)
+	# Top-level so it ignores this Node's lack of a transform; freed with the
+	# director when the game scene goes away.
+	area.top_level = true
+	add_child(area)
 	area.global_position = pos
 	area.body_entered.connect(_on_objective_trigger_entered.bind(obj))
 	_triggers.append(area)
@@ -155,6 +185,14 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 
 func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 	if not body.is_in_group("player"):
+		return
+	# Deferred: completing an objective can spawn enemies and triggers, which
+	# is not allowed from inside a physics in/out callback.
+	_complete_from_trigger.call_deferred(obj)
+
+
+func _complete_from_trigger(obj: Dictionary) -> void:
+	if not _active_objectives.has(StringName(obj.get("id", ""))):
 		return
 	if obj.get("type", "") == "interact":
 		Events.pickup_collected.emit(StringName(obj.get("interact_kind", "")), 1.0)
@@ -309,8 +347,16 @@ func current_marker_position() -> Vector3:
 func _on_player_died() -> void:
 	GameState.record_death()
 	await _fade_out()
+	if not is_inside_tree():
+		return
 	_respawn_player()
 	await _fade_in()
+
+
+## Puts the player back at the last checkpoint (or the spawn) with the
+## checkpoint's health, coins, vials and reserves.
+func respawn_at_checkpoint() -> void:
+	_respawn_player()
 
 
 func _respawn_player() -> void:
@@ -330,8 +376,15 @@ func _respawn_player() -> void:
 		player.call("respawn", xform)
 	else:
 		(player as Node3D).global_transform = xform
+	_restore_checkpoint_snapshot(player)
+
+
+func _restore_checkpoint_snapshot(player: Node) -> void:
+	if player == null:
+		return
 	if "health" in player and player.health != null:
-		player.health.revive(GameState.checkpoint_health / maxf(player.health.max_health, 1.0))
+		player.health.revive(clampf(GameState.checkpoint_health / maxf(player.health.max_health, 1.0), 0.01, 1.0))
+		Events.player_health_changed.emit(player.health.current, player.health.max_health)
 	if "coins" in player:
 		player.coins = GameState.checkpoint_coins
 	if "vials" in player:
@@ -341,6 +394,8 @@ func _respawn_player() -> void:
 			if player.allomancer.has_method("add_reserve"):
 				var current: float = player.allomancer.get_reserve(metal)
 				player.allomancer.add_reserve(metal, GameState.checkpoint_reserves[metal] - current)
+	if player.has_method("_emit_inventory"):
+		player.call("_emit_inventory")
 
 
 func _build_fade_layer() -> void:
@@ -352,7 +407,7 @@ func _build_fade_layer() -> void:
 	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade_layer.add_child(_fade_rect)
-	get_tree().root.add_child.call_deferred(_fade_layer)
+	add_child(_fade_layer)
 
 
 func _fade_out() -> void:
