@@ -3,25 +3,48 @@
 	"title": "The Lord Ruler",
 	"act": "3",
 	"chapter": "The Final Empire",
-	"prerequisites": ["the_pits_beneath_the_palace"],
+	"prerequisites": [
+		"the_pits_beneath_the_palace"
+	],
 	"journal": "I faced him in his throne hall. He Pushed on the metal inside me until I burned it all away. Breeze's vial let me reach the crowd in the square, calming their fear and then setting their anger loose. When he stumbled I tore his bracers off with iron, and he was only a man, a very old one. The city is awake. Elend means to help it decide what comes next. So do I.",
-	"rewards": {"unlocks": []},
+	"rewards": {
+		"unlocks": []
+	},
 	"fail_conditions": [],
 	"stages": [
 		{
 			"id": "survive_and_learn",
 			"label": "The Lord Ruler",
 			"on_enter": [
-				{"action": "switch_interior", "scene": "res://src/mission/interiors/throne_room.tscn"},
-				{"action": "grant_metals", "metals": [], "amount": 100.0},
-				{"action": "start_dialogue", "dialogue_id": "lord_ruler_confront"},
-				{"action": "call_group", "group": "lord_ruler", "method": "set_phase", "args": [1]}
+				{
+					"action": "switch_interior",
+					"scene": "res://src/mission/interiors/throne_room.tscn"
+				},
+				{
+					"action": "grant_metals",
+					"metals": [],
+					"amount": 100.0
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "lord_ruler_confront"
+				},
+				{
+					"action": "call_group",
+					"group": "lord_ruler",
+					"method": "set_phase",
+					"args": [
+						1
+					]
+				}
 			],
 			"objectives": [
 				{
 					"id": "lr_learn_his_push",
 					"type": "flag_count",
-					"flags": ["lr_learned_drain"],
+					"flags": [
+						"lr_learned_drain"
+					],
 					"count": 1,
 					"text": "Survive — work out what he's Pushing on"
 				},
@@ -36,10 +59,28 @@
 		{
 			"id": "the_city_rises",
 			"label": "The City Rises",
+			"interior": "res://src/mission/interiors/throne_room.tscn",
 			"on_enter": [
-				{"action": "call_group", "group": "lord_ruler", "method": "set_phase", "args": [2]},
-				{"action": "grant_metals", "metals": [4, 5], "amount": 100.0},
-				{"action": "start_dialogue", "dialogue_id": "throne_crowd"}
+				{
+					"action": "call_group",
+					"group": "lord_ruler",
+					"method": "set_phase",
+					"args": [
+						2
+					]
+				},
+				{
+					"action": "grant_metals",
+					"metals": [
+						4,
+						5
+					],
+					"amount": 100.0
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "throne_crowd"
+				}
 			],
 			"objectives": [
 				{
@@ -68,16 +109,34 @@
 		{
 			"id": "the_bracers",
 			"label": "His Bracers",
+			"interior": "res://src/mission/interiors/throne_room.tscn",
 			"on_enter": [
-				{"action": "call_group", "group": "lord_ruler", "method": "set_phase", "args": [3]},
-				{"action": "start_dialogue", "dialogue_id": "throne_bracers"},
-				{"action": "hint", "text": "Out of iron? There are vials in the corners of the hall — drink one (R).", "duration": 4.0}
+				{
+					"action": "call_group",
+					"group": "lord_ruler",
+					"method": "set_phase",
+					"args": [
+						3
+					]
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "throne_bracers"
+				},
+				{
+					"action": "hint",
+					"text": "Out of iron? There are vials in the corners of the hall — drink one (R).",
+					"duration": 4.0
+				}
 			],
 			"objectives": [
 				{
 					"id": "lr_tear_bracers",
 					"type": "flag_count",
-					"flags": ["lr_bracer_left", "lr_bracer_right"],
+					"flags": [
+						"lr_bracer_left",
+						"lr_bracer_right"
+					],
 					"count": 2,
 					"text": "When he staggers, Pull his bracers off with iron"
 				},
@@ -92,8 +151,12 @@
 		{
 			"id": "finale",
 			"label": "The Final Empire Falls",
+			"interior": "res://src/mission/interiors/throne_room.tscn",
 			"on_enter": [
-				{"action": "start_cutscene", "cutscene_id": "lord_ruler_falls"}
+				{
+					"action": "start_cutscene",
+					"cutscene_id": "lord_ruler_falls"
+				}
 			],
 			"objectives": [
 				{
@@ -102,8 +165,14 @@
 					"cutscene_id": "lord_ruler_falls",
 					"text": "...",
 					"on_complete": [
-						{"action": "set_flag", "flag": "lord_ruler_fallen", "value": true},
-						{"action": "roll_credits"}
+						{
+							"action": "set_flag",
+							"flag": "lord_ruler_fallen",
+							"value": true
+						},
+						{
+							"action": "roll_credits"
+						}
 					]
 				}
 			]

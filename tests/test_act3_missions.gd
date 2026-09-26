@@ -130,6 +130,8 @@ func test_act3_json_is_valid_and_references_resolve() -> void:
 		assert_true(m.journal.length() > 40, "%s needs a journal entry" % id)
 		var seen_ids := {}
 		for stage: Dictionary in m.stages:
+			if stage.has("interior"):
+				assert_true(ResourceLoader.exists(String(stage["interior"])), "%s: stage interior %s missing" % [id, stage["interior"]])
 			for action: Dictionary in stage.get("on_enter", []):
 				_check_action(id, action)
 			for obj: Dictionary in stage.get("objectives", []):
@@ -167,11 +169,13 @@ func test_act3_markers_exist_in_their_scenes() -> void:
 		var m := story.get_mission(id)
 		var scenes: Array[String] = []
 		for stage: Dictionary in m.stages:
+			if stage.has("interior") and not scenes.has(String(stage["interior"])):
+				scenes.append(String(stage["interior"]))
 			var actions: Array = stage.get("on_enter", []).duplicate()
 			for obj: Dictionary in stage.get("objectives", []):
 				actions.append_array(obj.get("on_complete", []))
 			for action: Dictionary in actions:
-				if String(action.get("action", "")) in ["enter_interior", "switch_interior"]:
+				if String(action.get("action", "")) in ["enter_interior", "switch_interior"] and not scenes.has(String(action["scene"])):
 					scenes.append(String(action["scene"]))
 		var ids := {}
 		var roots: Array[Node] = []

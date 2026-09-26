@@ -3,17 +3,27 @@
 	"title": "Fountain Square",
 	"act": "3",
 	"chapter": "The Executions",
-	"prerequisites": ["the_army_in_the_caves"],
+	"prerequisites": [
+		"the_army_in_the_caves"
+	],
 	"journal": "The Lord Ruler executed the captured rebels in Fountain Square, in front of half the city. Kelsier went onto the platform alone. He fought an Inquisitor, and the Lord Ruler struck him down while his back was turned. He died smiling at the crowd. I was close enough to see it and not close enough to matter.",
-	"rewards": {"unlocks": []},
+	"rewards": {
+		"unlocks": []
+	},
 	"fail_conditions": [],
 	"stages": [
 		{
 			"id": "the_crowd",
 			"label": "The Executions",
 			"on_enter": [
-				{"action": "enter_interior", "scene": "res://src/mission/interiors/fountain_square.tscn"},
-				{"action": "start_dialogue", "dialogue_id": "fountain_arrival"}
+				{
+					"action": "enter_interior",
+					"scene": "res://src/mission/interiors/fountain_square.tscn"
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "fountain_arrival"
+				}
 			],
 			"objectives": [
 				{
@@ -35,8 +45,12 @@
 		{
 			"id": "the_last_stand",
 			"label": "The Survivor's Stand",
+			"interior": "res://src/mission/interiors/fountain_square.tscn",
 			"on_enter": [
-				{"action": "start_cutscene", "cutscene_id": "kelsier_last_stand"}
+				{
+					"action": "start_cutscene",
+					"cutscene_id": "kelsier_last_stand"
+				}
 			],
 			"objectives": [
 				{
@@ -45,7 +59,11 @@
 					"cutscene_id": "kelsier_last_stand",
 					"text": "Watch",
 					"on_complete": [
-						{"action": "set_flag", "flag": "kelsier_fallen", "value": true}
+						{
+							"action": "set_flag",
+							"flag": "kelsier_fallen",
+							"value": true
+						}
 					]
 				}
 			]
@@ -53,9 +71,17 @@
 		{
 			"id": "the_mists_fall",
 			"label": "Get Out",
+			"interior": "res://src/mission/interiors/fountain_square.tscn",
 			"on_enter": [
-				{"action": "call_group", "group": "fountain_square", "method": "unleash"},
-				{"action": "start_dialogue", "dialogue_id": "vin_grief"}
+				{
+					"action": "call_group",
+					"group": "fountain_square",
+					"method": "unleash"
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "vin_grief"
+				}
 			],
 			"objectives": [
 				{
@@ -76,8 +102,12 @@
 		{
 			"id": "the_way_home",
 			"label": "The Way Home",
+			"interior": "res://src/mission/interiors/fountain_square.tscn",
 			"on_enter": [
-				{"action": "start_dialogue", "dialogue_id": "fountain_escape"}
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "fountain_escape"
+				}
 			],
 			"objectives": [
 				{
@@ -86,8 +116,12 @@
 					"dialogue_id": "fountain_escape",
 					"text": "Follow Dockson",
 					"on_complete": [
-						{"action": "exit_interior"},
-						{"action": "mission_complete"}
+						{
+							"action": "exit_interior"
+						},
+						{
+							"action": "mission_complete"
+						}
 					]
 				}
 			]

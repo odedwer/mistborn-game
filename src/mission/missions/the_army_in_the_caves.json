@@ -66,6 +66,7 @@
 		{
 			"id": "the_verdict",
 			"label": "An Honest Answer",
+			"interior": "res://src/mission/interiors/rebel_caves.tscn",
 			"objectives": [
 				{
 					"id": "caves_talk_kelsier",
@@ -78,6 +79,7 @@
 		{
 			"id": "the_march",
 			"label": "Yeden Marches",
+			"interior": "res://src/mission/interiors/rebel_caves.tscn",
 			"on_enter": [
 				{
 					"action": "hint",
@@ -113,6 +115,7 @@
 		{
 			"id": "the_rout",
 			"label": "The Rout",
+			"interior": "res://src/mission/interiors/battlefield.tscn",
 			"on_enter": [
 				{
 					"action": "start_dialogue",
@@ -159,6 +162,7 @@
 		{
 			"id": "the_reckoning",
 			"label": "The Cost",
+			"interior": "res://src/mission/interiors/battlefield.tscn",
 			"on_enter": [
 				{
 					"action": "start_dialogue",

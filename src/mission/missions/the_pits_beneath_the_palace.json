@@ -3,18 +3,31 @@
 	"title": "The Pits Beneath the Palace",
 	"act": "3",
 	"chapter": "Below Kredik Shaw",
-	"prerequisites": ["into_kredik_shaw"],
+	"prerequisites": [
+		"into_kredik_shaw"
+	],
 	"journal": "I woke in a cell under the palace with nothing left to burn. Sazed came for me, spending strength he'd stored for years, and Elend was in the next cell, having knocked on the front gate like a fool. I scraped together the vials the crew had smuggled in and climbed out. The skaa are gathering outside the throne hall.",
-	"rewards": {"unlocks": []},
+	"rewards": {
+		"unlocks": []
+	},
 	"fail_conditions": [],
 	"stages": [
 		{
 			"id": "the_cell",
 			"label": "Nothing to Burn",
 			"on_enter": [
-				{"action": "switch_interior", "scene": "res://src/mission/interiors/palace_pits.tscn"},
-				{"action": "drain_metals", "metals": []},
-				{"action": "start_dialogue", "dialogue_id": "pits_wake"}
+				{
+					"action": "switch_interior",
+					"scene": "res://src/mission/interiors/palace_pits.tscn"
+				},
+				{
+					"action": "drain_metals",
+					"metals": []
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "pits_wake"
+				}
 			],
 			"objectives": [
 				{
@@ -23,7 +36,10 @@
 					"dialogue_id": "pits_wake",
 					"text": "Get your bearings",
 					"on_complete": [
-						{"action": "start_dialogue", "dialogue_id": "sazed_rescue"}
+						{
+							"action": "start_dialogue",
+							"dialogue_id": "sazed_rescue"
+						}
 					]
 				},
 				{
@@ -32,7 +48,11 @@
 					"dialogue_id": "sazed_rescue",
 					"text": "Listen to Sazed",
 					"on_complete": [
-						{"action": "call_group", "group": "palace_pits", "method": "open_cell"}
+						{
+							"action": "call_group",
+							"group": "palace_pits",
+							"method": "open_cell"
+						}
 					]
 				},
 				{
@@ -47,8 +67,13 @@
 		{
 			"id": "the_vials",
 			"label": "Scraping Together Metal",
+			"interior": "res://src/mission/interiors/palace_pits.tscn",
 			"on_enter": [
-				{"action": "hint", "text": "The crew's bribed jailer left vials in the empty cells. Three should be enough to climb out.", "duration": 4.0}
+				{
+					"action": "hint",
+					"text": "The crew's bribed jailer left vials in the empty cells. Three should be enough to climb out.",
+					"duration": 4.0
+				}
 			],
 			"objectives": [
 				{
@@ -80,6 +105,7 @@
 		{
 			"id": "the_shaft",
 			"label": "The Old Shaft",
+			"interior": "res://src/mission/interiors/palace_pits.tscn",
 			"objectives": [
 				{
 					"id": "pits_reach_shaft",
@@ -100,8 +126,12 @@
 		{
 			"id": "the_crowd_gathers",
 			"label": "Above",
+			"interior": "res://src/mission/interiors/palace_pits.tscn",
 			"on_enter": [
-				{"action": "start_dialogue", "dialogue_id": "pits_climb"}
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "pits_climb"
+				}
 			],
 			"objectives": [
 				{
@@ -110,7 +140,9 @@
 					"dialogue_id": "pits_climb",
 					"text": "Hear the news from the city",
 					"on_complete": [
-						{"action": "mission_complete"}
+						{
+							"action": "mission_complete"
+						}
 					]
 				}
 			]

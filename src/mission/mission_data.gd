@@ -75,6 +75,10 @@ extends RefCounted
 ## tops reserves up) and `roll_credits` (the finale: credits, then post-game
 ## free roam).
 ##
+## A stage may name its mission space with `"interior"` (a scene path): the
+## director switches there on activation if the player isn't already inside
+## it, so a save resumed mid-mission lands in the right place.
+##
 ## `journal` (Act III on, optional): a first-person summary shown in the pause
 ## menu's journal once the mission is complete.
 ##

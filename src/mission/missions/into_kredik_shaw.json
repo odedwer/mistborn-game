@@ -3,17 +3,27 @@
 	"title": "Into Kredik Shaw",
 	"act": "3",
 	"chapter": "The Palace of Spires",
-	"prerequisites": ["the_survivors_legacy"],
+	"prerequisites": [
+		"the_survivors_legacy"
+	],
 	"journal": "I went into Kredik Shaw alone. I crossed the Hall of Spires over the Inquisitors' heads and reached a round chamber where one of them was waiting, hunting me by my own metals. Then there were four of them, and him. I burned the eleventh metal and saw someone else standing in his place for a moment. Then they took me.",
-	"rewards": {"unlocks": []},
+	"rewards": {
+		"unlocks": []
+	},
 	"fail_conditions": [],
 	"stages": [
 		{
 			"id": "the_court",
 			"label": "The Spire Court",
 			"on_enter": [
-				{"action": "enter_interior", "scene": "res://src/mission/interiors/kredik_shaw.tscn"},
-				{"action": "start_dialogue", "dialogue_id": "ks_approach"}
+				{
+					"action": "enter_interior",
+					"scene": "res://src/mission/interiors/kredik_shaw.tscn"
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "ks_approach"
+				}
 			],
 			"objectives": [
 				{
@@ -28,8 +38,12 @@
 		{
 			"id": "the_hall",
 			"label": "The Hall of Spires",
+			"interior": "res://src/mission/interiors/kredik_shaw.tscn",
 			"on_enter": [
-				{"action": "start_dialogue", "dialogue_id": "ks_hall_warning"}
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "ks_hall_warning"
+				}
 			],
 			"objectives": [
 				{
@@ -51,6 +65,7 @@
 		{
 			"id": "the_gazes",
 			"label": "The Hall of Gazes",
+			"interior": "res://src/mission/interiors/kredik_shaw.tscn",
 			"objectives": [
 				{
 					"id": "ks_enter_gazes",
@@ -59,8 +74,15 @@
 					"marker_id": "ks_gazes",
 					"text": "Enter the round chamber beyond",
 					"on_complete": [
-						{"action": "call_group", "group": "kredik_shaw", "method": "begin_duel"},
-						{"action": "start_dialogue", "dialogue_id": "ks_duel_taunt"}
+						{
+							"action": "call_group",
+							"group": "kredik_shaw",
+							"method": "begin_duel"
+						},
+						{
+							"action": "start_dialogue",
+							"dialogue_id": "ks_duel_taunt"
+						}
 					]
 				},
 				{
@@ -74,8 +96,12 @@
 		{
 			"id": "captured",
 			"label": "Taken",
+			"interior": "res://src/mission/interiors/kredik_shaw.tscn",
 			"on_enter": [
-				{"action": "start_cutscene", "cutscene_id": "vin_captured"}
+				{
+					"action": "start_cutscene",
+					"cutscene_id": "vin_captured"
+				}
 			],
 			"objectives": [
 				{
@@ -84,10 +110,22 @@
 					"cutscene_id": "vin_captured",
 					"text": "...",
 					"on_complete": [
-						{"action": "set_flag", "flag": "vin_captured", "value": true},
-						{"action": "drain_metals", "metals": []},
-						{"action": "switch_interior", "scene": "res://src/mission/interiors/palace_pits.tscn"},
-						{"action": "mission_complete"}
+						{
+							"action": "set_flag",
+							"flag": "vin_captured",
+							"value": true
+						},
+						{
+							"action": "drain_metals",
+							"metals": []
+						},
+						{
+							"action": "switch_interior",
+							"scene": "res://src/mission/interiors/palace_pits.tscn"
+						},
+						{
+							"action": "mission_complete"
+						}
 					]
 				}
 			]

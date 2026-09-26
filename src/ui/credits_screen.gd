@@ -132,7 +132,6 @@ func play() -> void:
 		get_tree().paused = true
 		var vp := get_viewport().get_visible_rect().size
 		_scroll.position = Vector2(0, vp.y)
-		_scroll.size.x = vp.x
 
 
 func _process(delta: float) -> void:

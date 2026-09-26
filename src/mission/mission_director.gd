@@ -168,6 +168,7 @@ func _activate_stage(index: int) -> void:
 		return
 	var stage: Dictionary = mission.stages[index]
 	stage_advanced.emit(index, stage.get("label", ""))
+	_ensure_stage_interior(stage)
 	# Stage-level setup actions (locking/unlocking metals, starting a cutscene
 	# or dialogue) run once, before the stage's own objectives activate.
 	for action: Dictionary in stage.get("on_enter", []):
@@ -192,6 +193,24 @@ func _activate_stage(index: int) -> void:
 			_activate_objective(obj)
 	else:
 		_activate_next_pending()
+
+
+## Optional stage key `"interior"` (Act III): the mission space the stage
+## takes place in. When a save resumes mid-mission, the stage that would
+## normally have been entered by an earlier objective's `switch_interior`
+## still puts the player in the right place. Skipped when the stage's own
+## `on_enter` handles the transition, or one is already under way.
+func _ensure_stage_interior(stage: Dictionary) -> void:
+	var path := String(stage.get("interior", ""))
+	if path == "" or SceneTransition.busy:
+		return
+	for action: Dictionary in stage.get("on_enter", []):
+		if String(action.get("action", "")) in ["enter_interior", "switch_interior", "exit_interior"]:
+			return
+	var current: Node = SceneTransition.current_interior()
+	if current != null and current.scene_file_path == path:
+		return
+	SceneTransition.switch_interior(path)
 
 
 ## Activates the next queued objective of a sequential stage.
