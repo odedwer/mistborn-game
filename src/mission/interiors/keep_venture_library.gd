@@ -123,7 +123,9 @@ func _build_furniture() -> void:
 
 
 func _build_lighting() -> void:
-	InteriorKit.enclosed_environment(self, Color(0.17, 0.14, 0.13), 1.2, Color(0.09, 0.07, 0.06), 0.012)
+	# A touch warmer/brighter than the default enclosed environment so the
+	# shelves and gallery read at a distance, and Elend's desk stays legible.
+	InteriorKit.enclosed_environment(self, Color(0.22, 0.18, 0.15), 1.35, Color(0.09, 0.07, 0.06), 0.012)
 	for p: Vector3 in [Vector3(-6, 3.2, 12), Vector3(6, 3.2, 12), Vector3(0, 3.2, -8), Vector3(-12, GALLERY_Y + 2.5, -10), Vector3(12, GALLERY_Y + 2.5, 8)]:
 		var l := InteriorKit.light(self, p, Color(1.0, 0.66, 0.38), 1.0, 10.0)
 		l.add_to_group(&"lantern")

@@ -110,32 +110,57 @@ func _build_hall() -> void:
 			add_child(pillar)
 
 
-## Tall emissive panels on the north wall (opposite the entrance), standing
-## in for stained glass.
+## Tall leaded stained-glass windows on the north wall (opposite the
+## entrance): a procedural shader gives each one a leaded pane lattice and an
+## emissive gradient, and a coloured SpotLight3D behind each casts its light
+## down through the glass onto the dance floor as a tinted shaft.
+const WINDOW_TINTS := [Color(0.7, 0.2, 0.25), Color(0.2, 0.4, 0.7), Color(0.8, 0.65, 0.2), Color(0.25, 0.55, 0.35)]
+
 func _build_stained_glass() -> void:
-	var colors := [Color(0.7, 0.2, 0.25), Color(0.2, 0.4, 0.7), Color(0.8, 0.65, 0.2), Color(0.25, 0.55, 0.35)]
 	var half_x := HALL_SIZE.x * 0.5
-	for i in colors.size():
+	var shader := load("res://assets/shaders/stained_glass.gdshader") as Shader
+	for i in WINDOW_TINTS.size():
+		var tint: Color = WINDOW_TINTS[i]
+		var x := -half_x + 4.0 + float(i) * 6.0
 		var panel := MeshInstance3D.new()
 		panel.mesh = PlaneMesh.new()
 		(panel.mesh as PlaneMesh).size = Vector2(3.0, 5.0)
 		(panel.mesh as PlaneMesh).orientation = PlaneMesh.FACE_Z
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = colors[i]
-		mat.emission_enabled = true
-		mat.emission = colors[i]
-		mat.emission_energy_multiplier = 1.6
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		# Rotate the fixed 4-colour palette per window so each one reads
+		# distinctly while sharing the same leaded lattice look.
+		var palette := [WINDOW_TINTS[i], WINDOW_TINTS[(i + 1) % 4], WINDOW_TINTS[(i + 2) % 4], WINDOW_TINTS[(i + 3) % 4]]
+		mat.set_shader_parameter("color_a", palette[0])
+		mat.set_shader_parameter("color_b", palette[1])
+		mat.set_shader_parameter("color_c", palette[2])
+		mat.set_shader_parameter("color_d", palette[3])
 		panel.material_override = mat
-		panel.position = Vector3(-half_x + 4.0 + float(i) * 6.0, 4.5, -HALL_SIZE.z * 0.5 + 0.35)
+		panel.position = Vector3(x, 4.5, -HALL_SIZE.z * 0.5 + 0.35)
 		add_child(panel)
+
+		# A coloured light shaft: a narrow spotlight standing in for the
+		# window, aimed down onto the dance floor to project a tinted pool
+		# of light where the glass would let moon/lantern light through.
+		var shaft := SpotLight3D.new()
+		shaft.light_color = tint.lightened(0.2)
+		shaft.light_energy = 1.1
+		shaft.spot_range = 9.0
+		shaft.spot_angle = 18.0
+		shaft.spot_angle_attenuation = 1.6
+		shaft.light_specular = 0.1
+		shaft.position = Vector3(x, HALL_SIZE.y - 0.3, -HALL_SIZE.z * 0.5 + 1.2)
+		shaft.rotation_degrees = Vector3(-62.0, 0.0, 0.0)
+		add_child(shaft)
 
 
 ## Metal chandeliers Vin must not Push/Pull while disguised (suspicion, not a
 ## hard lock — see `SuspicionMeter`).
 func _build_chandeliers() -> void:
 	var metallic_script := load("res://src/allomancy/metallic.gd")
-	for x: float in [-6.0, 0.0, 6.0]:
+	var xs: Array[float] = [-6.0, 0.0, 6.0]
+	for i in xs.size():
+		var x: float = xs[i]
 		var chandelier := Node3D.new()
 		chandelier.position = Vector3(x, HALL_SIZE.y - 1.2, 0)
 		var mesh := MeshInstance3D.new()
@@ -148,10 +173,32 @@ func _build_chandeliers() -> void:
 		mat.roughness = 0.3
 		mesh.material_override = mat
 		chandelier.add_child(mesh)
+		# A ring of small candle bulbs around the torus, since a single omni
+		# at the centre reads flat -- these plus the main light give it a
+		# proper "many small flames" glint.
+		for c in 6:
+			var ang := float(c) / 6.0 * TAU
+			var bulb := MeshInstance3D.new()
+			bulb.mesh = SphereMesh.new()
+			(bulb.mesh as SphereMesh).radius = 0.06
+			(bulb.mesh as SphereMesh).height = 0.12
+			var bulb_mat := StandardMaterial3D.new()
+			bulb_mat.albedo_color = Color(1.0, 0.8, 0.5)
+			bulb_mat.emission_enabled = true
+			bulb_mat.emission = Color(1.0, 0.7, 0.35)
+			bulb_mat.emission_energy_multiplier = 1.8
+			bulb.material_override = bulb_mat
+			bulb.position = Vector3(cos(ang) * 0.9, 0.0, sin(ang) * 0.9)
+			chandelier.add_child(bulb)
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.85, 0.6)
 		light.light_energy = 1.3
 		light.omni_range = 8.0
+		# The centre chandelier is close over the dance floor where nobles
+		# gather -- give it the one shadowed light in the room so figures
+		# read with real contact shadows without blowing the light budget.
+		if i == 1:
+			light.shadow_enabled = true
 		chandelier.add_child(light)
 		if metallic_script != null:
 			var metallic := Node3D.new()
@@ -173,37 +220,119 @@ func _build_tables_and_floor() -> void:
 	dance_floor.position = Vector3(0, 0.01, 0)
 	add_child(dance_floor)
 
-	var table_mat := StandardMaterial3D.new()
-	table_mat.albedo_color = Color(0.9, 0.9, 0.88)
-	for pos: Vector3 in [Vector3(-9, 0.5, -6), Vector3(9, 0.5, -6), Vector3(-9, 0.5, 6), Vector3(9, 0.5, 6)]:
+	# Round tables dressed with a tablecloth (a wider, thin cloth disc
+	# draped over the bare wood top) and a pair of lit candlesticks each.
+	var wood_mat := StandardMaterial3D.new()
+	wood_mat.albedo_color = Color(0.28, 0.18, 0.11)
+	wood_mat.roughness = 0.6
+	var cloth_mat := StandardMaterial3D.new()
+	cloth_mat.albedo_color = Color(0.78, 0.72, 0.58)
+	cloth_mat.roughness = 0.85
+	var brass_mat := StandardMaterial3D.new()
+	brass_mat.albedo_color = Color(0.75, 0.62, 0.3)
+	brass_mat.metallic = 0.85
+	brass_mat.roughness = 0.35
+	var wax_mat := StandardMaterial3D.new()
+	wax_mat.albedo_color = Color(0.92, 0.88, 0.75)
+	wax_mat.roughness = 0.5
+	var flame_mat := StandardMaterial3D.new()
+	flame_mat.albedo_color = Color(1.0, 0.8, 0.4)
+	flame_mat.emission_enabled = true
+	flame_mat.emission = Color(1.0, 0.6, 0.2)
+	flame_mat.emission_energy_multiplier = 1.3
+	flame_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+	for pos: Vector3 in [Vector3(-9, 0.4, -6), Vector3(9, 0.4, -6), Vector3(-9, 0.4, 6), Vector3(9, 0.4, 6)]:
 		var table := StaticBody3D.new()
 		var shape := CollisionShape3D.new()
 		var cyl := CylinderShape3D.new()
 		cyl.radius = 1.0
-		cyl.height = 1.0
+		cyl.height = 0.8
 		shape.shape = cyl
 		table.add_child(shape)
-		var mesh := MeshInstance3D.new()
-		mesh.mesh = CylinderMesh.new()
-		(mesh.mesh as CylinderMesh).top_radius = 1.0
-		(mesh.mesh as CylinderMesh).bottom_radius = 1.0
-		(mesh.mesh as CylinderMesh).height = 1.0
-		mesh.material_override = table_mat
-		table.add_child(mesh)
+		var leg := MeshInstance3D.new()
+		leg.mesh = CylinderMesh.new()
+		(leg.mesh as CylinderMesh).top_radius = 0.85
+		(leg.mesh as CylinderMesh).bottom_radius = 0.85
+		(leg.mesh as CylinderMesh).height = 0.8
+		leg.material_override = wood_mat
+		table.add_child(leg)
+		var cloth := MeshInstance3D.new()
+		cloth.mesh = CylinderMesh.new()
+		(cloth.mesh as CylinderMesh).top_radius = 1.15
+		(cloth.mesh as CylinderMesh).bottom_radius = 1.05
+		(cloth.mesh as CylinderMesh).height = 0.18
+		cloth.material_override = cloth_mat
+		cloth.position = Vector3(0, 0.45, 0)
+		table.add_child(cloth)
 		table.position = pos
 		add_child(table)
+
+		for c: float in [-0.55, 0.55]:
+			var candlestick := Node3D.new()
+			candlestick.position = pos + Vector3(c, 0.55, 0.0)
+			var stick := MeshInstance3D.new()
+			stick.mesh = CylinderMesh.new()
+			(stick.mesh as CylinderMesh).top_radius = 0.03
+			(stick.mesh as CylinderMesh).bottom_radius = 0.09
+			(stick.mesh as CylinderMesh).height = 0.22
+			stick.material_override = brass_mat
+			candlestick.add_child(stick)
+			var candle := MeshInstance3D.new()
+			candle.mesh = CylinderMesh.new()
+			(candle.mesh as CylinderMesh).top_radius = 0.025
+			(candle.mesh as CylinderMesh).bottom_radius = 0.03
+			(candle.mesh as CylinderMesh).height = 0.2
+			candle.material_override = wax_mat
+			candle.position = Vector3(0, 0.2, 0)
+			candlestick.add_child(candle)
+			var flame := MeshInstance3D.new()
+			flame.mesh = SphereMesh.new()
+			(flame.mesh as SphereMesh).radius = 0.025
+			(flame.mesh as SphereMesh).height = 0.06
+			flame.material_override = flame_mat
+			flame.position = Vector3(0, 0.32, 0)
+			candlestick.add_child(flame)
+			var candle_light := OmniLight3D.new()
+			candle_light.light_color = Color(1.0, 0.65, 0.3)
+			candle_light.light_energy = 0.3
+			candle_light.omni_range = 1.6
+			candle_light.position = Vector3(0, 0.32, 0)
+			candlestick.add_child(candle_light)
+			add_child(candlestick)
 
 
 func _build_lighting() -> void:
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.05, 0.04, 0.06)
+	e.background_color = Color(0.04, 0.035, 0.05)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.25, 0.22, 0.2)
-	e.ambient_light_energy = 1.4
+	# A warm-leaning ambient (rather than the old flat grey) so the hall
+	# reads opulent under the chandeliers and candlelight, while staying
+	# moody -- the corners fall off into shadow instead of everything being
+	# lit flat.
+	e.ambient_light_color = Color(0.3, 0.24, 0.19)
+	e.ambient_light_energy = 1.1
+	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+	e.tonemap_exposure = 1.15
+	# No glow here: at interior scale even a modest bloom threshold blows
+	# out lit character skin/hair under the fill + ambient + chandeliers, so
+	# rely on the emissive materials themselves (candle flames, chandelier
+	# bulbs, stained glass) to read as bright without any HDR bloom pass.
+	e.glow_enabled = false
 	env.environment = e
 	add_child(env)
+
+	# A soft warm fill light angled down over the dance floor, standing in
+	# for bounced candle/chandelier light so nobles aren't lit from one
+	# harsh point only -- keeps faces readable without extra shadow cost.
+	var fill := DirectionalLight3D.new()
+	fill.light_color = Color(1.0, 0.82, 0.6)
+	fill.light_energy = 0.35
+	fill.shadow_enabled = false
+	fill.rotation_degrees = Vector3(-65.0, 25.0, 0.0)
+	add_child(fill)
 
 
 func _build_nobles() -> void:
