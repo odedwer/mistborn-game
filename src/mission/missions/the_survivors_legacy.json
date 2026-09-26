@@ -1,0 +1,148 @@
+{
+	"id": "the_survivors_legacy",
+	"title": "The Survivor's Legacy",
+	"act": "3",
+	"chapter": "What He Left Behind",
+	"prerequisites": ["fountain_square"],
+	"journal": "The crew didn't scatter. Sazed's translation of the logbook says its author was not the man on the throne, and that the Lord Ruler may be a Feruchemist too. Kelsier left me the eleventh metal and no instructions. In Keep Venture's library I found the pattern: he never takes off his bracers. Elend is staying in Luthadel when his father leaves.",
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_empty_chair",
+			"label": "The Empty Chair",
+			"parallel": true,
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/crew_regroup.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "crew_regroup"}
+			],
+			"objectives": [
+				{
+					"id": "legacy_hear_sazed",
+					"type": "dialogue",
+					"dialogue_id": "sazed_logbook",
+					"text": "Hear what Sazed found in the logbook"
+				},
+				{
+					"id": "legacy_read_logbook",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "regroup_logbook",
+					"interact_kind": "logbook",
+					"text": "Read the logbook's last pages",
+					"on_complete": [
+						{"action": "hint", "text": "The hand is cramped and tired. 'He watches me when he thinks I sleep. He believes I am the wrong man for this. Some nights, so do I.'", "duration": 6.0}
+					]
+				},
+				{
+					"id": "legacy_kelsier_things",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "regroup_kelsier_things",
+					"interact_kind": "eleventh_metal",
+					"text": "Look through what Kelsier left behind",
+					"on_complete": [
+						{"action": "set_flag", "flag": "has_eleventh_metal", "value": true},
+						{"action": "hint", "text": "The bead of the eleventh metal, the one he swore was the Lord Ruler's weakness. It's cold, and it isn't like any metal you know. You pocket it.", "duration": 6.0}
+					]
+				},
+				{
+					"id": "legacy_hear_dockson",
+					"type": "dialogue",
+					"dialogue_id": "dockson_regroup",
+					"text": "Ask Dockson what's left of the plan"
+				}
+			]
+		},
+		{
+			"id": "keep_venture",
+			"label": "Keep Venture's Library",
+			"on_enter": [
+				{"action": "hint", "text": "Sazed has the logbook. For everything else, there's one noble library in the city you can walk into at night.", "duration": 4.0},
+				{"action": "switch_interior", "scene": "res://src/mission/interiors/keep_venture_library.tscn"}
+			],
+			"parallel": true,
+			"objectives": [
+				{
+					"id": "legacy_ascension_text",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "library_ascension_text",
+					"interact_kind": "clue_ascension",
+					"text": "Search the histories for the Ascension",
+					"on_complete": [
+						{"action": "hint", "text": "A thousand-year-old account of the Ascension, mostly propaganda. But one plate shows him at the Well, and even then: a band of metal on each forearm.", "duration": 6.0}
+					]
+				},
+				{
+					"id": "legacy_palace_ledger",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "library_palace_ledger",
+					"interact_kind": "clue_ledger",
+					"text": "Check the builders' ledgers from Kredik Shaw",
+					"on_complete": [
+						{"action": "hint", "text": "Venture masons helped raise the palace. Their ledger lists a throne hall with a gallery open to the city — and a prison cut beneath it, 'for those the Lord Ruler wishes to keep.'", "duration": 6.0}
+					]
+				},
+				{
+					"id": "legacy_faded_margins",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "library_margins",
+					"interact_kind": "clue_margins",
+					"require_metal": 3,
+					"hint_locked": "The ink has faded to nothing. Burn tin to make it out.",
+					"text": "Find the faded annotations on the gallery",
+					"on_complete": [
+						{"action": "set_flag", "flag": "knows_bracers", "value": true},
+						{"action": "hint", "text": "In an old Venture's scrawl: 'Forty years at court and I never once saw him without the bracers. Not bathing, not sleeping. A man keeps close what keeps him alive.'", "duration": 7.0}
+					]
+				},
+				{
+					"id": "legacy_overhear_straff",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "library_study_door",
+					"require_metal": 3,
+					"hint_locked": "Voices behind the study door, too low to follow. Burn tin.",
+					"text": "Listen at the door of Straff Venture's study",
+					"on_complete": [
+						{"action": "hint", "text": "Straff Venture, to his steward: 'The carts leave at the end of the month. My son can stay and play philosopher if he likes. He'll come crawling after us once the fires start.'", "duration": 7.0}
+					]
+				}
+			]
+		},
+		{
+			"id": "elend",
+			"label": "Elend",
+			"objectives": [
+				{
+					"id": "legacy_talk_elend",
+					"type": "dialogue",
+					"dialogue_id": "elend_library",
+					"text": "Talk to Elend at his desk"
+				}
+			]
+		},
+		{
+			"id": "resolve",
+			"label": "A Plan of Her Own",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "library_exit"}
+			],
+			"objectives": [
+				{
+					"id": "legacy_resolve",
+					"type": "dialogue",
+					"dialogue_id": "library_exit",
+					"text": "Decide what comes next",
+					"on_complete": [
+						{"action": "exit_interior"},
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

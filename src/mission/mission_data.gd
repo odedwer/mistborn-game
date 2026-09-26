@@ -50,6 +50,8 @@ extends RefCounted
 ## - `survive` (Act II): complete `duration` seconds after the objective
 ##   activates, purely by elapsed time (used for "survive the Inquisitor's
 ##   first strike").
+## - `cutscene` (Act III): complete when `Events.cutscene_finished` fires for
+##   `cutscene_id` (see `CutsceneSystem`, `res://src/mission/cutscenes/`).
 ## `interact`/`reach_marker`/`escape` also accept an optional `require_metal`
 ## (a `Metal.Type`): the trigger only completes the objective while that
 ## metal is burning (tin to eavesdrop on a rumor), otherwise it shows
@@ -65,6 +67,14 @@ extends RefCounted
 ## (`dialogue_id`), `start_cutscene` (`cutscene_id`), `enter_interior`/
 ## `exit_interior` (`scene`, via `SceneTransition`), `set_flag` (`flag`,
 ## `value`).
+## Act III actions: `switch_interior` (`scene`: swap one interior for another
+## under a single fade), `call_group` (`group`, `method`, optional `args`:
+## lets a scene stage its own scripted beats, e.g. a boss phase change),
+## `drain_metals` (`metals`, empty = all: empties the player's reserves and
+## vials) and `roll_credits` (the finale: credits, then post-game free roam).
+##
+## `journal` (Act III on, optional): a first-person summary shown in the pause
+## menu's journal once the mission is complete.
 ##
 ## `fail_conditions` (Act II on): a stage may carry `"fail_conditions"`, a
 ## list of dictionaries checked whenever `Events.alert_level_changed` fires
@@ -85,6 +95,7 @@ var prerequisites: Array[StringName] = []
 var stages: Array = []          # Array[Dictionary]
 var fail_conditions: Array = [] # Array[Dictionary]
 var rewards: Dictionary = {}
+var journal: String = ""
 
 
 static func from_dict(d: Dictionary) -> MissionData:
@@ -98,6 +109,7 @@ static func from_dict(d: Dictionary) -> MissionData:
 	m.stages = d.get("stages", [])
 	m.fail_conditions = d.get("fail_conditions", [])
 	m.rewards = d.get("rewards", {})
+	m.journal = d.get("journal", "")
 	return m
 
 

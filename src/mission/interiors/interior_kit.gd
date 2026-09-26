@@ -147,6 +147,9 @@ static func brazier(parent: Node, pos: Vector3, energy := 2.2, rng := 10.0) -> v
 	box(parent, Vector3(0.9, 0.8, 0.9), pos + Vector3(0, 0.4, 0), mat(Color(0.18, 0.16, 0.15), 0.6, 0.5))
 	box(parent, Vector3(0.7, 0.12, 0.7), pos + Vector3(0, 0.86, 0), mat(Color(1.0, 0.45, 0.15), 0.0, 1.0, Color(1.0, 0.4, 0.1), 3.0), 0.0, false)
 	var l := light(parent, pos + Vector3(0, 1.6, 0), Color(1.0, 0.55, 0.25), energy, rng)
+	# Under a MissionBackdrop's volumetric fog a full-strength fire light
+	# blooms into a white orb; keep its fog contribution subtle.
+	l.light_volumetric_fog_energy = 0.15
 	l.add_to_group(&"lantern")
 
 

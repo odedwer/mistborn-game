@@ -1,0 +1,96 @@
+{
+	"id": "fountain_square",
+	"title": "Fountain Square",
+	"act": "3",
+	"chapter": "The Executions",
+	"prerequisites": ["the_army_in_the_caves"],
+	"journal": "The Lord Ruler executed the captured rebels in Fountain Square, in front of half the city. Kelsier went onto the platform alone. He fought an Inquisitor, and the Lord Ruler struck him down while his back was turned. He died smiling at the crowd. I was close enough to see it and not close enough to matter.",
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_crowd",
+			"label": "The Executions",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/fountain_square.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "fountain_arrival"}
+			],
+			"objectives": [
+				{
+					"id": "fountain_reach_crowd",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "fountain_crowd_edge",
+					"text": "Slip into the crowd"
+				},
+				{
+					"id": "fountain_reach_front",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "fountain_front",
+					"text": "Work your way to the front, past the guards"
+				}
+			]
+		},
+		{
+			"id": "the_last_stand",
+			"label": "The Survivor's Stand",
+			"on_enter": [
+				{"action": "start_cutscene", "cutscene_id": "kelsier_last_stand"}
+			],
+			"objectives": [
+				{
+					"id": "fountain_watch",
+					"type": "cutscene",
+					"cutscene_id": "kelsier_last_stand",
+					"text": "Watch",
+					"on_complete": [
+						{"action": "set_flag", "flag": "kelsier_fallen", "value": true}
+					]
+				}
+			]
+		},
+		{
+			"id": "the_mists_fall",
+			"label": "Get Out",
+			"on_enter": [
+				{"action": "call_group", "group": "fountain_square", "method": "unleash"},
+				{"action": "start_dialogue", "dialogue_id": "vin_grief"}
+			],
+			"objectives": [
+				{
+					"id": "fountain_hold_off",
+					"type": "survive",
+					"duration": 15.0,
+					"text": "Keep the Inquisitors busy while the crowd scatters"
+				},
+				{
+					"id": "fountain_escape_alley",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "fountain_escape",
+					"text": "Escape through the west alley"
+				}
+			]
+		},
+		{
+			"id": "the_way_home",
+			"label": "The Way Home",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "fountain_escape"}
+			],
+			"objectives": [
+				{
+					"id": "fountain_hear_dockson",
+					"type": "dialogue",
+					"dialogue_id": "fountain_escape",
+					"text": "Follow Dockson",
+					"on_complete": [
+						{"action": "exit_interior"},
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

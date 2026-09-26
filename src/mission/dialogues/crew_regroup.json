@@ -1,0 +1,25 @@
+{
+  "id": "crew_regroup",
+  "lines": [
+    {
+      "speaker": "Dockson",
+      "color": "#6b7280",
+      "text": "Sit down, all of you. Nobody's leaving this room until we've decided whether there's still a job."
+    },
+    {
+      "speaker": "Breeze",
+      "color": "#90743a",
+      "text": "There's no job, Dox. The job was Kelsier. The rest of us were very expensive scenery."
+    },
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "The skaa in the square didn't run, Breeze. Not at first. They stood there and looked at him. That's new."
+    },
+    {
+      "speaker": "Dockson",
+      "color": "#6b7280",
+      "text": "Sazed's been at the logbook since sunrise. Vin — go and hear him out. Then we talk about what's left."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "fountain_escape",
+  "lines": [
+    {
+      "speaker": "Dockson",
+      "color": "#6b7280",
+      "text": "Here — through here. Don't stop until the second canal."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "He knew. He knew he wasn't walking off that platform."
+    },
+    {
+      "speaker": "Dockson",
+      "color": "#6b7280",
+      "text": "He always had one more plan than he told us. Tonight's not the night to work out what it was. Tonight we get home."
+    }
+  ]
+}

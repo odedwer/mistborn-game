@@ -1,0 +1,69 @@
+{
+  "id": "elend_library",
+  "lines": [
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "Valette? It's past midnight. If my father's steward catches you in here we'll both be in a great deal of trouble — him mostly with me, for once."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "I needed somewhere quiet. And you always seem to know where the old books are.",
+      "choices": [
+        {
+          "text": "Tell him the truth: you're skaa, and you were part of Kelsier's crew.",
+          "set_flag": "elend_knows_truth",
+          "goto": 2
+        },
+        {
+          "text": "Keep the mask: you're only a noblewoman shaken by the executions.",
+          "set_flag": "elend_trusts_valette",
+          "goto": 5
+        }
+      ]
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "Skaa. And a thief's apprentice. I... should be angry. I think I'm mostly embarrassed that I didn't see it. You never did hold a teacup correctly.",
+      "choices": [
+        {
+          "text": "Continue",
+          "goto": 3
+        }
+      ]
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "My father is pulling House Venture out of the city before the season ends. He thinks Luthadel is about to burn, and he'd like to be somewhere comfortable while it does."
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "I'm not going with him. If this city is going to change, someone with a noble name ought to be standing in it, arguing that the skaa deserve a say in what comes next. Even if nobody listens yet.",
+      "choices": [
+        {
+          "text": "Continue",
+          "goto": 7
+        }
+      ]
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "The executions. Yes. Half the court went to watch as if it were a play. I went because I thought someone should look at it honestly."
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "My father is taking House Venture out of the city. I've decided to stay. Someone in this family should be here when the city finally asks its questions out loud."
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "If you're hunting for something in these shelves — and you are, you have the look — try the gallery. My grandfather annotated everything he read, usually rudely, and his ink has faded almost to nothing."
+    }
+  ]
+}

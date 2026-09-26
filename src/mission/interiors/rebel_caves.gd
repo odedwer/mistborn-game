@@ -51,7 +51,7 @@ func _build_cavern() -> void:
 	var x := -hx
 	while x <= hx:
 		for side: float in [-1.0, 1.0]:
-			if side > 0.0 and absf(x) < 4.0:
+			if side > 0.0 and absf(x) < 7.5:
 				continue  # tunnel mouth
 			var h := HALL.y + _rng.randf_range(-1.0, 2.0)
 			var d := _rng.randf_range(2.5, 5.0)

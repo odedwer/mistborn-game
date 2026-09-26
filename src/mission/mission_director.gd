@@ -64,6 +64,7 @@ func _ready() -> void:
 	Events.actor_died.connect(_on_actor_died)
 	Events.dialogue_finished.connect(_on_dialogue_finished)
 	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
+	Events.cutscene_finished.connect(_on_cutscene_finished)
 	Events.alert_level_changed.connect(_on_alert_level_changed)
 	Events.interior_entered.connect(_on_interior_entered)
 	Events.interior_exited.connect(func() -> void: _interior_respawn = Vector3.INF)
@@ -213,7 +214,7 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target":
+		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target", "cutscene":
 			pass # driven by Events, see the handlers below.
 		"crowd_mood", "survive":
 			pass # polled in _process, see above.
@@ -529,6 +530,15 @@ func _on_dialogue_finished(id: StringName) -> void:
 	for oid in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[oid]
 		if obj.get("type", "") == "dialogue" and StringName(obj.get("dialogue_id", "")) == id:
+			complete_objective(obj)
+
+
+## `cutscene` objective (Act III): complete when `Events.cutscene_finished`
+## fires for `cutscene_id` (usually started by the stage's `on_enter`).
+func _on_cutscene_finished(id: StringName) -> void:
+	for oid in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[oid]
+		if obj.get("type", "") == "cutscene" and StringName(obj.get("cutscene_id", "")) == id:
 			complete_objective(obj)
 
 
