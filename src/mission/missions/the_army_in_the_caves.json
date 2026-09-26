@@ -1,0 +1,190 @@
+{
+	"id": "the_army_in_the_caves",
+	"title": "The Army in the Caves",
+	"act": "3",
+	"chapter": "Yeden's Folly",
+	"prerequisites": [
+		"the_inquisitors_shadow"
+	],
+	"journal": "Kelsier finally showed me the rebellion's army, drilling in caverns outside the city. They were brave and nowhere near ready. Yeden didn't wait: he marched them against the garrison on the south plain, and they were broken in a single night. I dragged out who I could. Kelsier blames himself.",
+	"rewards": {
+		"unlocks": []
+	},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_caves",
+			"label": "The Hidden Army",
+			"on_enter": [
+				{
+					"action": "enter_interior",
+					"scene": "res://src/mission/interiors/rebel_caves.tscn"
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "caves_arrival"
+				}
+			],
+			"objectives": [
+				{
+					"id": "caves_walk_yard",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "caves_training_ground",
+					"text": "Walk the training ground"
+				},
+				{
+					"id": "caves_talk_ham",
+					"type": "dialogue",
+					"dialogue_id": "ham_training",
+					"text": "Hear Ham's report on the recruits"
+				},
+				{
+					"id": "caves_inspect_armory",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "caves_armory",
+					"interact_kind": "armory",
+					"text": "Inspect the armory along the west wall",
+					"on_complete": [
+						{
+							"action": "hint",
+							"text": "Scavenged spears, a few good swords, and more clubs than either. Enough to arm a crowd. Not enough to arm an army.",
+							"duration": 5.0
+						}
+					]
+				},
+				{
+					"id": "caves_talk_yeden",
+					"type": "dialogue",
+					"dialogue_id": "yeden_impatience",
+					"text": "Speak with Yeden at the command tent"
+				}
+			],
+			"parallel": true
+		},
+		{
+			"id": "the_verdict",
+			"label": "An Honest Answer",
+			"interior": "res://src/mission/interiors/rebel_caves.tscn",
+			"objectives": [
+				{
+					"id": "caves_talk_kelsier",
+					"type": "dialogue",
+					"dialogue_id": "kelsier_caves",
+					"text": "Give Kelsier your honest verdict"
+				}
+			]
+		},
+		{
+			"id": "the_march",
+			"label": "Yeden Marches",
+			"interior": "res://src/mission/interiors/rebel_caves.tscn",
+			"on_enter": [
+				{
+					"action": "hint",
+					"text": "Some weeks later...",
+					"duration": 3.0
+				},
+				{
+					"action": "call_group",
+					"group": "rebel_caves",
+					"method": "march_out"
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "army_marched"
+				}
+			],
+			"objectives": [
+				{
+					"id": "caves_run_to_tunnel",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "caves_exit_tunnel",
+					"text": "Get to the south plain before it's too late",
+					"on_complete": [
+						{
+							"action": "switch_interior",
+							"scene": "res://src/mission/interiors/battlefield.tscn"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "the_rout",
+			"label": "The Rout",
+			"interior": "res://src/mission/interiors/battlefield.tscn",
+			"on_enter": [
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "battlefield_arrival"
+				}
+			],
+			"objectives": [
+				{
+					"id": "battle_reach_front",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "battle_front",
+					"text": "Reach what's left of the rebel line"
+				},
+				{
+					"id": "battle_rescue_survivors",
+					"type": "flag_count",
+					"flags": [
+						"battle_survivor_1",
+						"battle_survivor_2",
+						"battle_survivor_3",
+						"battle_survivor_4",
+						"battle_survivor_5"
+					],
+					"count": 3,
+					"text": "Get at least three of the wounded on their feet"
+				},
+				{
+					"id": "battle_fall_back",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "battle_retreat",
+					"text": "Fall back to the ridge ahead of the garrison",
+					"on_complete": [
+						{
+							"action": "call_group",
+							"group": "battlefield",
+							"method": "halt_garrison"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "the_reckoning",
+			"label": "The Cost",
+			"interior": "res://src/mission/interiors/battlefield.tscn",
+			"on_enter": [
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "kelsier_aftermath"
+				}
+			],
+			"objectives": [
+				{
+					"id": "battle_hear_kelsier",
+					"type": "dialogue",
+					"dialogue_id": "kelsier_aftermath",
+					"text": "Stand with the survivors",
+					"on_complete": [
+						{
+							"action": "exit_interior"
+						},
+						{
+							"action": "mission_complete"
+						}
+					]
+				}
+			]
+		}
+	]
+}

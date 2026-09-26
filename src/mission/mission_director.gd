@@ -29,6 +29,16 @@ var _active_objectives: Dictionary = {}
 ## Remaining objectives of a sequential stage, activated one at a time.
 var _pending_objectives: Array[Dictionary] = []
 var _triggers: Array[Area3D] = []
+## Objectives whose marker could not be found yet (typically because the
+## stage's `enter_interior`/`switch_interior` is still fading in and the
+## scene holding the marker isn't instantiated). Retried from `_process` and
+## on `Events.interior_entered` until the marker appears.
+var _unresolved_triggers: Array[Dictionary] = []
+var _retry_timer := 0.0
+## Inside an interior, deaths respawn here rather than at the open-world
+## checkpoint: the interior's spawn marker, then the latest `reach_marker`/
+## `escape` objective the player reached in it (a mid-scene checkpoint).
+var _interior_respawn: Vector3 = Vector3.INF
 var _hinted_metal_use := false
 ## `chain_pushes` objective id -> {last: float (ticks sec), count: int}.
 var _chain_state: Dictionary = {}
@@ -54,7 +64,10 @@ func _ready() -> void:
 	Events.actor_died.connect(_on_actor_died)
 	Events.dialogue_finished.connect(_on_dialogue_finished)
 	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
+	Events.cutscene_finished.connect(_on_cutscene_finished)
 	Events.alert_level_changed.connect(_on_alert_level_changed)
+	Events.interior_entered.connect(_on_interior_entered)
+	Events.interior_exited.connect(func() -> void: _interior_respawn = Vector3.INF)
 	_build_fade_layer()
 	_start_or_resume()
 
@@ -63,6 +76,11 @@ func _ready() -> void:
 ## everything else here is event-driven, so this stays a cheap no-op most of
 ## the time.
 func _process(delta: float) -> void:
+	if not _unresolved_triggers.is_empty():
+		_retry_timer -= delta
+		if _retry_timer <= 0.0:
+			_retry_timer = 0.25
+			_retry_unresolved_triggers()
 	if _active_objectives.is_empty():
 		return
 	var player := get_tree().get_first_node_in_group("player")
@@ -85,9 +103,24 @@ func _process(delta: float) -> void:
 
 
 func _start_or_resume() -> void:
+	# Post-game free roam (after "The Lord Ruler" and the credits): no story
+	# mission runs; the open world and every side activity stay available.
+	if GameState.post_game:
+		mission = null
+		return
 	mission = story.get_mission(GameState.mission_id)
+	# A save made on the mission-complete screen still names the mission
+	# just finished: move on to the next one in the chain instead of
+	# replaying it.
+	if mission != null and GameState.completed_missions.has(mission.id):
+		mission = story.next_story_mission(GameState.completed_missions)
+		GameState.mission_stage = 0
+		GameState.last_checkpoint_id = &""
+		if mission == null:
+			GameState.post_game = true
+			return
 	if mission == null:
-		mission = story.next_story_mission(GameState.completed_objectives.map(func(x): return x))
+		mission = story.next_story_mission(GameState.completed_missions)
 	if mission == null and not story.all_missions.is_empty():
 		mission = story.all_missions[0]
 	if mission == null:
@@ -96,6 +129,17 @@ func _start_or_resume() -> void:
 	GameState.mission_id = mission.id
 	stage_index = clampi(GameState.mission_stage, 0, maxi(mission.stages.size() - 1, 0))
 	_activate_stage(stage_index)
+
+
+## Starts the next story mission in place (the mission-complete screen's
+## "Continue" button). Returns false once the story is over (post-game).
+func start_next_mission() -> bool:
+	_clear_triggers()
+	_active_objectives.clear()
+	_pending_objectives.clear()
+	GameState.mission_stage = 0
+	_start_or_resume()
+	return mission != null
 
 
 func _connect_checkpoints() -> void:
@@ -115,6 +159,8 @@ func _on_checkpoint_body_entered(body: Node, area: Area3D) -> void:
 # --- Stage / objective lifecycle --------------------------------------------
 
 func _activate_stage(index: int) -> void:
+	if mission == null:
+		return
 	_clear_triggers()
 	_active_objectives.clear()
 	_survive_start.clear()
@@ -122,6 +168,7 @@ func _activate_stage(index: int) -> void:
 		return
 	var stage: Dictionary = mission.stages[index]
 	stage_advanced.emit(index, stage.get("label", ""))
+	_ensure_stage_interior(stage)
 	# Stage-level setup actions (locking/unlocking metals, starting a cutscene
 	# or dialogue) run once, before the stage's own objectives activate.
 	for action: Dictionary in stage.get("on_enter", []):
@@ -148,6 +195,24 @@ func _activate_stage(index: int) -> void:
 		_activate_next_pending()
 
 
+## Optional stage key `"interior"` (Act III): the mission space the stage
+## takes place in. When a save resumes mid-mission, the stage that would
+## normally have been entered by an earlier objective's `switch_interior`
+## still puts the player in the right place. Skipped when the stage's own
+## `on_enter` handles the transition, or one is already under way.
+func _ensure_stage_interior(stage: Dictionary) -> void:
+	var path := String(stage.get("interior", ""))
+	if path == "" or SceneTransition.busy:
+		return
+	for action: Dictionary in stage.get("on_enter", []):
+		if String(action.get("action", "")) in ["enter_interior", "switch_interior", "exit_interior"]:
+			return
+	var current: Node = SceneTransition.current_interior()
+	if current != null and current.scene_file_path == path:
+		return
+	SceneTransition.switch_interior(path)
+
+
 ## Activates the next queued objective of a sequential stage.
 func _activate_next_pending() -> void:
 	var obj: Dictionary = _pending_objectives.pop_front()
@@ -168,7 +233,7 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target":
+		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target", "cutscene":
 			pass # driven by Events, see the handlers below.
 		"crowd_mood", "survive":
 			pass # polled in _process, see above.
@@ -179,6 +244,8 @@ func _activate_objective(obj: Dictionary) -> void:
 func _spawn_trigger_for(obj: Dictionary) -> void:
 	var pos := _find_marker_position(obj.get("marker_group", "objective_point"), obj.get("marker_id", ""))
 	if pos == Vector3.INF:
+		if not _unresolved_triggers.has(obj):
+			_unresolved_triggers.append(obj)
 		return
 	var area := Area3D.new()
 	area.collision_layer = 0
@@ -202,6 +269,27 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 		area.add_child(beacon)
 
 
+func _on_interior_entered(_path: String) -> void:
+	_interior_respawn = Vector3.INF
+	var spawn := get_tree().get_first_node_in_group(&"interior_spawn") as Node3D
+	var interior: Node = SceneTransition.current_interior()
+	if interior != null:
+		for n in get_tree().get_nodes_in_group(&"interior_spawn"):
+			if interior.is_ancestor_of(n):
+				spawn = n as Node3D
+	if spawn != null:
+		_interior_respawn = spawn.global_position
+	_retry_unresolved_triggers()
+
+
+func _retry_unresolved_triggers() -> void:
+	var pending := _unresolved_triggers.duplicate()
+	_unresolved_triggers.clear()
+	for obj: Dictionary in pending:
+		if _active_objectives.has(StringName(obj.get("id", ""))):
+			_spawn_trigger_for(obj)
+
+
 func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 	if not body.is_in_group("player"):
 		return
@@ -215,6 +303,8 @@ func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 			return
 	if obj.get("type", "") == "interact":
 		Events.pickup_collected.emit(StringName(obj.get("interact_kind", "")), 1.0)
+	elif SceneTransition.is_inside_interior():
+		_interior_respawn = (body as Node3D).global_position
 	complete_objective(obj)
 
 
@@ -256,6 +346,7 @@ func complete_objective(obj: Dictionary) -> void:
 		return
 	_active_objectives.erase(id)
 	_pending_objectives.erase(obj)
+	_unresolved_triggers.erase(obj)
 	Events.objective_updated.emit(id, obj.get("text", ""), true)
 	AudioManager.play_ui(&"objective_complete")
 	for action: Dictionary in obj.get("on_complete", []):
@@ -269,6 +360,8 @@ func complete_objective(obj: Dictionary) -> void:
 
 
 func _advance_stage() -> void:
+	if mission == null:
+		return
 	stage_index += 1
 	GameState.mission_stage = stage_index
 	if stage_index >= mission.stages.size():
@@ -298,6 +391,86 @@ func _run_action(action: Dictionary) -> void:
 			SceneTransition.exit_interior()
 		"set_flag":
 			GameState.set_dialogue_flag(StringName(action.get("flag", "")), action.get("value", true))
+		"switch_interior":
+			SceneTransition.switch_interior(String(action.get("scene", "")))
+		"call_group":
+			_call_group(action)
+		"drain_metals":
+			_drain_metals(action.get("metals", []))
+		"grant_metals":
+			_grant_metals(action.get("metals", []), float(action.get("amount", 100.0)))
+		"roll_credits":
+			_roll_credits()
+
+
+## `call_group` action. When the same `on_enter` just started an interior
+## transition, the target scene doesn't exist yet: wait for it to load.
+func _call_group(action: Dictionary) -> void:
+	if SceneTransition.busy:
+		await Events.interior_entered
+	var call_args: Array = [StringName(action.get("group", "")), StringName(action.get("method", ""))]
+	call_args.append_array(action.get("args", []))
+	get_tree().callv(&"call_group", call_args)
+
+
+## Act III ("Into Kredik Shaw" capture / "The Pits Beneath the Palace"):
+## empties the player's reserves of `metals` (all metals when empty) and stops
+## them burning — the Inquisitors made sure Vin woke with nothing to burn.
+func _drain_metals(metals: Array) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var list: Array = metals if not metals.is_empty() else Metal.Type.values()
+	for m in list:
+		player.allomancer.set_burning(int(m), false)
+		player.allomancer.set_reserve(int(m), 0.0)
+	if "vials" in player:
+		player.vials = 0
+
+
+## Tops the player's reserves of `metals` (all when empty) up to `amount`
+## (a crewmate's vial, a story beat that hands Vin her metals back).
+func _grant_metals(metals: Array, amount: float) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var list: Array = metals if not metals.is_empty() else Metal.Type.values()
+	for m in list:
+		if int(m) == Metal.Type.ATIUM or int(m) == Metal.Type.DURALUMIN:
+			if metals.is_empty():
+				continue  # "all" means the ordinary metals
+		player.allomancer.set_reserve(int(m), maxf(player.allomancer.get_reserve(int(m)), amount))
+
+
+## The finale: records the last story mission as done, then plays the
+## credits (`CreditsScreen`); once they end the game drops into post-game
+## free roam instead of the usual mission-complete screen.
+func _roll_credits() -> void:
+	var final_id: StringName = mission.id if mission != null else &""
+	GameState.post_game = true
+	if final_id != &"":
+		GameState.record_mission_complete(final_id)
+	var credits := CreditsScreen.new()
+	get_tree().root.add_child(credits)
+	credits.finished.connect(_on_credits_finished.bind(final_id))
+	credits.play()
+
+
+func _on_credits_finished(final_id: StringName) -> void:
+	# Post-game free roam happens in the open world: leave the finale's
+	# interior (back to where the Act III chain of interiors began).
+	if SceneTransition.is_inside_interior():
+		SceneTransition.exit_interior()
+	mission = null
+	_active_objectives.clear()
+	_pending_objectives.clear()
+	_clear_triggers()
+	if final_id != &"":
+		# `MissionComplete` skips its screen in post-game; `GameState`
+		# still records + autosaves off this signal.
+		Events.mission_completed.emit(final_id)
+		mission_finished.emit(final_id)
+	Events.post_game_started.emit(final_id)
 
 
 ## Restricts the player's `Allomancer` to `metals` (a list of `Metal.Type`
@@ -404,6 +577,15 @@ func _on_dialogue_finished(id: StringName) -> void:
 	for oid in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[oid]
 		if obj.get("type", "") == "dialogue" and StringName(obj.get("dialogue_id", "")) == id:
+			complete_objective(obj)
+
+
+## `cutscene` objective (Act III): complete when `Events.cutscene_finished`
+## fires for `cutscene_id` (usually started by the stage's `on_enter`).
+func _on_cutscene_finished(id: StringName) -> void:
+	for oid in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[oid]
+		if obj.get("type", "") == "cutscene" and StringName(obj.get("cutscene_id", "")) == id:
 			complete_objective(obj)
 
 
@@ -523,7 +705,9 @@ func _respawn_player() -> void:
 	if player == null:
 		return
 	var xform := (player as Node3D).global_transform
-	if GameState.last_checkpoint_id != &"":
+	if SceneTransition.is_inside_interior() and _interior_respawn != Vector3.INF:
+		xform = Transform3D(Basis.IDENTITY, _interior_respawn + Vector3.UP * 0.2)
+	elif GameState.last_checkpoint_id != &"":
 		xform = GameState.last_checkpoint_transform
 	else:
 		var spawn := get_tree().get_first_node_in_group("player_spawn") as Node3D

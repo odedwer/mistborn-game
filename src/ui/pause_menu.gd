@@ -222,8 +222,18 @@ func _refresh_journal() -> void:
 					_journal_list.add_child(l)
 	_journal_list.add_child(UIHelpers.vsep(10))
 	_journal_list.add_child(UIHelpers.heading_label("Completed Missions"))
-	for m in GameState.completed_missions:
-		_journal_list.add_child(UIHelpers.dim_label(String(m)))
+	var story := StoryManager.new()
+	story.refresh()
+	for entry: Dictionary in journal_entries(story, GameState.completed_missions):
+		_journal_list.add_child(UIHelpers.dim_label(entry["title"]))
+		if String(entry["text"]) != "":
+			var body := Label.new()
+			body.text = "    " + String(entry["text"])
+			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			body.custom_minimum_size.x = 560
+			_journal_list.add_child(body)
+	if GameState.post_game:
+		_journal_list.add_child(UIHelpers.dim_label("The story is complete. Luthadel is yours to roam."))
 
 	_journal_list.add_child(UIHelpers.vsep(10))
 	_journal_list.add_child(UIHelpers.heading_label("Side Activities"))
@@ -263,6 +273,21 @@ func _refresh_journal() -> void:
 			_journal_list.add_child(row)
 		else:
 			_journal_list.add_child(UIHelpers.dim_label(text))
+
+
+## Completed missions in completion order as `{id, title, act, text}`, where
+## `text` is the mission's first-person `journal` entry (Act III on; empty
+## for missions without one). Unknown ids fall back to the raw id.
+static func journal_entries(story: StoryManager, completed: Array[StringName]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for id in completed:
+		var m := story.get_mission(id)
+		if m == null:
+			out.append({"id": id, "title": String(id), "act": "", "text": ""})
+			continue
+		var title := m.title if m.act == "" else "Act %s — %s" % [m.act, m.title]
+		out.append({"id": id, "title": title, "act": m.act, "text": m.journal})
+	return out
 
 
 func _on_journal_waypoint(pos: Vector3) -> void:

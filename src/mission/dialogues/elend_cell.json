@@ -1,0 +1,20 @@
+{
+  "id": "elend_cell",
+  "lines": [
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "Valette — Vin. Whichever you'd like me to call you in a dungeon. I came to the palace gate and asked to see you. In hindsight, asking was the flaw in the plan."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "You're an idiot, Elend."
+    },
+    {
+      "speaker": "Elend Venture",
+      "color": "#8f7fbf",
+      "text": "An idiot who is very glad to see you. Sazed will get me out by the servants' stair. Go and do whatever it is you're about to do. Please come back from it."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "sazed_rescue",
+  "lines": [
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "Mistress. Please keep your voice low; the guard at the stair believes I am a steward delivering a ledger. I have been many things in my life, but rarely a convincing liar."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Sazed? How did you — never mind. Can you open this?"
+    },
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "I stored a great deal of strength against a day like this one. It will cost me several weeks of feeling rather feeble. A fair trade."
+    },
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "Lord Venture is in the cell across the way. He tried to reach you through the front gate, which was brave and somewhat foolish. There are vials hidden in the empty cells — the crew bribed a jailer. Find them, and the shaft at the far end will take you up."
+    }
+  ]
+}

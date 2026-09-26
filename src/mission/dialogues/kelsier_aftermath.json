@@ -1,0 +1,30 @@
+{
+  "id": "kelsier_aftermath",
+  "lines": [
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "How many made it back?"
+    },
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "A few hundred, maybe. Out of thousands. The rest are on that plain or in the garrison's cages."
+    },
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "This is on me. I built them a sword and forgot that someone else could pick it up and swing it."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Yeden marched them. Not you."
+    },
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "I'm the one who told them they could win. That makes it mine as well. Gather the crew. Whatever we do next, we do it without an army."
+    }
+  ]
+}

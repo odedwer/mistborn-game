@@ -1,0 +1,25 @@
+{
+  "id": "fountain_arrival",
+  "lines": [
+    {
+      "speaker": "Breeze",
+      "color": "#90743a",
+      "text": "Stay close, my dear. I've Soothed this crowd twice over already and they're still ready to bolt at a raised voice."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Where's Kelsier? He said he'd be here."
+    },
+    {
+      "speaker": "Breeze",
+      "color": "#90743a",
+      "text": "He said a great many things this morning, none of which I liked. Dockson has the rest of the crew at the alley mouth. We watch, we learn who they've taken, and we leave. Nothing heroic."
+    },
+    {
+      "speaker": "Breeze",
+      "color": "#90743a",
+      "text": "Mind the Inquisitor on the south side. And the guards in the lanes. Don't Push anything you can't afford to be seen Pushing."
+    }
+  ]
+}

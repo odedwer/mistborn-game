@@ -18,6 +18,17 @@ const ALLOMANCER_PATH := "res://src/allomancy/allomancer.gd"
 @export var pull_check_interval: float = 1.2
 @export var pull_check_radius: float = 10.0
 @export var coin_push_radius: float = 8.0
+## Act III ("Into Kredik Shaw" duel): hunt by bronze like a `Seeker`. Any
+## allomantic pulse within `pulse_sense_range` locks the Inquisitor onto its
+## source and spurs it (`pulse_spur_speed` for `pulse_spur_time`); with no
+## pulse sensed for `pulse_memory` seconds *and* no line of sight, it loses
+## the target and has to search. Copper (which suppresses the player's
+## pulses) is the counter.
+@export var senses_pulses: bool = false
+@export var pulse_sense_range: float = 30.0
+@export var pulse_memory: float = 4.0
+@export var pulse_spur_speed: float = 12.0
+@export var pulse_spur_time: float = 1.5
 
 var allomancer: Node = null
 var hitbox: MeleeHitbox
@@ -27,6 +38,8 @@ var _cooldown_timer: float = 0.0
 var _pull_timer: float = 0.0
 var _retreating: bool = false
 var _retreat_timer: float = 0.0
+var _since_pulse: float = 999.0
+var _spur_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -55,6 +68,29 @@ func _ready() -> void:
 			for mt: int in [Metal.Type.STEEL, Metal.Type.IRON, Metal.Type.PEWTER, Metal.Type.TIN]:
 				allomancer.call("set_burning", mt, true)
 	AudioManager.play_3d(&"inquisitor_scream", global_position)
+	if senses_pulses:
+		Events.allomantic_pulse.connect(_on_pulse_sensed)
+
+
+## `senses_pulses`: a pulse in range reveals its source outright.
+func _on_pulse_sensed(source: Node, _metal: int, position: Vector3) -> void:
+	if state == State.DEAD or source == self or not is_instance_valid(source):
+		return
+	if source.is_in_group(&"enemy"):
+		return  # its own kind's pulses (other Inquisitors, the Lord Ruler)
+	if not (source is Node3D) or global_position.distance_to(position) > pulse_sense_range:
+		return
+	_since_pulse = 0.0
+	_spur_timer = pulse_spur_time
+	target = source as Node3D
+	last_known_target_pos = position
+	if state != State.COMBAT:
+		_change_state(State.COMBAT)
+
+
+## Seconds since this Inquisitor last sensed a pulse (tests/UI).
+func time_since_pulse() -> float:
+	return _since_pulse
 
 
 func _get_model_path() -> String:
@@ -101,7 +137,7 @@ func _combat_tick(delta: float) -> void:
 	else:
 		_attacking = false
 		_windup_timer = 0.0
-		_move_toward(target.global_position, chase_speed, delta)
+		_move_toward(target.global_position, pulse_spur_speed if _spur_timer > 0.0 else chase_speed, delta)
 	_face_point(target.global_position, delta)
 	if _attacking:
 		_windup_timer -= delta
@@ -115,6 +151,12 @@ func _update_combat(delta: float) -> void:
 	if target == null or not is_instance_valid(target):
 		_change_state(State.SEARCH)
 		return
+	if senses_pulses:
+		_since_pulse += delta
+		_spur_timer = maxf(_spur_timer - delta, 0.0)
+		if _since_pulse > pulse_memory and not _has_line_of_sight(target):
+			_change_state(State.SEARCH)
+			return
 	last_known_target_pos = target.global_position
 	_combat_tick(delta)
 

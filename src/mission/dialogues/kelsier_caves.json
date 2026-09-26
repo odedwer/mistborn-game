@@ -1,0 +1,20 @@
+{
+  "id": "kelsier_caves",
+  "lines": [
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "Well? Be blunt. It's the only way anyone ever tells me the truth."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "They're brave. And they're not ready. And Yeden doesn't care about the second part."
+    },
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "No, he doesn't. I'll keep him on a short rope until the plan's in place. A few more weeks, that's all we need."
+    }
+  ]
+}
