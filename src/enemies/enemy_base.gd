@@ -19,6 +19,11 @@ const _ALERT_LEVEL_BY_STATE := {
 	State.COMBAT: 2, State.FLEE: 2, State.STUNNED: 0, State.DEAD: 0,
 }
 
+## Minimum seconds between path requests toward a moving goal.
+const REPATH_INTERVAL := 0.35
+## Below this height an enemy is returned to its spawn point.
+const VOID_HEIGHT := -60.0
+
 @export_group("Movement")
 @export var move_speed: float = 3.5
 @export var chase_speed: float = 4.5
@@ -75,6 +80,11 @@ var _alert_director: Node = null
 var _player_cache: Node3D = null
 var _ai_tick_accum: float = 0.0
 var _despawn_timer: float = 0.0
+var _repath_timer: float = 0.0
+var _home := Vector3.INF
+var _stream_hold := false
+var _stream_check_timer := 0.0
+var _streamer_cache: Node = null
 
 
 func _ready() -> void:
@@ -159,6 +169,8 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 		return
 
+	if _hold_for_streaming(delta):
+		return
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	var fall_speed_before := velocity.y
@@ -202,6 +214,52 @@ func _change_state(new_state: int) -> void:
 	var enter_fn: Callable = new_entry.get("enter", Callable())
 	if enter_fn.is_valid():
 		enter_fn.call()
+
+
+## Streamed out (or freed) mid-fight: stop counting towards the alert level.
+func _exit_tree() -> void:
+	if _alert_director != null and is_instance_valid(_alert_director):
+		_alert_director.call("report", self, 0)
+
+
+# --- Streaming safety ----------------------------------------------------------
+
+## Enemies can stand on a landmark (it streams from further away) whose
+## surrounding chunk isn't loaded yet, or on a chunk that just streamed out.
+## While the ground under them isn't resident they freeze in place instead of
+## falling out of the world; anything that still ends up below the world is
+## put back at its spawn point. Returns true while holding.
+func _hold_for_streaming(delta: float) -> bool:
+	if _home == Vector3.INF:
+		_home = global_position
+		# Spawned in mid-air (an ambush around an airborne player, a marker
+		# above a gap): drop the home point onto the ground below.
+		var q := PhysicsRayQueryParameters3D.create(_home + Vector3.UP * 1.0, _home + Vector3.DOWN * 80.0, 1)
+		q.exclude = [get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty() and _home.y - (hit["position"] as Vector3).y > 0.5:
+			_home = hit["position"]
+			global_position = _home
+	if global_position.y < VOID_HEIGHT:
+		global_position = _home
+		velocity = Vector3.ZERO
+		_stream_hold = true
+	if is_on_floor() and not _stream_hold:
+		return false
+	_stream_check_timer -= delta
+	if _stream_check_timer <= 0.0:
+		_stream_check_timer = 0.25
+		var streamer := _get_streamer()
+		_stream_hold = streamer != null and not streamer.is_area_loaded(global_position)
+	if _stream_hold:
+		velocity = Vector3.ZERO
+	return _stream_hold
+
+
+func _get_streamer() -> Node:
+	if _streamer_cache == null or not is_instance_valid(_streamer_cache):
+		_streamer_cache = get_tree().get_first_node_in_group(&"world_streamer")
+	return _streamer_cache
 
 
 # --- AI tick throttling -------------------------------------------------------
@@ -335,7 +393,13 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 ## Steers toward `point` at `speed`, using nav-agent avoidance when present.
 func _move_toward(point: Vector3, speed: float, _delta: float) -> void:
 	if nav_agent:
-		nav_agent.target_position = point
+		# Setting target_position always requests a new path (a full A* query),
+		# so only re-target when the goal really moved.
+		_repath_timer -= _delta
+		var moved := nav_agent.target_position.distance_squared_to(point)
+		if moved > 16.0 or (moved > 0.25 and _repath_timer <= 0.0):
+			nav_agent.target_position = point
+			_repath_timer = REPATH_INTERVAL
 		if nav_agent.is_navigation_finished():
 			_desired_velocity = Vector3.ZERO
 		else:
@@ -572,7 +636,6 @@ func _spawn_ragdoll() -> void:
 	rb.apply_impulse(velocity * 0.3 + Vector3(randf_range(-1.0, 1.0), 2.0, randf_range(-1.0, 1.0)))
 	rb.apply_torque_impulse(Vector3(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0), randf_range(-3.0, 3.0)))
 	var timer := get_tree().create_timer(despawn_after_death)
-	timer.timeout.connect(func() -> void:
-		if is_instance_valid(rb):
-			rb.queue_free()
-	)
+	# Bound method, not a lambda capturing `rb`: the timer outlives the body
+	# when its chunk streams out (a freed capture errors when it fires).
+	timer.timeout.connect(rb.queue_free)

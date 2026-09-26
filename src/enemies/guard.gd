@@ -27,6 +27,14 @@ func _ready() -> void:
 		hitbox.damage = attack_damage
 		hitbox.damage_kind = &"blade"
 	lantern = get_node_or_null(^"Lantern") as OmniLight3D
+	# The character model carries its own lantern light in the hand; the
+	# scene's placeholder light doubled it into a blown-out ball in the mist.
+	var model_light := find_child("LanternLight", true, false) as OmniLight3D
+	if model_light != null:
+		if lantern != null:
+			lantern.queue_free()
+		lantern = model_light
+		lantern.light_volumetric_fog_energy = 0.35
 
 
 func _get_model_path() -> String:

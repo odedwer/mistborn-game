@@ -29,6 +29,39 @@ var _objective_unlocked: bool = false
 
 func _ready() -> void:
 	Events.objective_updated.connect(_on_objective_updated)
+	GameState.load_completed.connect(_on_game_loaded)
+	# Resuming a save made after the unlocking objective.
+	_objective_unlocked = GameState.completed_objectives.has(defer_objective_id)
+
+
+func _on_game_loaded(_slot: int) -> void:
+	var unlocked := GameState.completed_objectives.has(defer_objective_id)
+	if unlocked == _objective_unlocked:
+		return
+	_objective_unlocked = unlocked
+	if unlocked:
+		for m in _pending_inquisitor_markers.duplicate():
+			if is_instance_valid(m):
+				spawn_for_marker(m)
+		_pending_inquisitor_markers.clear()
+	else:
+		# Loaded back to before the ledger: the Inquisitor hasn't arrived yet.
+		for key: Vector3i in _alive_keys.keys():
+			var e: Node = _alive_keys[key]
+			if is_instance_valid(e) and e is Inquisitor:
+				var m := _marker_at_key(key)
+				if m != null and not _pending_inquisitor_markers.has(m):
+					_pending_inquisitor_markers.append(m)
+				e.queue_free()
+
+
+func _marker_at_key(key: Vector3i) -> Marker3D:
+	if not is_inside_tree():
+		return null
+	for m in get_tree().get_nodes_in_group(&"enemy_spawn"):
+		if m is Marker3D and marker_key(m) == key:
+			return m
+	return null
 
 
 ## Spawns one enemy per "enemy_spawn" marker found under `root`'s tree.
@@ -83,6 +116,11 @@ func spawn_type(etype: StringName, at: Marker3D = null) -> Node:
 	return _spawn_at(at, etype)
 
 
+## True if a spawn marker for `etype` is available (deferred or loaded).
+func has_marker_for(etype: StringName) -> bool:
+	return _find_marker_for_type(etype) != null
+
+
 func _find_marker_for_type(etype: StringName) -> Marker3D:
 	for m in _pending_inquisitor_markers:
 		if is_instance_valid(m) and m.get_meta("enemy_type", &"") == etype:
@@ -105,6 +143,10 @@ func _spawn_at(marker: Marker3D, etype: StringName) -> Node:
 	var enemy := scene.instantiate()
 	# Parent to the marker's chunk so the enemy streams out with its ground.
 	var parent: Node = marker.get_parent()
+	# Ad-hoc markers (activity ambushes) may sit on the tree root: keep the
+	# enemy inside the world so it is freed with the game.
+	if parent != null and parent == marker.get_tree().root and world_root != null and is_instance_valid(world_root):
+		parent = world_root
 	if parent == null:
 		parent = world_root if world_root else marker.get_tree().current_scene
 	parent.add_child(enemy)

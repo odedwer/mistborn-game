@@ -20,6 +20,13 @@ signal unit_navigation_ready(key: String)
 @export var max_tasks := 4
 @export var frame_budget_usec := 3000
 @export var update_interval := 0.25
+## Navmesh bakes allowed in flight at once. Bakes run on the WorkerThreadPool
+## at high priority; several at once occupy every worker, and the physics
+## engine's own jobs (Jolt runs on the same pool) then wait: 30-70 ms physics
+## hitches while streaming. One at a time keeps a thread free.
+@export var max_bakes := 1
+## Units freed per update (see `_update_wanted`).
+@export var max_unloads_per_update := 2
 
 var plan: CityPlan
 var seed_value := 0
@@ -40,6 +47,8 @@ var _results_mutex := Mutex.new()
 var _building: Array[ChunkInstancer] = []
 ## Instancers whose navmesh is baking.
 var _baking: Array[ChunkInstancer] = []
+## Instanced units waiting for a free bake slot (nearest first).
+var _bake_queue: Array[ChunkInstancer] = []
 ## Prebuilt data (landmarks computed for the marker index), consumed on load.
 var _prebuilt: Dictionary = {}
 var _timer := 0.0
@@ -89,6 +98,11 @@ func is_busy() -> bool:
 	return not _tasks.is_empty() or not _building.is_empty()
 
 
+## True while navmeshes are still baking or queued.
+func is_baking() -> bool:
+	return not _baking.is_empty() or not _bake_queue.is_empty()
+
+
 func focus_position() -> Vector3:
 	if focus_override != null and is_instance_valid(focus_override):
 		return focus_override.global_position
@@ -120,6 +134,14 @@ func wanted_units(p: Vector3, radius: float) -> Dictionary:
 		if d2 <= radius + landmark_extra:
 			out[ChunkGenerator.landmark_key(lm.id)] = d2
 	return out
+
+
+func _unit_distance(inst: ChunkInstancer, p: Vector3) -> float:
+	var key := inst.data.key
+	if key.begins_with("c:"):
+		return _rect_distance(plan.chunk_rect(inst.data.coord), Vector2(p.x, p.z))
+	var lm := plan.landmark_by_id(StringName(key.substr(3)))
+	return _rect_distance(lm.footprint, Vector2(p.x, p.z)) if lm != null else 0.0
 
 
 static func _rect_distance(r: Rect2, p: Vector2) -> float:
@@ -206,6 +228,24 @@ func _process(delta: float) -> void:
 
 
 func _poll_baking() -> void:
+	# Start queued bakes while a slot is free (nearest to the focus first).
+	if _baking.size() < max_bakes and not _bake_queue.is_empty():
+		var focus := focus_position()
+		var best := 0
+		var bd := INF
+		for j in _bake_queue.size():
+			var r: Rect2 = _bake_queue[j].data.nav_rect
+			var d := _rect_distance(r, Vector2(focus.x, focus.z))
+			if d < bd:
+				bd = d
+				best = j
+		var inst: ChunkInstancer = _bake_queue[best]
+		_bake_queue.remove_at(best)
+		if inst.root != null and is_instance_valid(inst.root):
+			if inst.bake_navigation():
+				_baking.append(inst)
+			else:
+				_emit_nav_ready.call_deferred(inst.data.key)
 	var i := 0
 	while i < _baking.size():
 		var inst := _baking[i]
@@ -220,11 +260,20 @@ func _poll_baking() -> void:
 func _update_wanted() -> void:
 	var p := focus_position()
 	var wanted := wanted_units(p, load_radius)
-	# Unload far units.
+	# Unload far units, a few per update (farthest first): freeing a unit's
+	# node tree costs a few ms, and a teleport can drop dozens at once.
 	var keep := wanted_units(p, unload_radius)
+	var drop: Array = []
 	for k: String in _units.keys():
 		if not keep.has(k):
-			_unload(k)
+			var inst: ChunkInstancer = _units[k]
+			if not inst.is_done():
+				_unload(k)  # never finished building: cheap, drop now
+			else:
+				drop.append([_unit_distance(inst, p), k])
+	drop.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
+	for i in mini(drop.size(), max_unloads_per_update):
+		_unload(drop[i][1])
 	# Request missing units, nearest first.
 	var missing: Array = []
 	for k: String in wanted:
@@ -281,10 +330,11 @@ func _build_step() -> void:
 func _on_instanced(inst: ChunkInstancer) -> void:
 	var key := inst.data.key
 	unit_loaded.emit(key)
-	if inst.bake_navigation():
-		_baking.append(inst)
-	else:
+	if inst.data.nav_rect.size == Vector2.ZERO or inst.data.nav_faces.is_empty():
+		inst.nav_ready = true
 		_emit_nav_ready.call_deferred(key)
+	else:
+		_bake_queue.append(inst)
 
 
 func _emit_nav_ready(key: String) -> void:
@@ -295,6 +345,7 @@ func _unload(key: String) -> void:
 	var inst: ChunkInstancer = _units[key]
 	_units.erase(key)
 	_building.erase(inst)
+	_bake_queue.erase(inst)
 	inst.free_nodes()
 	unit_unloaded.emit(key)
 

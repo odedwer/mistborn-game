@@ -31,7 +31,21 @@ static func get_for(node: Node) -> CoinPool:
 	var pool := CoinPool.new()
 	pool.name = "CoinPool"
 	pool.add_to_group(GROUP)
-	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
+	# Lives in the scene that uses it, so it goes away with that scene: the
+	# game scene (group "game_scene"), else the current scene, else the
+	# top-level node the caller belongs to.
+	var parent: Node = null
+	var n := node.get_parent()
+	while n != null and parent == null:
+		if n.is_in_group(&"game_scene"):
+			parent = n
+		n = n.get_parent()
+	if parent == null:
+		parent = tree.current_scene
+	if parent == null or not parent.is_ancestor_of(node):
+		parent = node
+		while parent.get_parent() != null and parent.get_parent() != tree.root:
+			parent = parent.get_parent()
 	parent.add_child(pool)
 	return pool
 

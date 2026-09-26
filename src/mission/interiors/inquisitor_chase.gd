@@ -31,6 +31,9 @@ func _ready() -> void:
 	add_child(_nav)
 	_build_corridor()
 	_nav.navigation_mesh = NavigationMesh.new()
+	# Bake from the rooms' collision shapes: parsing visual meshes reads them
+	# back from the GPU (a stall, and a warning on every bake).
+	_nav.navigation_mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	_nav.bake_navigation_mesh(false)
 	_build_lighting()
 	_build_spook()

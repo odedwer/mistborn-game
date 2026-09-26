@@ -263,9 +263,15 @@ func apply_graphics() -> void:
 
 	var vp := get_tree().root
 	vp.scaling_3d_scale = render_scale
-	vp.scaling_3d_mode = upscale_mode
+	# FSR2 is a temporal upscaler with its own AA: it replaces TAA (the engine
+	# warns and disables TAA every frame otherwise) and is pointless at native
+	# resolution, where plain bilinear + TAA is used instead.
+	var mode := upscale_mode
+	if render_scale >= 0.999 and mode == Viewport.SCALING_3D_MODE_FSR2:
+		mode = Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_mode = mode
 	vp.msaa_3d = msaa
-	vp.use_taa = use_taa
+	vp.use_taa = use_taa and mode != Viewport.SCALING_3D_MODE_FSR2
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if use_fxaa else Viewport.SCREEN_SPACE_AA_DISABLED
 
 	_apply_shadow_quality()

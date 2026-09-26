@@ -35,6 +35,11 @@ var collectibles: Dictionary = {}     # collectible id (String) -> true if found
 ## every save, so "save anywhere" restores exactly where the player was.
 var open_world_position: Transform3D = Transform3D.IDENTITY
 var has_open_world_position: bool = false
+## The interior scene the player was in when saved ("" = open world). The
+## open-world position above is then where they entered it, so a load puts
+## them outside and re-enters the interior (never interior coordinates in
+## the open world).
+var interior_scene: String = ""
 
 ## Side-activity results, activity id (String) -> {completed: bool,
 ## best_time: float, medal: String ("bronze"/"silver"/"gold"/""), attempts: int}.
@@ -175,6 +180,7 @@ func reset_run() -> void:
 	collectibles.clear()
 	open_world_position = Transform3D.IDENTITY
 	has_open_world_position = false
+	interior_scene = ""
 	activity_records.clear()
 	mastery_points = 0
 	mastery_levels.clear()
@@ -257,6 +263,14 @@ func capture_open_world_position() -> void:
 	var player := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
 	if player is Node3D:
 		open_world_position = (player as Node3D).global_transform
+		# Inside an interior the player's transform is in the interior scene;
+		# resume outdoors where they went in instead.
+		interior_scene = ""
+		var st := get_node_or_null(^"/root/SceneTransition")
+		if st != null and st.has_method(&"is_inside_interior") and st.is_inside_interior():
+			open_world_position = st.outdoor_transform()
+			var cur: Node = st.current_interior()
+			interior_scene = cur.scene_file_path if cur != null else ""
 		has_open_world_position = true
 
 
@@ -295,6 +309,7 @@ func to_dict() -> Dictionary:
 		"collectibles": collectibles,
 		"open_world_position": _transform_to_array(open_world_position),
 		"has_open_world_position": has_open_world_position,
+		"interior_scene": interior_scene,
 		"activity_records": activity_records,
 		"mastery_points": mastery_points,
 		"mastery_levels": _stringname_keys_to_str(mastery_levels),
@@ -329,6 +344,7 @@ func from_dict(data: Dictionary) -> void:
 	collectibles = data.get("collectibles", {})
 	open_world_position = _array_to_transform(data.get("open_world_position", []))
 	has_open_world_position = data.get("has_open_world_position", false)
+	interior_scene = str(data.get("interior_scene", ""))
 	activity_records = data.get("activity_records", {})
 	mastery_points = data.get("mastery_points", 0)
 	mastery_levels = _str_keys_to_stringname(data.get("mastery_levels", {}))

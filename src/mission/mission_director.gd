@@ -62,6 +62,11 @@ func _ready() -> void:
 	Events.allomantic_line_used.connect(_on_allomantic_line_used)
 	Events.pickup_collected.connect(_on_pickup_collected)
 	Events.actor_died.connect(_on_actor_died)
+	GameState.load_completed.connect(_on_game_loaded)
+	# Checkpoint areas stream in with their chunks: connect them as they load.
+	var world := _find_world_node()
+	if world != null and world.has_signal(&"unit_loaded"):
+		world.connect(&"unit_loaded", _on_unit_loaded)
 	Events.dialogue_finished.connect(_on_dialogue_finished)
 	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
 	Events.cutscene_finished.connect(_on_cutscene_finished)
@@ -70,6 +75,55 @@ func _ready() -> void:
 	Events.interior_exited.connect(func() -> void: _interior_respawn = Vector3.INF)
 	_build_fade_layer()
 	_start_or_resume()
+	if GameState.last_checkpoint_id != &"":
+		_restore_checkpoint_snapshot(get_tree().get_first_node_in_group("player"))
+	_restore_saved_interior.call_deferred()
+
+
+func _exit_tree() -> void:
+	_clear_triggers()
+	Engine.time_scale = 1.0
+
+
+func _on_unit_loaded(_key: String) -> void:
+	_connect_checkpoints()
+
+
+## A save was loaded while playing: resync the mission to the loaded
+## progress and put the player back at the saved checkpoint.
+func _on_game_loaded(_slot: int) -> void:
+	# Leave any interior first: the loaded stage re-enters one if it needs to.
+	if SceneTransition.is_inside_interior():
+		await SceneTransition.exit_interior()
+	if not is_inside_tree():
+		return
+	_pending_objectives.clear()
+	_active_objectives.clear()
+	_clear_triggers()
+	_start_or_resume()
+	respawn_at_checkpoint()
+	# Save anywhere: resume at the exact saved position rather than the
+	# checkpoint, with the ground there streamed in first.
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if GameState.has_open_world_position and player != null:
+		var target := GameState.open_world_position
+		var world := _find_world_node()
+		if world != null and "streamer" in world and world.streamer != null \
+				and not world.streamer.is_area_loaded(target.origin):
+			world.streamer.load_now(target.origin, world.streamer.load_radius)
+		player.global_transform = Transform3D(Basis.IDENTITY, target.origin)
+		if player is CharacterBody3D:
+			(player as CharacterBody3D).velocity = Vector3.ZERO
+		if "camera_rig" in player and player.camera_rig != null:
+			player.camera_rig.snap()
+	_restore_saved_interior()
+
+
+## Saved inside an interior: go back in (the stage's own `enter_interior`,
+## if any, has already started and makes this a no-op).
+func _restore_saved_interior() -> void:
+	if GameState.interior_scene != "" and not SceneTransition.is_inside_interior() and not SceneTransition.busy:
+		SceneTransition.enter_interior(GameState.interior_scene)
 
 
 ## Polls `reach_speed` objectives (e.g. "hit a coin-jump chain at 12 m/s");
@@ -84,6 +138,8 @@ func _process(delta: float) -> void:
 	if _active_objectives.is_empty():
 		return
 	var player := get_tree().get_first_node_in_group("player")
+	if Engine.get_process_frames() % 6 == 0:
+		_recheck_gated_triggers(player)
 	var speed := 0.0
 	if player is CharacterBody3D:
 		speed = (player as CharacterBody3D).velocity.length()
@@ -233,12 +289,32 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target", "cutscene":
+		"use_metal", "flare_metal":
+			# Driven by Events, but the metal may already be burning (burned
+			# during an earlier beat): that must count, or the stage soft-locks
+			# until the player happens to toggle it off and on.
+			_check_metal_already_active.call_deferred(obj)
+		"defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target", "cutscene":
 			pass # driven by Events, see the handlers below.
 		"crowd_mood", "survive":
 			pass # polled in _process, see above.
 		"flag_count":
 			_check_flag_count(obj)
+
+
+func _check_metal_already_active(obj: Dictionary) -> void:
+	if not _active_objectives.has(StringName(obj.get("id", ""))):
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var al: Allomancer = player.allomancer
+	var metal := int(obj.get("metal", -1))
+	var ok := al.is_burning(metal)
+	if obj.get("type", "") == "flare_metal":
+		ok = ok and al.is_flaring(metal)
+	if ok:
+		complete_objective(obj)
 
 
 func _spawn_trigger_for(obj: Dictionary) -> void:
@@ -248,6 +324,7 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 			_unresolved_triggers.append(obj)
 		return
 	var area := Area3D.new()
+	area.name = "Objective_%s" % obj.get("id", "")
 	area.collision_layer = 0
 	area.collision_mask = 1 << 1  # "player" physics layer
 	area.monitorable = false
@@ -256,9 +333,13 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 	sphere.radius = TRIGGER_RADIUS
 	shape.shape = sphere
 	area.add_child(shape)
-	get_tree().root.add_child(area)
+	# Top-level so it ignores this Node's lack of a transform; freed with the
+	# director when the game scene goes away.
+	area.top_level = true
+	add_child(area)
 	area.global_position = pos
 	area.body_entered.connect(_on_objective_trigger_entered.bind(obj))
+	area.set_meta(&"objective", obj)
 	_triggers.append(area)
 	# Mark the mission's opening objective with a subtle beacon (story
 	# gating: tells the player where to go before they've picked up the
@@ -301,9 +382,35 @@ func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 		if allomancer == null or not allomancer.call("is_burning", req_metal):
 			Events.hint_requested.emit(obj.get("hint_locked", "Burn %s to make it out." % Metal.NAMES.get(req_metal, "that metal")), 3.0)
 			return
+	# Deferred: completing an objective can spawn enemies and triggers, which
+	# is not allowed from inside a physics in/out callback.
+	_complete_from_trigger.call_deferred(obj, body)
+
+
+## A metal-gated trigger (eavesdrop with tin) only sees the player *enter*;
+## if they were already standing in it when they started burning the metal
+## (e.g. spawned inside it), re-check while they stay inside.
+func _recheck_gated_triggers(player: Node) -> void:
+	if player == null or not (player is PhysicsBody3D):
+		return
+	for area in _triggers:
+		if not is_instance_valid(area) or not area.monitoring:
+			continue
+		var obj: Dictionary = area.get_meta(&"objective", {})
+		var req := int(obj.get("require_metal", -1))
+		if req < 0 or not _active_objectives.has(StringName(obj.get("id", ""))):
+			continue
+		var al := _find_allomancer(player)
+		if al != null and al.call("is_burning", req) and area.overlaps_body(player):
+			_complete_from_trigger(obj, player)
+
+
+func _complete_from_trigger(obj: Dictionary, body: Node = null) -> void:
+	if not _active_objectives.has(StringName(obj.get("id", ""))):
+		return
 	if obj.get("type", "") == "interact":
 		Events.pickup_collected.emit(StringName(obj.get("interact_kind", "")), 1.0)
-	elif SceneTransition.is_inside_interior():
+	elif SceneTransition.is_inside_interior() and is_instance_valid(body) and body is Node3D:
 		_interior_respawn = (body as Node3D).global_position
 	complete_objective(obj)
 
@@ -374,7 +481,7 @@ func _run_action(action: Dictionary) -> void:
 		"spawn_enemy":
 			var spawner := get_tree().get_first_node_in_group("enemy_spawner")
 			if spawner != null and spawner.has_method("spawn_type"):
-				spawner.call("spawn_type", StringName(action.get("enemy_type", "")))
+				_spawn_enemy(spawner, StringName(action.get("enemy_type", "")))
 		"hint":
 			Events.hint_requested.emit(action.get("text", ""), action.get("duration", 4.0))
 		"mission_complete":
@@ -471,6 +578,29 @@ func _on_credits_finished(final_id: StringName) -> void:
 		Events.mission_completed.emit(final_id)
 		mission_finished.emit(final_id)
 	Events.post_game_started.emit(final_id)
+
+
+## Spawns `etype` at its world marker when one is loaded (the Inquisitor at
+## Keep Venture); otherwise (a scripted opponent like Ham in a lesson, where
+## the city has no marker of that type nearby) in front of the player.
+func _spawn_enemy(spawner: Node, etype: StringName) -> Node:
+	if not spawner.has_method("has_marker_for") or spawner.call("has_marker_for", etype):
+		return spawner.call("spawn_type", etype)
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	var parent: Node = player.get_parent() if player != null else null
+	if player == null or parent == null:
+		push_warning("MissionDirector: nowhere to spawn '%s'" % etype)
+		return null
+	var fwd := -player.global_basis.z
+	if "camera_rig" in player and player.camera_rig != null:
+		fwd = -(player.camera_rig as PlayerCamera).yaw_basis().z
+	var marker := Marker3D.new()
+	parent.add_child(marker)
+	marker.global_position = player.global_position + Vector3(fwd.x, 0.0, fwd.z).normalized() * 8.0 + Vector3.UP * 0.5
+	marker.look_at(player.global_position + Vector3.UP * 0.5, Vector3.UP, true)
+	var enemy: Node = spawner.call("spawn_type", etype, marker)
+	marker.queue_free()
+	return enemy
 
 
 ## Restricts the player's `Allomancer` to `metals` (a list of `Metal.Type`
@@ -696,8 +826,16 @@ func current_marker_position() -> Vector3:
 func _on_player_died() -> void:
 	GameState.record_death()
 	await _fade_out()
+	if not is_inside_tree():
+		return
 	_respawn_player()
 	await _fade_in()
+
+
+## Puts the player back at the last checkpoint (or the spawn) with the
+## checkpoint's health, coins, vials and reserves.
+func respawn_at_checkpoint() -> void:
+	_respawn_player()
 
 
 func _respawn_player() -> void:
@@ -719,8 +857,15 @@ func _respawn_player() -> void:
 		player.call("respawn", xform)
 	else:
 		(player as Node3D).global_transform = xform
+	_restore_checkpoint_snapshot(player)
+
+
+func _restore_checkpoint_snapshot(player: Node) -> void:
+	if player == null:
+		return
 	if "health" in player and player.health != null:
-		player.health.revive(GameState.checkpoint_health / maxf(player.health.max_health, 1.0))
+		player.health.revive(clampf(GameState.checkpoint_health / maxf(player.health.max_health, 1.0), 0.01, 1.0))
+		Events.player_health_changed.emit(player.health.current, player.health.max_health)
 	if "coins" in player:
 		player.coins = GameState.checkpoint_coins
 	if "vials" in player:
@@ -730,6 +875,8 @@ func _respawn_player() -> void:
 			if player.allomancer.has_method("add_reserve"):
 				var current: float = player.allomancer.get_reserve(metal)
 				player.allomancer.add_reserve(metal, GameState.checkpoint_reserves[metal] - current)
+	if player.has_method("_emit_inventory"):
+		player.call("_emit_inventory")
 
 
 func _build_fade_layer() -> void:
@@ -741,7 +888,7 @@ func _build_fade_layer() -> void:
 	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade_layer.add_child(_fade_rect)
-	get_tree().root.add_child.call_deferred(_fade_layer)
+	add_child(_fade_layer)
 
 
 func _fade_out() -> void:

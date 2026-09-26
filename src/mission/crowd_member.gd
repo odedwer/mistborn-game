@@ -21,6 +21,31 @@ var _target := Vector3.ZERO
 var _wait := 0.0
 var _meter: Node = null
 var model: CharacterModel
+var _grounded_home := false
+var _stream_timer := 0.0
+var _stream_ok := true
+
+
+## Crowds are placed around a point that may be mid-air (a roof edge, a
+## player position): drop the home point onto the ground below once.
+func _snap_home_to_ground() -> void:
+	_grounded_home = true
+	var q := PhysicsRayQueryParameters3D.create(_home + Vector3.UP * 2.0, _home + Vector3.DOWN * 80.0, 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if not hit.is_empty():
+		_home = hit["position"]
+		global_position = _home
+		_target = _home
+
+
+## False while the streamed chunk under us isn't loaded (hold, don't fall).
+func _ground_loaded() -> bool:
+	_stream_timer -= get_physics_process_delta_time()
+	if _stream_timer <= 0.0:
+		_stream_timer = 0.25
+		var streamer := get_tree().get_first_node_in_group(&"world_streamer")
+		_stream_ok = streamer == null or streamer.is_area_loaded(global_position)
+	return _stream_ok
 
 
 func _ready() -> void:
@@ -66,6 +91,15 @@ func _build_capsule() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _grounded_home:
+		_snap_home_to_ground()
+	if global_position.y < _home.y - 40.0:
+		# Fell out of the world (spawned over a gap or unloaded ground): go home.
+		global_position = _home
+		velocity = Vector3.ZERO
+	if not is_on_floor() and not _ground_loaded():
+		velocity = Vector3.ZERO
+		return
 	if not is_on_floor():
 		velocity.y -= 20.0 * delta
 	if global_position.distance_to(_target) < 0.4:

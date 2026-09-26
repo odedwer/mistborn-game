@@ -27,7 +27,13 @@ var _fade_rect: ColorRect
 
 
 func is_inside_interior() -> bool:
-	return _interior_root != null and is_instance_valid(_interior_root)
+	return _interior_root != null and is_instance_valid(_interior_root) and _interior_root.is_inside_tree()
+
+
+## Where the player was outdoors when they entered the current interior
+## chain (what "save anywhere" should resume at).
+func outdoor_transform() -> Transform3D:
+	return _saved_transform
 
 
 ## Loads `scene_path` as a child of the current scene, moves the player into
@@ -42,8 +48,10 @@ func enter_interior(scene_path: String) -> void:
 		return
 	busy = true
 	await _fade_to(1.0)
-	# The player (or a test's stand-in) can be freed during the fade.
-	if not is_instance_valid(player) or not is_instance_valid(host) or is_inside_interior():
+	# The player (or a test's stand-in, or the whole game scene) can be freed
+	# during the fade.
+	if not is_instance_valid(player) or not is_instance_valid(host) or not (player as Node).is_inside_tree() \
+			or is_inside_interior():
 		busy = false
 		await _fade_to(0.0)
 		return
@@ -117,8 +125,13 @@ func exit_interior() -> void:
 		return
 	var player := get_tree().get_first_node_in_group(&"player")
 	var host := _host_node()
+	var interior := _interior_root
 	await _fade_to(1.0)
-	if not is_inside_interior():
+	# Torn down during the fade (the game scene was freed, or another
+	# transition already exited or switched): just clear the stale state.
+	if not is_inside_interior() or interior != _interior_root:
+		if not is_inside_interior():
+			_interior_root = null
 		await _fade_to(0.0)
 		return
 	if is_instance_valid(player) and is_instance_valid(host):
@@ -136,6 +149,12 @@ func exit_interior() -> void:
 ## The current scene, or the tree root as a fallback (e.g. in headless tests,
 ## which run under a bare `SceneTree` with no `current_scene`).
 func _host_node() -> Node:
+	# The game scene, so an interior (and the player inside it) goes away with
+	# it; parking them on the tree root leaked the player into whatever runs
+	# next (main menu, a reloaded game, the next test).
+	var game := get_tree().get_first_node_in_group(&"game_scene")
+	if game != null:
+		return game
 	var cur := get_tree().current_scene
 	return cur if cur != null else get_tree().root
 

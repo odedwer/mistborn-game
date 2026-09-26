@@ -35,6 +35,9 @@ func _ready() -> void:
 	_build_room(Vector3.ZERO, OUTER_SIZE, true, true)
 	_build_room(INNER_OFFSET, INNER_SIZE, true, false)
 	_nav.navigation_mesh = NavigationMesh.new()
+	# Bake from the rooms' collision shapes: parsing visual meshes reads them
+	# back from the GPU (a stall, and a warning on every bake).
+	_nav.navigation_mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	_nav.bake_navigation_mesh(false)
 	_build_lighting()
 	_build_ledger()

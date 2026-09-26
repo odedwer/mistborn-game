@@ -170,18 +170,19 @@ func _ensure_letterbox() -> void:
 	_top_bar = ColorRect.new()
 	_top_bar.color = Color.BLACK
 	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_top_bar.custom_minimum_size = Vector2(0, 90)
-	_top_bar.size.y = 90
+	# Offsets, not size: setting size on a stretched (wide) anchor preset
+	# warns and gets overridden.
+	_top_bar.offset_bottom = 90.0
 	_letterbox.add_child(_top_bar)
 	_bottom_bar = ColorRect.new()
 	_bottom_bar.color = Color.BLACK
 	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_bottom_bar.position.y = -90
-	_bottom_bar.size.y = 90
+	_bottom_bar.offset_top = -90.0
 	_letterbox.add_child(_bottom_bar)
 	_subtitle = Label.new()
 	_subtitle.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_subtitle.position.y = -76
+	_subtitle.offset_top = -76.0
+	_subtitle.offset_bottom = -40.0
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_subtitle.add_theme_font_size_override("font_size", 20)
 	_subtitle.add_theme_color_override("font_color", Color(0.95, 0.93, 0.88))

@@ -18,7 +18,10 @@ uniform float emission_energy = 0.0;
 #include "res://assets/models/characters/materials/character_common.gdshaderinc"
 
 void fragment() {
-	vec3 c = apply_dye(pow(COLOR.rgb, vec3(2.2)), COLOR.a);
+	// pow() of a negative base is undefined (NaN on most GPUs). Compressed
+	// vertex colours of near-black parts (boots, hair, straps) can decode a
+	// hair below zero; the NaN pixels then bloom into big white orbs.
+	vec3 c = apply_dye(pow(max(COLOR.rgb, vec3(0.0)), vec3(2.2)), COLOR.a);
 	vec2 uv = UV * detail_scale;
 	// fine weave (cloth) / grain (leather, wood): two crossing sines modulated by noise
 	float weave = 0.5 + 0.25 * sin(uv.x * 3.1) * sin(uv.y * 3.1);

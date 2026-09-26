@@ -78,6 +78,9 @@ func pool_tick(delta: float, speed: float) -> void:
 
 
 func _on_body_entered(other: Node) -> void:
+	# Contacts can still be reported while the pool re-parents a parked coin.
+	if not active or not is_inside_tree():
+		return
 	var speed := maxf(impact_speed, linear_velocity.length())
 	if _hit_cooldown > 0.0 or speed < 2.0:
 		return

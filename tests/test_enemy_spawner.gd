@@ -1,6 +1,16 @@
 extends TestCase
 ## EnemySpawner: spawns the right type per marker, and defers the Inquisitor.
 
+
+func before_each() -> void:
+	# The spawner reads mission progress (a save past the ledger unlocks the
+	# Inquisitor), so start every test from a fresh run.
+	GameState.reset_run()
+
+
+func after_each() -> void:
+	GameState.reset_run()
+
 func test_spawner_spawns_correct_types() -> void:
 	var spawner := EnemySpawner.new()
 	add_child(spawner)

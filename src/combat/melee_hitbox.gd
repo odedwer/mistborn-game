@@ -22,8 +22,10 @@ var _hit_this_swing: Array[Node] = []
 
 
 func _ready() -> void:
-	monitoring = false
-	monitorable = false
+	# Deferred: enemies can be spawned from inside a physics callback (a
+	# trigger completing an objective), where these setters are blocked.
+	set_deferred(&"monitoring", false)
+	set_deferred(&"monitorable", false)
 	body_entered.connect(_on_body_entered)
 
 

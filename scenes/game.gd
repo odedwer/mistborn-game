@@ -25,6 +25,7 @@ var _live_pickups: Dictionary = {}
 
 
 func _ready() -> void:
+	add_to_group(&"game_scene")
 	_build_world()
 	_spawn_player()
 	_build_enemy_spawner()
@@ -147,6 +148,11 @@ func _build_enemy_spawner() -> void:
 	spawner.add_to_group("enemy_spawner")
 	add_child(spawner)
 	enemy_spawner = spawner
+	# Shared alert level (HUD indicator, detection stats, music intensity).
+	if get_tree().get_first_node_in_group(&"alert_director") == null:
+		var alert := AlertDirector.new()
+		alert.name = "AlertDirector"
+		add_child(alert)
 	spawner.call(&"spawn_all", world)
 
 
