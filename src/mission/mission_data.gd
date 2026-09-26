@@ -71,7 +71,9 @@ extends RefCounted
 ## under a single fade), `call_group` (`group`, `method`, optional `args`:
 ## lets a scene stage its own scripted beats, e.g. a boss phase change),
 ## `drain_metals` (`metals`, empty = all: empties the player's reserves and
-## vials) and `roll_credits` (the finale: credits, then post-game free roam).
+## vials), `grant_metals` (`metals`, empty = all ordinary metals, `amount`:
+## tops reserves up) and `roll_credits` (the finale: credits, then post-game
+## free roam).
 ##
 ## `journal` (Act III on, optional): a first-person summary shown in the pause
 ## menu's journal once the mission is complete.

@@ -1,0 +1,112 @@
+{
+	"id": "the_lord_ruler",
+	"title": "The Lord Ruler",
+	"act": "3",
+	"chapter": "The Final Empire",
+	"prerequisites": ["the_pits_beneath_the_palace"],
+	"journal": "I faced him in his throne hall. He Pushed on the metal inside me until I burned it all away. Breeze's vial let me reach the crowd in the square, calming their fear and then setting their anger loose. When he stumbled I tore his bracers off with iron, and he was only a man, a very old one. The city is awake. Elend means to help it decide what comes next. So do I.",
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "survive_and_learn",
+			"label": "The Lord Ruler",
+			"on_enter": [
+				{"action": "switch_interior", "scene": "res://src/mission/interiors/throne_room.tscn"},
+				{"action": "grant_metals", "metals": [], "amount": 100.0},
+				{"action": "start_dialogue", "dialogue_id": "lord_ruler_confront"},
+				{"action": "call_group", "group": "lord_ruler", "method": "set_phase", "args": [1]}
+			],
+			"objectives": [
+				{
+					"id": "lr_learn_his_push",
+					"type": "flag_count",
+					"flags": ["lr_learned_drain"],
+					"count": 1,
+					"text": "Survive — work out what he's Pushing on"
+				},
+				{
+					"id": "lr_hold_out",
+					"type": "survive",
+					"duration": 15.0,
+					"text": "Keep your reserves low and stay alive"
+				}
+			]
+		},
+		{
+			"id": "the_city_rises",
+			"label": "The City Rises",
+			"on_enter": [
+				{"action": "call_group", "group": "lord_ruler", "method": "set_phase", "args": [2]},
+				{"action": "grant_metals", "metals": [4, 5], "amount": 100.0},
+				{"action": "start_dialogue", "dialogue_id": "throne_crowd"}
+			],
+			"objectives": [
+				{
+					"id": "lr_reach_gallery",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "throne_gallery",
+					"text": "Get to the gallery above the square"
+				},
+				{
+					"id": "lr_soothe_fear",
+					"type": "crowd_mood",
+					"direction": "below",
+					"target": 25.0,
+					"text": "Soothe the crowd's fear with brass"
+				},
+				{
+					"id": "lr_riot_anger",
+					"type": "crowd_mood",
+					"direction": "above",
+					"target": 85.0,
+					"text": "Now Riot their anger with zinc — let the city rise"
+				}
+			]
+		},
+		{
+			"id": "the_bracers",
+			"label": "His Bracers",
+			"on_enter": [
+				{"action": "call_group", "group": "lord_ruler", "method": "set_phase", "args": [3]},
+				{"action": "start_dialogue", "dialogue_id": "throne_bracers"},
+				{"action": "hint", "text": "Out of iron? There are vials in the corners of the hall — drink one (R).", "duration": 4.0}
+			],
+			"objectives": [
+				{
+					"id": "lr_tear_bracers",
+					"type": "flag_count",
+					"flags": ["lr_bracer_left", "lr_bracer_right"],
+					"count": 2,
+					"text": "When he staggers, Pull his bracers off with iron"
+				},
+				{
+					"id": "lr_finish",
+					"type": "defeat",
+					"target_group": "lord_ruler",
+					"text": "Finish it"
+				}
+			]
+		},
+		{
+			"id": "finale",
+			"label": "The Final Empire Falls",
+			"on_enter": [
+				{"action": "start_cutscene", "cutscene_id": "lord_ruler_falls"}
+			],
+			"objectives": [
+				{
+					"id": "lr_finale",
+					"type": "cutscene",
+					"cutscene_id": "lord_ruler_falls",
+					"text": "...",
+					"on_complete": [
+						{"action": "set_flag", "flag": "lord_ruler_fallen", "value": true},
+						{"action": "roll_credits"}
+					]
+				}
+			]
+		}
+	]
+}

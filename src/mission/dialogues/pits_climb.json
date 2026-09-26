@@ -1,0 +1,25 @@
+{
+  "id": "pits_climb",
+  "lines": [
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "You're out of the pit — well done. Listen: the crew has not been idle. Breeze and Ham have been in the Fourth Octant since dawn. The skaa are gathering in the square below the throne hall, thousands of them."
+    },
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "They came because of Kelsier. They are frightened, and they are angry, and they are waiting to see which of those wins."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Then they're about to find out. Where is he?"
+    },
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "The throne hall, above us. Mistress — whatever you face up there, remember what the margins said. He never takes them off."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "ks_duel_taunt",
+  "lines": [
+    {
+      "speaker": "Inquisitor",
+      "color": "#9a3030",
+      "text": "There you are. The little Mistborn who rings like a temple bell every time she breathes her metals."
+    },
+    {
+      "speaker": "Inquisitor",
+      "color": "#9a3030",
+      "text": "Your friend fought well, too. Come. Show me whether he taught you anything worth taking."
+    }
+  ]
+}

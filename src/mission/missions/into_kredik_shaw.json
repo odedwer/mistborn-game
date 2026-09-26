@@ -1,0 +1,96 @@
+{
+	"id": "into_kredik_shaw",
+	"title": "Into Kredik Shaw",
+	"act": "3",
+	"chapter": "The Palace of Spires",
+	"prerequisites": ["the_survivors_legacy"],
+	"journal": "I went into Kredik Shaw alone. I crossed the Hall of Spires over the Inquisitors' heads and reached a round chamber where one of them was waiting, hunting me by my own metals. Then there were four of them, and him. I burned the eleventh metal and saw someone else standing in his place for a moment. Then they took me.",
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_court",
+			"label": "The Spire Court",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/kredik_shaw.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "ks_approach"}
+			],
+			"objectives": [
+				{
+					"id": "ks_cross_court",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "ks_gate",
+					"text": "Cross the Spire Court to the great doors"
+				}
+			]
+		},
+		{
+			"id": "the_hall",
+			"label": "The Hall of Spires",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "ks_hall_warning"}
+			],
+			"objectives": [
+				{
+					"id": "ks_hall_mid",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "ks_hall_midpoint",
+					"text": "Get past the Inquisitor patrols (the braziers hang high)"
+				},
+				{
+					"id": "ks_hall_end",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "ks_hall_far",
+					"text": "Slip by the Seeker at the far arch — copper hides your pulses"
+				}
+			]
+		},
+		{
+			"id": "the_gazes",
+			"label": "The Hall of Gazes",
+			"objectives": [
+				{
+					"id": "ks_enter_gazes",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "ks_gazes",
+					"text": "Enter the round chamber beyond",
+					"on_complete": [
+						{"action": "call_group", "group": "kredik_shaw", "method": "begin_duel"},
+						{"action": "start_dialogue", "dialogue_id": "ks_duel_taunt"}
+					]
+				},
+				{
+					"id": "ks_duel",
+					"type": "survive",
+					"duration": 30.0,
+					"text": "Duel the Inquisitor — it hunts by bronze; burn copper to vanish from its senses"
+				}
+			]
+		},
+		{
+			"id": "captured",
+			"label": "Taken",
+			"on_enter": [
+				{"action": "start_cutscene", "cutscene_id": "vin_captured"}
+			],
+			"objectives": [
+				{
+					"id": "ks_captured",
+					"type": "cutscene",
+					"cutscene_id": "vin_captured",
+					"text": "...",
+					"on_complete": [
+						{"action": "set_flag", "flag": "vin_captured", "value": true},
+						{"action": "drain_metals", "metals": []},
+						{"action": "switch_interior", "scene": "res://src/mission/interiors/palace_pits.tscn"},
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

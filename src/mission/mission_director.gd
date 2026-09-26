@@ -375,13 +375,23 @@ func _run_action(action: Dictionary) -> void:
 		"switch_interior":
 			SceneTransition.switch_interior(String(action.get("scene", "")))
 		"call_group":
-			var call_args: Array = [StringName(action.get("group", "")), StringName(action.get("method", ""))]
-			call_args.append_array(action.get("args", []))
-			get_tree().callv(&"call_group", call_args)
+			_call_group(action)
 		"drain_metals":
 			_drain_metals(action.get("metals", []))
+		"grant_metals":
+			_grant_metals(action.get("metals", []), float(action.get("amount", 100.0)))
 		"roll_credits":
 			_roll_credits()
+
+
+## `call_group` action. When the same `on_enter` just started an interior
+## transition, the target scene doesn't exist yet: wait for it to load.
+func _call_group(action: Dictionary) -> void:
+	if SceneTransition.busy:
+		await Events.interior_entered
+	var call_args: Array = [StringName(action.get("group", "")), StringName(action.get("method", ""))]
+	call_args.append_array(action.get("args", []))
+	get_tree().callv(&"call_group", call_args)
 
 
 ## Act III ("Into Kredik Shaw" capture / "The Pits Beneath the Palace"):
@@ -399,6 +409,20 @@ func _drain_metals(metals: Array) -> void:
 		player.vials = 0
 
 
+## Tops the player's reserves of `metals` (all when empty) up to `amount`
+## (a crewmate's vial, a story beat that hands Vin her metals back).
+func _grant_metals(metals: Array, amount: float) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var list: Array = metals if not metals.is_empty() else Metal.Type.values()
+	for m in list:
+		if int(m) == Metal.Type.ATIUM or int(m) == Metal.Type.DURALUMIN:
+			if metals.is_empty():
+				continue  # "all" means the ordinary metals
+		player.allomancer.set_reserve(int(m), maxf(player.allomancer.get_reserve(int(m)), amount))
+
+
 ## The finale: records the last story mission as done, then plays the
 ## credits (`CreditsScreen`); once they end the game drops into post-game
 ## free roam instead of the usual mission-complete screen.
@@ -414,6 +438,10 @@ func _roll_credits() -> void:
 
 
 func _on_credits_finished(final_id: StringName) -> void:
+	# Post-game free roam happens in the open world: leave the finale's
+	# interior (back to where the Act III chain of interiors began).
+	if SceneTransition.is_inside_interior():
+		SceneTransition.exit_interior()
 	mission = null
 	_active_objectives.clear()
 	_pending_objectives.clear()

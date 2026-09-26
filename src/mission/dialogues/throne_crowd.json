@@ -1,0 +1,20 @@
+{
+  "id": "throne_crowd",
+  "lines": [
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Listen to them. The whole square is full — and they're terrified, and they're furious, and they don't know which one they are yet."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Breeze's emergency vial. Brass and zinc. Kelsier, if you're watching: this is the part you'd have enjoyed."
+    },
+    {
+      "speaker": "The Lord Ruler",
+      "color": "#e8e2d0",
+      "text": "Do not presume to speak to my people."
+    }
+  ]
+}

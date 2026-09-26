@@ -73,6 +73,7 @@ var _burst: Array[Vector2] = []  # (time, amount)
 var _clock := 0.0
 var _hinted_push := false
 var _learned := false
+var _first_exposure := -1.0
 
 
 func _ready() -> void:
@@ -273,6 +274,17 @@ static func metal_exposure(reserves: Dictionary, coins: int) -> float:
 	return clampf(metal_part * 0.75 + coin_part * 0.25, 0.0, 1.0)
 
 
+## "Survive and learn" is done once the player has drained what he Pushes on:
+## nearly empty, or well below what they carried at his first Push — or
+## they've simply outlasted `learn_timeout`.
+func has_learned(exposure: float, first_exposure: float, phase_time: float) -> bool:
+	if phase_time >= learn_timeout:
+		return true
+	if exposure <= 0.05:
+		return true
+	return first_exposure > 0.0 and exposure <= minf(learned_exposure, first_exposure * 0.6)
+
+
 func player_exposure() -> float:
 	var player := _get_player()
 	if player == null or not ("allomancer" in player) or player.allomancer == null:
@@ -367,10 +379,10 @@ func _combat_tick(delta: float) -> void:
 	if _push_timer <= 0.0:
 		_push_timer = push_interval
 		_push_player()
-	if phase == Phase.SURVIVE and not _learned:
-		if (times_pushed_player > 0 and player_exposure() <= learned_exposure) or _phase_time >= learn_timeout:
-			_learned = true
-			GameState.set_dialogue_flag(&"lr_learned_drain", true)
+	if phase == Phase.SURVIVE and not _learned and has_learned(player_exposure(), _first_exposure, _phase_time):
+		_learned = true
+		GameState.set_dialogue_flag(&"lr_learned_drain", true)
+		Events.hint_requested.emit("Less metal in you, less for him to grip. Keep it that way.", 3.0)
 	# The telegraphed slam, and the stagger that follows it.
 	if phase == Phase.BRACERS:
 		if _slam_windup_left >= 0.0:
@@ -409,6 +421,8 @@ func _push_player() -> void:
 	if exposure <= 0.05:
 		return
 	times_pushed_player += 1
+	if _first_exposure < 0.0:
+		_first_exposure = exposure
 	var dir := player.global_position - global_position
 	dir.y = 0.0
 	dir = dir.normalized() if dir.length() > 0.01 else Vector3.FORWARD
