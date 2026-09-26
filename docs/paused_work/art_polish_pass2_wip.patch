@@ -1,0 +1,239 @@
+diff --git a/assets/shaders/stained_glass.gdshader b/assets/shaders/stained_glass.gdshader
+index 719b0aa..ba6e2b8 100644
+--- a/assets/shaders/stained_glass.gdshader
++++ b/assets/shaders/stained_glass.gdshader
+@@ -1,21 +1,21 @@
+ shader_type spatial;
+ render_mode unshaded, cull_back;
+-// Procedural leaded stained glass: a rectangular came (lead) lattice with a
+-// diagonal tracery accent, each pane tinted from a small fixed palette
+-// (hashed per-cell) and blended along a top-to-bottom colour gradient, with
+-// a warm emissive core so the panel reads as backlit glass rather than a
+-// flat coloured quad.
++// Procedural leaded stained glass: an irregular (Voronoi, not grid-square)
++// leaded lattice arranged as a Gothic window -- a rose of concentric rings
++// and radial spokes in the upper arch, tapering into narrow vertical lancet
++// panes below -- tinted from a small, deliberately desaturated palette and
++// blended along a top-to-bottom colour gradient, with a warm emissive core
++// so the panel reads as backlit glass rather than a flat coloured checker.
+ 
+ uniform vec4 color_a : source_color = vec4(0.55, 0.12, 0.14, 1.0);
+ uniform vec4 color_b : source_color = vec4(0.14, 0.28, 0.55, 1.0);
+ uniform vec4 color_c : source_color = vec4(0.55, 0.42, 0.10, 1.0);
+ uniform vec4 color_d : source_color = vec4(0.16, 0.4, 0.24, 1.0);
+ uniform vec4 lead_color : source_color = vec4(0.03, 0.03, 0.035, 1.0);
+-uniform float grid_x = 4.0;
+-uniform float grid_y = 7.0;
+-uniform float lead_width = 0.05;
+-uniform float emission_strength = 2.4;
++uniform float lead_width = 0.16;
++uniform float emission_strength = 1.5;
+ uniform float twinkle_speed = 0.15;
++uniform float saturation = 0.55;
+ 
+ float hash21(vec2 p) {
+ 	p = fract(p * vec2(123.34, 456.21));
+@@ -23,24 +23,61 @@ float hash21(vec2 p) {
+ 	return fract(p.x * p.y);
+ }
+ 
++vec2 hash22(vec2 p) {
++	float n = hash21(p);
++	float m = hash21(p + 17.13);
++	return vec2(n, m);
++}
++
++// Jittered-grid Worley: returns (f1, f2, cell id) in the given cell space,
++// so the leaded boundaries are irregular polygons, never straight grid
++// squares -- this is what actually stops the window reading as a checker.
++vec3 worley(vec2 p) {
++	vec2 base = floor(p);
++	float best1 = 8.0;
++	float best2 = 8.0;
++	vec2 best_id = vec2(0.0);
++	for (int y = -1; y <= 1; y++) {
++		for (int x = -1; x <= 1; x++) {
++			vec2 cell = base + vec2(float(x), float(y));
++			vec2 jitter = hash22(cell);
++			vec2 pt = cell + 0.15 + jitter * 0.7;
++			float d = length(pt - p);
++			if (d < best1) {
++				best2 = best1;
++				best1 = d;
++				best_id = cell;
++			} else if (d < best2) {
++				best2 = d;
++			}
++		}
++	}
++	return vec3(best1, best2, hash21(best_id));
++}
++
+ void fragment() {
+ 	vec2 uv = UV;
+-	vec2 cell = uv * vec2(grid_x, grid_y);
+-	vec2 cell_id = floor(cell);
+-	vec2 cell_f = fract(cell);
+ 
+-	// Rectangular came lines.
+-	float lead = 0.0;
+-	lead = max(lead, step(cell_f.x, lead_width) + step(1.0 - lead_width, cell_f.x));
+-	lead = max(lead, step(cell_f.y, lead_width) + step(1.0 - lead_width, cell_f.y));
+-	// Diagonal tracery accent through the middle of each pane (gothic quatrefoil feel).
+-	float diag = abs(cell_f.x - cell_f.y);
+-	float diag2 = abs(cell_f.x + cell_f.y - 1.0);
+-	lead = max(lead, 1.0 - smoothstep(0.0, lead_width * 0.6, min(diag, diag2)));
+-	lead = clamp(lead, 0.0, 1.0);
++	// Warp into the window's own layout before feeding the Worley cells:
++	// a circular rose in the upper arch, narrow vertical lancets below.
++	vec2 rose_center = vec2(0.5, 0.8);
++	vec2 d = uv - rose_center;
++	float radius = length(d) / 0.32;
++	vec2 cell_space;
++	if (uv.y > 0.42 && radius < 1.15) {
++		float ang = atan(d.y, d.x) / 6.28318 + 0.5;
++		cell_space = vec2(ang * 10.0, radius * 4.5);
++	} else {
++		// Elongated lancet panes: few columns, several rows, each pane
++		// stretched tall like real Gothic tracery.
++		cell_space = vec2(uv.x * 6.0, uv.y * 3.2);
++	}
++
++	vec3 w = worley(cell_space);
++	float gap = w.y - w.x;
++	float lead = 1.0 - smoothstep(lead_width * 0.5, lead_width, gap);
++	float h = w.z;
+ 
+-	// Per-pane colour, picked from a small fixed palette by a cell hash.
+-	float h = hash21(cell_id);
+ 	vec4 base;
+ 	if (h < 0.25) {
+ 		base = color_a;
+@@ -51,17 +88,21 @@ void fragment() {
+ 	} else {
+ 		base = color_d;
+ 	}
++	// Desaturate the palette toward its own luminance -- authentic leaded
++	// glass reads muted/antique, not primary-colour saturated.
++	float lum = dot(base.rgb, vec3(0.299, 0.587, 0.114));
++	vec3 muted = mix(vec3(lum), base.rgb, saturation);
++
+ 	// A gentle warm-to-cool gradient down the whole window (top = cool
+ 	// moonlit sky glimpsed through glass, bottom = warm hall-side glow).
+-	vec3 grad = mix(vec3(1.05, 0.95, 0.8), vec3(0.85, 0.95, 1.1), uv.y);
+-	vec3 pane_color = base.rgb * grad;
++	vec3 grad = mix(vec3(1.0, 0.92, 0.8), vec3(0.85, 0.92, 1.05), uv.y);
++	vec3 pane_color = muted * grad;
+ 
+ 	// Subtle per-pane twinkle so the ballroom feels alive without being noisy.
+-	float twinkle = 0.9 + 0.1 * sin(TIME * twinkle_speed * 6.283 + h * 40.0);
++	float twinkle = 0.92 + 0.08 * sin(TIME * twinkle_speed * 6.283 + h * 40.0);
+ 
+ 	vec3 glass_emission = pane_color * emission_strength * twinkle;
+-	vec3 final_color = mix(glass_emission, lead_color.rgb, lead);
+ 
+-	ALBEDO = mix(pane_color * 0.4, lead_color.rgb, lead);
++	ALBEDO = mix(pane_color * 0.35, lead_color.rgb, lead);
+ 	EMISSION = mix(glass_emission, vec3(0.0), lead);
+ }
+diff --git a/src/mission/interiors/keep_venture_ballroom.gd b/src/mission/interiors/keep_venture_ballroom.gd
+index 24aa4c0..43c8f6f 100644
+--- a/src/mission/interiors/keep_venture_ballroom.gd
++++ b/src/mission/interiors/keep_venture_ballroom.gd
+@@ -144,7 +144,7 @@ func _build_stained_glass() -> void:
+ 		# of light where the glass would let moon/lantern light through.
+ 		var shaft := SpotLight3D.new()
+ 		shaft.light_color = tint.lightened(0.2)
+-		shaft.light_energy = 1.1
++		shaft.light_energy = 1.6
+ 		shaft.spot_range = 9.0
+ 		shaft.spot_angle = 18.0
+ 		shaft.spot_angle_attenuation = 1.6
+@@ -192,7 +192,7 @@ func _build_chandeliers() -> void:
+ 			chandelier.add_child(bulb)
+ 		var light := OmniLight3D.new()
+ 		light.light_color = Color(1.0, 0.85, 0.6)
+-		light.light_energy = 1.3
++		light.light_energy = 1.9
+ 		light.omni_range = 8.0
+ 		# The centre chandelier is close over the dance floor where nobles
+ 		# gather -- give it the one shadowed light in the room so figures
+@@ -308,14 +308,14 @@ func _build_lighting() -> void:
+ 	e.background_mode = Environment.BG_COLOR
+ 	e.background_color = Color(0.04, 0.035, 0.05)
+ 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+-	# A warm-leaning ambient (rather than the old flat grey) so the hall
+-	# reads opulent under the chandeliers and candlelight, while staying
+-	# moody -- the corners fall off into shadow instead of everything being
+-	# lit flat.
+-	e.ambient_light_color = Color(0.3, 0.24, 0.19)
+-	e.ambient_light_energy = 1.1
++	# Kept low and warm: the chandeliers, their candle bulbs and the
++	# stained-glass shafts are meant to carry the room's light, not a flat
++	# ambient wash. The pass-1 value (1.1) blew walls near the door out to
++	# white; this is low enough that unlit corners actually go dim.
++	e.ambient_light_color = Color(0.22, 0.17, 0.13)
++	e.ambient_light_energy = 0.4
+ 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+-	e.tonemap_exposure = 1.15
++	e.tonemap_exposure = 0.95
+ 	# No glow here: at interior scale even a modest bloom threshold blows
+ 	# out lit character skin/hair under the fill + ambient + chandeliers, so
+ 	# rely on the emissive materials themselves (candle flames, chandelier
+@@ -324,12 +324,12 @@ func _build_lighting() -> void:
+ 	env.environment = e
+ 	add_child(env)
+ 
+-	# A soft warm fill light angled down over the dance floor, standing in
+-	# for bounced candle/chandelier light so nobles aren't lit from one
+-	# harsh point only -- keeps faces readable without extra shadow cost.
++	# A faint warm fill, just enough to keep faces off pure black between
++	# the chandeliers and window shafts -- most of the room's light should
++	# visibly come from those, not from this.
+ 	var fill := DirectionalLight3D.new()
+ 	fill.light_color = Color(1.0, 0.82, 0.6)
+-	fill.light_energy = 0.35
++	fill.light_energy = 0.12
+ 	fill.shadow_enabled = false
+ 	fill.rotation_degrees = Vector3(-65.0, 25.0, 0.0)
+ 	add_child(fill)
+diff --git a/src/mission/interiors/keep_venture_library.gd b/src/mission/interiors/keep_venture_library.gd
+index 83bede0..6b9568c 100644
+--- a/src/mission/interiors/keep_venture_library.gd
++++ b/src/mission/interiors/keep_venture_library.gd
+@@ -54,9 +54,32 @@ func _build_hall() -> void:
+ 	InteriorKit.box(self, Vector3(hx - gap, HALL.y, 0.5), Vector3(-(hx + gap) * 0.5, HALL.y * 0.5, hz), stone)
+ 	InteriorKit.box(self, Vector3(hx - gap, HALL.y, 0.5), Vector3((hx + gap) * 0.5, HALL.y * 0.5, hz), stone)
+ 	InteriorKit.box(self, Vector3(gap * 2.0, HALL.y - 3.2, 0.5), Vector3(0, 3.2 + (HALL.y - 3.2) * 0.5, hz), stone)
+-	# Tall stained windows on the north wall, lit faintly from outside.
+-	for x: float in [-8.0, 0.0, 8.0]:
+-		InteriorKit.box(self, Vector3(2.2, 5.0, 0.1), Vector3(x, 6.5, -hz + 0.3), InteriorKit.mat(Color(0.3, 0.35, 0.55), 0.0, 0.3, Color(0.25, 0.3, 0.5), 0.8), 0.0, false)
++	# Tall stained windows on the north wall: the same leaded-glass shader
++	# the ballroom uses (irregular panes, a rose-window arch, muted colour),
++	# each with its own palette rotation for variety.
++	var glass_shader := load("res://assets/shaders/stained_glass.gdshader") as Shader
++	var palettes := [
++		[Color(0.55, 0.12, 0.14), Color(0.14, 0.28, 0.55), Color(0.55, 0.42, 0.10), Color(0.16, 0.4, 0.24)],
++		[Color(0.14, 0.28, 0.55), Color(0.16, 0.4, 0.24), Color(0.55, 0.12, 0.14), Color(0.55, 0.42, 0.10)],
++		[Color(0.55, 0.42, 0.10), Color(0.55, 0.12, 0.14), Color(0.16, 0.4, 0.24), Color(0.14, 0.28, 0.55)],
++	]
++	var xs: Array[float] = [-8.0, 0.0, 8.0]
++	for i in xs.size():
++		var panel := MeshInstance3D.new()
++		panel.mesh = PlaneMesh.new()
++		(panel.mesh as PlaneMesh).size = Vector2(2.2, 5.0)
++		(panel.mesh as PlaneMesh).orientation = PlaneMesh.FACE_Z
++		var mat := ShaderMaterial.new()
++		mat.shader = glass_shader
++		var pal: Array = palettes[i]
++		mat.set_shader_parameter("color_a", pal[0])
++		mat.set_shader_parameter("color_b", pal[1])
++		mat.set_shader_parameter("color_c", pal[2])
++		mat.set_shader_parameter("color_d", pal[3])
++		mat.set_shader_parameter("emission_strength", 1.1)
++		panel.material_override = mat
++		panel.position = Vector3(xs[i], 6.5, -hz + 0.32)
++		add_child(panel)
+ 	# The study door on the east wall (closed; the eavesdrop spot).
+ 	InteriorKit.box(self, Vector3(0.2, 2.8, 1.6), Vector3(hx - 0.3, 1.4, 10), InteriorKit.mat(Color(0.3, 0.2, 0.12)))
+ 
