@@ -1,0 +1,8 @@
+{
+  "id": "lessons_intro",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Rooftop lessons taught you to move. Today you learn to fight, and to fall without breaking."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "I already know how to fall."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Not the way I mean. Chain your pushes tight enough and the mists will carry you faster than any guard can run. Then Ham's going to hit you, and you're going to enjoy it a little."}
+  ]
+}

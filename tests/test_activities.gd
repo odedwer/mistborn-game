@@ -129,6 +129,41 @@ func test_obligator_ambush_completes_when_all_defeated() -> void:
 	spawner.queue_free()
 
 
+func test_loads_act2_activities() -> void:
+	assert_true(_mgr.activities.has(&"obligator_courier_intercept"))
+	assert_true(_mgr.activities.has(&"soothing_riots"))
+	assert_true(_mgr.activities.has(&"noble_carriage_heist"))
+	assert_eq(String(_mgr.activities[&"soothing_riots"].type), "crowd_riot")
+
+
+## "Soothing riots" (Act II): a `CrowdMoodMeter` starts already boiling over;
+## soothing it below `calm_threshold` completes the activity.
+func test_crowd_riot_start_and_soothe_completes() -> void:
+	assert_true(_mgr.start_activity(&"soothing_riots", Vector3(30, 0, 30)))
+	assert_true(_mgr.is_running(&"soothing_riots"))
+	var st: Dictionary = _mgr._active[&"soothing_riots"]
+	var meter: CrowdMoodMeter = st["meter"]
+	assert_true(meter.mood > 70.0, "riot should start already boiling over")
+	var got_complete := [false]
+	_mgr.activity_completed.connect(func(id, _medal, _t): got_complete[0] = (id == &"soothing_riots"))
+	meter.apply(&"soothe", 1.0)
+	meter.apply(&"soothe", 1.0)
+	meter.apply(&"soothe", 1.0)
+	meter.apply(&"soothe", 1.0)
+	meter.apply(&"soothe", 1.0)
+	_mgr._tick_activity(&"soothing_riots", 0.1, Vector3.INF)
+	assert_true(got_complete[0])
+	assert_false(_mgr.is_running(&"soothing_riots"))
+
+
+func test_crowd_riot_times_out_and_fails() -> void:
+	_mgr.start_activity(&"soothing_riots", Vector3.ZERO)
+	var got_failed := [false]
+	_mgr.activity_failed.connect(func(id, _reason): got_failed[0] = (id == &"soothing_riots"))
+	_mgr._tick_activity(&"soothing_riots", 999.0, Vector3.INF)
+	assert_true(got_failed[0])
+
+
 func test_collectible_marker_grants_and_persists() -> void:
 	var marker := Node3D.new()
 	marker.add_to_group(&"collectible_spawn")

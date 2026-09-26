@@ -1,0 +1,59 @@
+{
+	"id": "lessons_in_the_mists",
+	"title": "Lessons in the Mists",
+	"act": "1",
+	"chapter": "Kelsier's Training",
+	"prerequisites": ["mistwalk_to_keep_venture"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "training_intro",
+			"label": "Advanced Training",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "lessons_intro"}
+			],
+			"objectives": [
+				{
+					"id": "pull_swing",
+					"type": "reach_speed",
+					"min_speed": 10.0,
+					"text": "Pull-swing until you're moving fast"
+				},
+				{
+					"id": "coin_jump_chain",
+					"type": "chain_pushes",
+					"metal": 0,
+					"count": 3,
+					"max_gap": 1.5,
+					"text": "Chain three steel-pushes together"
+				},
+				{
+					"id": "flare_lesson",
+					"type": "flare_metal",
+					"metal": 2,
+					"text": "Flare pewter to feel the surge"
+				}
+			]
+		},
+		{
+			"id": "the_duel",
+			"label": "Sparring with Ham",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "ham_duel_taunt"},
+				{"action": "spawn_enemy", "enemy_type": "thug"}
+			],
+			"objectives": [
+				{
+					"id": "beat_ham",
+					"type": "defeat_in_duel",
+					"target_group": "enemy",
+					"text": "Beat Ham in the sparring bout",
+					"on_complete": [
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,63 @@
+{
+	"id": "house_war",
+	"title": "House War",
+	"act": "2",
+	"chapter": "Keep Tekiel",
+	"prerequisites": ["soothing_the_masses"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_strike",
+			"label": "The Rooftop Strike",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/keep_tekiel_rooftop.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "house_war_briefing"}
+			],
+			"objectives": [
+				{
+					"id": "clear_rooftop",
+					"type": "defeat",
+					"target_group": "enemy",
+					"text": "Clear the coinshot and hazekillers"
+				}
+			]
+		},
+		{
+			"id": "the_set_piece",
+			"label": "Bring Down the Gate",
+			"objectives": [
+				{
+					"id": "topple_gate",
+					"type": "push_target",
+					"marker_group": "objective_point",
+					"marker_id": "tekiel_gate",
+					"text": "Push (or Pull) the iron gate down into the courtyard",
+					"on_complete": [
+						{"action": "hint", "text": "The gate crashes down through the courtyard — every house on the street will hear it.", "duration": 4.0}
+					]
+				}
+			]
+		},
+		{
+			"id": "the_getaway",
+			"label": "Away Before the Watch Arrives",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "house_war_aftermath"}
+			],
+			"objectives": [
+				{
+					"id": "tekiel_escape",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "tekiel_exit",
+					"text": "Get off the roof before the watch arrives",
+					"on_complete": [
+						{"action": "exit_interior"},
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

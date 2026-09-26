@@ -1,0 +1,8 @@
+{
+  "id": "ham_duel_taunt",
+  "lines": [
+    {"speaker": "Ham", "color": "#8a4b3d", "text": "Pewter up. Flare when it counts, not before — you'll burn through your reserve in a minute otherwise."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "Try not to break anything important."},
+    {"speaker": "Ham", "color": "#8a4b3d", "text": "No promises. Come on, then."}
+  ]
+}

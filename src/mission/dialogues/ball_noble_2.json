@@ -1,0 +1,13 @@
+{
+  "id": "ball_noble_2",
+  "lines": [
+    {"speaker": "Lady Hesting", "color": "#a26b7a", "text": "You've chosen a strange season to enter society, dear. Half these houses are still counting their losses from the Hasting affair."},
+    {"speaker": "Valette", "color": "#8fa6c4", "text": "I'd heard whispers. Nothing certain.",
+      "choices": [
+        {"text": "Press for names.", "set_flag": "talked_noble_2", "goto": 2},
+        {"text": "Ask what the Hastings lost.", "set_flag": "talked_noble_2", "goto": 3}
+      ]},
+    {"speaker": "Lady Hesting", "color": "#a26b7a", "text": "Names are dangerous currency at a ball, Lady Renoux. I'll only say the obligators were involved, and obligators are never involved for small matters."},
+    {"speaker": "Lady Hesting", "color": "#a26b7a", "text": "An entire shipment of atium, or so the rumor goes. Enough to ruin a lesser house outright."}
+  ]
+}

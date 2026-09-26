@@ -42,3 +42,22 @@ signal hint_requested(text: String, duration: float)
 # --- Game flow -------------------------------------------------------------
 signal pause_toggled(paused: bool)
 signal settings_changed
+
+# --- Act I: dialogue / cutscenes / social stealth ---------------------------
+## A `DialogueData` started/finished playing (see `src/dialogue/`).
+signal dialogue_started(id: StringName)
+signal dialogue_line_shown(dialogue_id: StringName, speaker: String, text: String, color: Color)
+## A line offered choices; `choices` is the raw JSON array (each with `text`).
+signal dialogue_choices_shown(dialogue_id: StringName, choices: Array)
+signal dialogue_finished(id: StringName)
+## A story flag changed (dialogue choice, mission action). `value` is
+## free-form (usually `true`, sometimes a count or string).
+signal dialogue_flag_set(flag: StringName, value: Variant)
+## Lady Valette's suspicion meter (0..max_value) changed.
+signal suspicion_changed(value: float, max_value: float)
+## A `CutsceneData` letterbox/pan/subtitle sequence started/finished.
+signal cutscene_started(id: StringName)
+signal cutscene_finished(id: StringName)
+## The player crossed a scene-transition door into/out of an interior.
+signal interior_entered(scene_path: String)
+signal interior_exited

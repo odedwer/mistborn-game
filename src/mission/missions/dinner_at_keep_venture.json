@@ -1,0 +1,68 @@
+{
+	"id": "dinner_at_keep_venture",
+	"title": "Dinner at Keep Venture",
+	"act": "2",
+	"chapter": "The Venture Table",
+	"prerequisites": ["lady_valette"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_dinner",
+			"label": "A Quiet Dinner",
+			"parallel": true,
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/keep_venture_dinner.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "dinner_intro"}
+			],
+			"objectives": [
+				{
+					"id": "meet_elend",
+					"type": "dialogue",
+					"dialogue_id": "elend_venture_intro",
+					"text": "Have dinner with Elend Venture"
+				},
+				{
+					"id": "dinner_eavesdrop",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "dinner_eavesdrop",
+					"interact_kind": "eavesdrop",
+					"require_metal": 3,
+					"hint_locked": "Burn tin to make out what the gossiping nobles are really saying.",
+					"text": "Eavesdrop on house politics (burn tin)"
+				},
+				{
+					"id": "dinner_pickpocket",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "dinner_pickpocket",
+					"interact_kind": "pickpocket",
+					"require_metal": 1,
+					"hint_locked": "Burn iron and Pull gently — a sharp tug will be noticed.",
+					"text": "Pick the steward's purse (Pull)"
+				}
+			]
+		},
+		{
+			"id": "the_exit",
+			"label": "A Polite Goodbye",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "dinner_exit"},
+				{"action": "exit_interior"}
+			],
+			"objectives": [
+				{
+					"id": "dinner_mistwalk_exit",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "keep_courtyard",
+					"text": "Mistwalk back over the rooftops",
+					"on_complete": [
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,88 @@
+{
+	"id": "the_pits_of_hathsin",
+	"title": "The Pits of Hathsin",
+	"act": "2",
+	"chapter": "Into the Crevasses",
+	"prerequisites": ["house_war"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_descent",
+			"label": "Down Into the Pits",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/pits_of_hathsin.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "kelsier_pits_backstory"}
+			],
+			"objectives": [
+				{
+					"id": "descend_ledge_1",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "pits_ledge_1",
+					"text": "Pull yourself down to the next ledge",
+					"on_complete": [
+						{"action": "hint", "text": "Old chain-anchors, rusted into the rock — someone spent years hauling ore up this exact shaft.", "duration": 5.0}
+					]
+				},
+				{
+					"id": "descend_ledge_2",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "pits_ledge_2",
+					"text": "Keep descending",
+					"on_complete": [
+						{"action": "hint", "text": "A collapsed side-tunnel, shored up with someone's old coat. Whoever hid here didn't plan on staying long.", "duration": 5.0}
+					]
+				},
+				{
+					"id": "descend_ledge_3",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "pits_ledge_3",
+					"text": "One more ledge down",
+					"on_complete": [
+						{"action": "hint", "text": "The air changes near the bottom — warmer, and faintly metallic. This close to the veins, you can almost taste the atium.", "duration": 5.0}
+					]
+				}
+			]
+		},
+		{
+			"id": "the_vein",
+			"label": "The Atium Vein",
+			"objectives": [
+				{
+					"id": "collect_geode",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "pits_geode",
+					"interact_kind": "geode",
+					"text": "Take a raw atium geode"
+				}
+			]
+		},
+		{
+			"id": "the_guards",
+			"label": "Past the Guards",
+			"objectives": [
+				{
+					"id": "pits_escape",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "pits_escape",
+					"text": "Slip past the guards to the escape shaft"
+				}
+			]
+		},
+		{
+			"id": "climb_out",
+			"label": "Back to the Surface",
+			"on_enter": [
+				{"action": "exit_interior"},
+				{"action": "hint", "text": "The mists have never felt so welcome.", "duration": 3.0},
+				{"action": "mission_complete"}
+			],
+			"objectives": []
+		}
+	]
+}

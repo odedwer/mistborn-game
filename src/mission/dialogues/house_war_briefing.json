@@ -1,0 +1,8 @@
+{
+  "id": "house_war_briefing",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "The Ventures and the Tekiels already hate each other over the canal tolls. All they need is a shove. Get onto Keep Tekiel's roof, make it look like Venture men did it, and let the nobles do the rest of our work for us."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "That's a lot of guards for 'a shove.'"},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Coinshots and hazekillers, both. Drop that gate on the courtyard below and every house in Luthadel will hear it by morning. That's the point."}
+  ]
+}

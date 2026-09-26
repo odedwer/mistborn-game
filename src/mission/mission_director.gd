@@ -29,7 +29,13 @@ var _active_objectives: Dictionary = {}
 ## Remaining objectives of a sequential stage, activated one at a time.
 var _pending_objectives: Array[Dictionary] = []
 var _triggers: Array[Area3D] = []
+## Marker objectives whose marker could not be found yet (retried).
+var _unplaced: Array[Dictionary] = []
 var _hinted_metal_use := false
+## `chain_pushes` objective id -> {last: float (ticks sec), count: int}.
+var _chain_state: Dictionary = {}
+## `survive` objective id -> seconds of `_process` time accumulated so far.
+var _survive_start: Dictionary = {}
 var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
 ## Optional player-set waypoint (from the map screen) overriding the current
@@ -44,6 +50,7 @@ func _ready() -> void:
 	_connect_checkpoints()
 	Events.player_died.connect(_on_player_died)
 	Events.metal_burn_changed.connect(_on_metal_burn_changed)
+	Events.metal_flare_changed.connect(_on_metal_flare_changed)
 	Events.allomantic_line_used.connect(_on_allomantic_line_used)
 	Events.pickup_collected.connect(_on_pickup_collected)
 	Events.actor_died.connect(_on_actor_died)
@@ -52,6 +59,9 @@ func _ready() -> void:
 	var world := _find_world_node()
 	if world != null and world.has_signal(&"unit_loaded"):
 		world.connect(&"unit_loaded", _on_unit_loaded)
+	Events.dialogue_finished.connect(_on_dialogue_finished)
+	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
+	Events.alert_level_changed.connect(_on_alert_level_changed)
 	_build_fade_layer()
 	_start_or_resume()
 	if GameState.last_checkpoint_id != &"":
@@ -70,6 +80,11 @@ func _on_unit_loaded(_key: String) -> void:
 ## A save was loaded while playing: resync the mission to the loaded
 ## progress and put the player back at the saved checkpoint.
 func _on_game_loaded(_slot: int) -> void:
+	# Leave any interior first: the loaded stage re-enters one if it needs to.
+	if SceneTransition.is_inside_interior():
+		await SceneTransition.exit_interior()
+	if not is_inside_tree():
+		return
 	_pending_objectives.clear()
 	_active_objectives.clear()
 	_clear_triggers()
@@ -89,6 +104,34 @@ func _on_game_loaded(_slot: int) -> void:
 			(player as CharacterBody3D).velocity = Vector3.ZERO
 		if "camera_rig" in player and player.camera_rig != null:
 			player.camera_rig.snap()
+
+
+## Polls `reach_speed` objectives (e.g. "hit a coin-jump chain at 12 m/s");
+## everything else here is event-driven, so this stays a cheap no-op most of
+## the time.
+func _process(delta: float) -> void:
+	if _active_objectives.is_empty():
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if Engine.get_process_frames() % 6 == 0:
+		_recheck_gated_triggers(player)
+		_retry_unplaced_triggers()
+	var speed := 0.0
+	if player is CharacterBody3D:
+		speed = (player as CharacterBody3D).velocity.length()
+	for id in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[id]
+		var t: String = obj.get("type", "")
+		if t == "reach_speed" and player is CharacterBody3D and speed >= float(obj.get("min_speed", 10.0)):
+			complete_objective(obj)
+		elif t == "crowd_mood" and _crowd_mood_reached(obj):
+			complete_objective(obj)
+		elif t == "survive":
+			var elapsed: float = float(_survive_start.get(id, 0.0)) + delta
+			_survive_start[id] = elapsed
+			if elapsed >= float(obj.get("duration", 10.0)):
+				_survive_start.erase(id)
+				complete_objective(obj)
 
 
 func _start_or_resume() -> void:
@@ -124,10 +167,15 @@ func _on_checkpoint_body_entered(body: Node, area: Area3D) -> void:
 func _activate_stage(index: int) -> void:
 	_clear_triggers()
 	_active_objectives.clear()
+	_survive_start.clear()
 	if index >= mission.stages.size():
 		return
 	var stage: Dictionary = mission.stages[index]
 	stage_advanced.emit(index, stage.get("label", ""))
+	# Stage-level setup actions (locking/unlocking metals, starting a cutscene
+	# or dialogue) run once, before the stage's own objectives activate.
+	for action: Dictionary in stage.get("on_enter", []):
+		_run_action(action)
 	# Stages are sequential by default (tutorial beats one at a time); set
 	# "parallel": true on a stage to activate all its objectives together.
 	_pending_objectives.clear()
@@ -170,13 +218,42 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "defeat", "collect":
+		"use_metal", "flare_metal":
+			# Driven by Events, but the metal may already be burning (burned
+			# during an earlier beat): that must count, or the stage soft-locks
+			# until the player happens to toggle it off and on.
+			_check_metal_already_active.call_deferred(obj)
+		"defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target":
 			pass # driven by Events, see the handlers below.
+		"crowd_mood", "survive":
+			pass # polled in _process, see above.
+		"flag_count":
+			_check_flag_count(obj)
+
+
+func _check_metal_already_active(obj: Dictionary) -> void:
+	if not _active_objectives.has(StringName(obj.get("id", ""))):
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var al: Allomancer = player.allomancer
+	var metal := int(obj.get("metal", -1))
+	var ok := al.is_burning(metal)
+	if obj.get("type", "") == "flare_metal":
+		ok = ok and al.is_flaring(metal)
+	if ok:
+		complete_objective(obj)
 
 
 func _spawn_trigger_for(obj: Dictionary) -> void:
 	var pos := _find_marker_position(obj.get("marker_group", "objective_point"), obj.get("marker_id", ""))
 	if pos == Vector3.INF:
+		# The marker isn't there yet: an interior the stage just asked for is
+		# still fading in, or its chunk hasn't been indexed. Retry shortly
+		# instead of leaving the objective without a trigger (soft-lock).
+		if not _unplaced.has(obj):
+			_unplaced.append(obj)
 		return
 	var area := Area3D.new()
 	area.name = "Objective_%s" % obj.get("id", "")
@@ -194,15 +271,59 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 	add_child(area)
 	area.global_position = pos
 	area.body_entered.connect(_on_objective_trigger_entered.bind(obj))
+	area.set_meta(&"objective", obj)
 	_triggers.append(area)
+	# Mark the mission's opening objective with a subtle beacon (story
+	# gating: tells the player where to go before they've picked up the
+	# invisible trigger radius), reusing the side-activity beacon visual.
+	if stage_index == 0:
+		var beacon := ActivityBeacon.new()
+		beacon.beacon_color = Color(0.55, 0.78, 0.95)
+		area.add_child(beacon)
 
 
 func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 	if not body.is_in_group("player"):
 		return
+	# Optional gate (the ball's eavesdropping): the objective only completes
+	# while a given metal is burning, e.g. tin to make out a hushed rumor.
+	var req_metal := int(obj.get("require_metal", -1))
+	if req_metal >= 0:
+		var allomancer := _find_allomancer(body)
+		if allomancer == null or not allomancer.call("is_burning", req_metal):
+			Events.hint_requested.emit(obj.get("hint_locked", "Burn %s to make it out." % Metal.NAMES.get(req_metal, "that metal")), 3.0)
+			return
 	# Deferred: completing an objective can spawn enemies and triggers, which
 	# is not allowed from inside a physics in/out callback.
 	_complete_from_trigger.call_deferred(obj)
+
+
+func _retry_unplaced_triggers() -> void:
+	if _unplaced.is_empty():
+		return
+	var todo := _unplaced.duplicate()
+	_unplaced.clear()
+	for obj: Dictionary in todo:
+		if _active_objectives.has(StringName(obj.get("id", ""))):
+			_spawn_trigger_for(obj)
+
+
+## A metal-gated trigger (eavesdrop with tin) only sees the player *enter*;
+## if they were already standing in it when they started burning the metal
+## (e.g. spawned inside it), re-check while they stay inside.
+func _recheck_gated_triggers(player: Node) -> void:
+	if player == null or not (player is PhysicsBody3D):
+		return
+	for area in _triggers:
+		if not is_instance_valid(area) or not area.monitoring:
+			continue
+		var obj: Dictionary = area.get_meta(&"objective", {})
+		var req := int(obj.get("require_metal", -1))
+		if req < 0 or not _active_objectives.has(StringName(obj.get("id", ""))):
+			continue
+		var al := _find_allomancer(player)
+		if al != null and al.call("is_burning", req) and area.overlaps_body(player):
+			_complete_from_trigger(obj)
 
 
 func _complete_from_trigger(obj: Dictionary) -> void:
@@ -211,6 +332,12 @@ func _complete_from_trigger(obj: Dictionary) -> void:
 	if obj.get("type", "") == "interact":
 		Events.pickup_collected.emit(StringName(obj.get("interact_kind", "")), 1.0)
 	complete_objective(obj)
+
+
+func _find_allomancer(player: Node) -> Node:
+	if "allomancer" in player:
+		return player.allomancer
+	return player.get_node_or_null("Allomancer")
 
 
 ## Finds a marker's world position. Prefers live `Marker3D`/`Area3D` nodes in
@@ -270,11 +397,59 @@ func _run_action(action: Dictionary) -> void:
 		"spawn_enemy":
 			var spawner := get_tree().get_first_node_in_group("enemy_spawner")
 			if spawner != null and spawner.has_method("spawn_type"):
-				spawner.call("spawn_type", StringName(action.get("enemy_type", "")))
+				_spawn_enemy(spawner, StringName(action.get("enemy_type", "")))
 		"hint":
 			Events.hint_requested.emit(action.get("text", ""), action.get("duration", 4.0))
 		"mission_complete":
 			_finish_mission()
+		"set_allowed_metals":
+			_set_allowed_metals(action.get("metals", []))
+		"start_dialogue":
+			DialogueSystem.play(StringName(action.get("dialogue_id", "")))
+		"start_cutscene":
+			CutsceneSystem.play(StringName(action.get("cutscene_id", "")))
+		"enter_interior":
+			SceneTransition.enter_interior(String(action.get("scene", "")))
+		"exit_interior":
+			SceneTransition.exit_interior()
+		"set_flag":
+			GameState.set_dialogue_flag(StringName(action.get("flag", "")), action.get("value", true))
+
+
+## Spawns `etype` at its world marker when one is loaded (the Inquisitor at
+## Keep Venture); otherwise (a scripted opponent like Ham in a lesson, where
+## the city has no marker of that type nearby) in front of the player.
+func _spawn_enemy(spawner: Node, etype: StringName) -> Node:
+	if not spawner.has_method("has_marker_for") or spawner.call("has_marker_for", etype):
+		return spawner.call("spawn_type", etype)
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	var parent: Node = player.get_parent() if player != null else null
+	if player == null or parent == null:
+		push_warning("MissionDirector: nowhere to spawn '%s'" % etype)
+		return null
+	var fwd := -player.global_basis.z
+	if "camera_rig" in player and player.camera_rig != null:
+		fwd = -(player.camera_rig as PlayerCamera).yaw_basis().z
+	var marker := Marker3D.new()
+	parent.add_child(marker)
+	marker.global_position = player.global_position + Vector3(fwd.x, 0.0, fwd.z).normalized() * 8.0 + Vector3.UP * 0.5
+	marker.look_at(player.global_position + Vector3.UP * 0.5, Vector3.UP, true)
+	var enemy: Node = spawner.call("spawn_type", etype, marker)
+	marker.queue_free()
+	return enemy
+
+
+## Restricts the player's `Allomancer` to `metals` (a list of `Metal.Type`
+## ints); an empty list unlocks every metal again. Drives the pewter-only
+## tutorial opening and any story-mandated allomancy lock/unlock.
+func _set_allowed_metals(metals: Array) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var arr: Array[int] = []
+	for m in metals:
+		arr.append(int(m))
+	player.allomancer.allowed_metals = arr
 
 
 func _finish_mission() -> void:
@@ -296,12 +471,51 @@ func _on_metal_burn_changed(allomancer: Node, metal: int, burning: bool) -> void
 		_hinted_metal_use = true
 
 
-func _on_allomantic_line_used(allomancer: Node, _target: Node, metal: int, _strength: float) -> void:
+func _on_allomantic_line_used(allomancer: Node, target: Node, metal: int, _strength: float) -> void:
 	if not _is_player_owned(allomancer):
+		return
+	var target_obj_id := ""
+	if target != null and is_instance_valid(target):
+		target_obj_id = str(target.get_meta("objective_id", ""))
+	for id in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[id]
+		var t: String = obj.get("type", "")
+		if t == "use_metal" and int(obj.get("metal", -1)) == metal:
+			complete_objective(obj)
+		elif t == "chain_pushes" and int(obj.get("metal", Metal.Type.STEEL)) == metal:
+			_tick_chain(id, obj)
+		elif t == "push_target" and target_obj_id != "" and target_obj_id == str(obj.get("marker_id", "")):
+			complete_objective(obj)
+
+
+## Counts distinct Pushes/Pulls (debounced so one held button-press is one
+## count, not one per physics frame) toward a `chain_pushes` objective, e.g.
+## "chain 3 pushes within 1.5s of each other" for the coin-jump lesson.
+func _tick_chain(id: StringName, obj: Dictionary) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var st: Dictionary = _chain_state.get(id, {"last": -999.0, "count": 0})
+	var max_gap := float(obj.get("max_gap", 1.5))
+	var debounce := 0.2
+	var last: float = st["last"]
+	if now - last > max_gap:
+		st["count"] = 0
+	if now - last > debounce:
+		st["count"] = int(st["count"]) + 1
+	st["last"] = now
+	_chain_state[id] = st
+	if int(st["count"]) >= int(obj.get("count", 3)):
+		_chain_state.erase(id)
+		complete_objective(obj)
+
+
+## `flare_metal` objective type: complete the first time the player flares
+## `metal` (used for the pewter-flare lesson).
+func _on_metal_flare_changed(allomancer: Node, metal: int, flaring: bool) -> void:
+	if not flaring or not _is_player_owned(allomancer):
 		return
 	for id in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[id]
-		if obj.get("type", "") == "use_metal" and int(obj.get("metal", -1)) == metal:
+		if obj.get("type", "") == "flare_metal" and int(obj.get("metal", -1)) == metal:
 			complete_objective(obj)
 
 
@@ -318,10 +532,88 @@ func _on_pickup_collected(kind: StringName, _amount: float) -> void:
 func _on_actor_died(actor: Node, _killer: Node) -> void:
 	for id in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[id]
-		if obj.get("type", "") == "defeat" and actor.is_in_group(obj.get("target_group", "enemy")):
+		var t: String = obj.get("type", "")
+		if (t == "defeat" or t == "defeat_in_duel") and actor.is_in_group(obj.get("target_group", "enemy")):
 			complete_objective(obj)
 	if actor.is_in_group("enemy"):
 		GameState.record_kill()
+
+
+func _on_dialogue_finished(id: StringName) -> void:
+	for oid in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[oid]
+		if obj.get("type", "") == "dialogue" and StringName(obj.get("dialogue_id", "")) == id:
+			complete_objective(obj)
+
+
+func _on_dialogue_flag_set(_flag: StringName, _value: Variant) -> void:
+	for oid in _active_objectives.keys():
+		var obj: Dictionary = _active_objectives[oid]
+		if obj.get("type", "") == "flag_count":
+			_check_flag_count(obj)
+
+
+## The Canton of Resource heist's alarm state: a stage may carry
+## `"fail_conditions"` (see `MissionData`) checked against the district-wide
+## alert level. Exceeding a condition's `max` fails the mission — matches how
+## `SuspicionMeter` fails "Lady Valette" on detection, but driven by
+## `AlertDirector`/`EnemyBase` instead of a bespoke meter.
+func _on_alert_level_changed(level: int) -> void:
+	if mission == null or stage_index >= mission.stages.size():
+		return
+	var stage: Dictionary = mission.stages[stage_index]
+	for cond: Dictionary in stage.get("fail_conditions", []):
+		var kind := String(cond.get("type", ""))
+		if kind == "alert_level" and level > int(cond.get("max", 2)):
+			_fail_for(cond, "alert_level")
+			return
+		# One guard clocking you can still be handled quietly (a takedown
+		# before they shout); the heist only fails once several are hostile
+		# at once — the alarm has genuinely spread.
+		if kind == "combat_count" and level >= 2 and _enemies_in_combat() > int(cond.get("max", 1)):
+			_fail_for(cond, "combat_count")
+			return
+
+
+func _fail_for(cond: Dictionary, reason: String) -> void:
+	Events.hint_requested.emit(cond.get("reason", "The alarm is raised!"), 4.0)
+	Events.mission_failed.emit(mission.id, reason)
+
+
+func _enemies_in_combat() -> int:
+	var n := 0
+	for e in get_tree().get_nodes_in_group(&"enemy"):
+		if "state" in e and int(e.state) == EnemyBase.State.COMBAT:
+			n += 1
+	return n
+
+
+## "Talk to 3 nobles"-style objective: complete once `count` of `flags` are
+## set in `GameState.dialogue_flags`.
+func _check_flag_count(obj: Dictionary) -> void:
+	var flags: Array = obj.get("flags", [])
+	var need := int(obj.get("count", flags.size()))
+	var have := 0
+	for f in flags:
+		if GameState.has_dialogue_flag(StringName(f)):
+			have += 1
+	if have >= need:
+		complete_objective(obj)
+
+
+## `crowd_mood` objective: true once the first node in group `mood_group`
+## (default `"crowd_mood"`, see `CrowdMoodMeter`) has crossed `target` in the
+## requested `direction`.
+func _crowd_mood_reached(obj: Dictionary) -> bool:
+	var group := StringName(obj.get("mood_group", "crowd_mood"))
+	var meter := get_tree().get_first_node_in_group(group)
+	if meter == null or not ("mood" in meter):
+		return false
+	var mood: float = meter.mood
+	var target := float(obj.get("target", 50.0))
+	if String(obj.get("direction", "below")) == "above":
+		return mood >= target
+	return mood <= target
 
 
 func _is_player_owned(node: Node) -> bool:
@@ -439,6 +731,7 @@ func _fade_in() -> void:
 
 
 func _clear_triggers() -> void:
+	_unplaced.clear()
 	for a in _triggers:
 		if is_instance_valid(a):
 			a.queue_free()

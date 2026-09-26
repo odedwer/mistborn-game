@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/mission/interiors/canton_office.gd" id="1"]
+
+[node name="CantonOffice" type="Node3D"]
+script = ExtResource("1")

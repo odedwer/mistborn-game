@@ -1,0 +1,13 @@
+{
+  "id": "ball_noble_1",
+  "lines": [
+    {"speaker": "Lord Fedren", "color": "#7a5c8f", "text": "Renoux, was it? I don't believe I've had the pleasure. New to court?"},
+    {"speaker": "Valette", "color": "#8fa6c4", "text": "Newly arrived, my lord. My house keeps mostly to its own affairs.",
+      "choices": [
+        {"text": "Ask about the Venture household's mood.", "set_flag": "talked_noble_1", "goto": 2},
+        {"text": "Ask about the canal-tax dispute.", "set_flag": "talked_noble_1", "goto": 3}
+      ]},
+    {"speaker": "Lord Fedren", "color": "#7a5c8f", "text": "The Ventures? Tense. Lord Straff's been recalling household guard from the provinces all month — nobody's saying why."},
+    {"speaker": "Lord Fedren", "color": "#7a5c8f", "text": "The canal tax? A formality, officially. Unofficially, three houses are quietly moving goods around the toll stations before it takes effect."}
+  ]
+}

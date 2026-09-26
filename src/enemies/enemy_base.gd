@@ -232,6 +232,14 @@ func _exit_tree() -> void:
 func _hold_for_streaming(delta: float) -> bool:
 	if _home == Vector3.INF:
 		_home = global_position
+		# Spawned in mid-air (an ambush around an airborne player, a marker
+		# above a gap): drop the home point onto the ground below.
+		var q := PhysicsRayQueryParameters3D.create(_home + Vector3.UP * 1.0, _home + Vector3.DOWN * 80.0, 1)
+		q.exclude = [get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty() and _home.y - (hit["position"] as Vector3).y > 0.5:
+			_home = hit["position"]
+			global_position = _home
 	if global_position.y < VOID_HEIGHT:
 		global_position = _home
 		velocity = Vector3.ZERO

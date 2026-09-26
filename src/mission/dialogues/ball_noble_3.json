@@ -1,0 +1,13 @@
+{
+  "id": "ball_noble_3",
+  "lines": [
+    {"speaker": "Lord Elariel", "color": "#6b8f7c", "text": "Renoux. Your family imports dye, I recall. Steady trade, if unglamorous."},
+    {"speaker": "Valette", "color": "#8fa6c4", "text": "Steady enough that I can afford to be curious about everyone else's business instead.",
+      "choices": [
+        {"text": "Ask about the Lord Ruler's coming visit.", "set_flag": "talked_noble_3", "goto": 2},
+        {"text": "Ask which houses are hiring extra guards.", "set_flag": "talked_noble_3", "goto": 3}
+      ]},
+    {"speaker": "Lord Elariel", "color": "#6b8f7c", "text": "Unconfirmed, but Kredik Shaw has been quietly summoning household heads all week. Something has his attention."},
+    {"speaker": "Lord Elariel", "color": "#6b8f7c", "text": "Venture and Hasting both, from what my steward hears. Neither house is saying against whom."}
+  ]
+}

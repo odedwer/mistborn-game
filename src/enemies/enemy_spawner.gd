@@ -11,6 +11,7 @@ const TYPE_SCENES := {
 	&"thug": "res://src/enemies/thug.tscn",
 	&"coinshot": "res://src/enemies/coinshot.tscn",
 	&"inquisitor": "res://src/enemies/inquisitor.tscn",
+	&"seeker": "res://src/enemies/seeker.tscn",
 }
 
 @export var defer_inquisitor: bool = true
@@ -115,6 +116,11 @@ func spawn_type(etype: StringName, at: Marker3D = null) -> Node:
 	return _spawn_at(at, etype)
 
 
+## True if a spawn marker for `etype` is available (deferred or loaded).
+func has_marker_for(etype: StringName) -> bool:
+	return _find_marker_for_type(etype) != null
+
+
 func _find_marker_for_type(etype: StringName) -> Marker3D:
 	for m in _pending_inquisitor_markers:
 		if is_instance_valid(m) and m.get_meta("enemy_type", &"") == etype:
@@ -137,6 +143,10 @@ func _spawn_at(marker: Marker3D, etype: StringName) -> Node:
 	var enemy := scene.instantiate()
 	# Parent to the marker's chunk so the enemy streams out with its ground.
 	var parent: Node = marker.get_parent()
+	# Ad-hoc markers (activity ambushes) may sit on the tree root: keep the
+	# enemy inside the world so it is freed with the game.
+	if parent != null and parent == marker.get_tree().root and world_root != null and is_instance_valid(world_root):
+		parent = world_root
 	if parent == null:
 		parent = world_root if world_root else marker.get_tree().current_scene
 	parent.add_child(enemy)

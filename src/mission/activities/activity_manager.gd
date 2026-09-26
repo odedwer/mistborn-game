@@ -13,6 +13,10 @@ extends Node
 ##   get within `params.catch_distance`.
 ## - "obligator_ambush": a patrol group spawns around the player (via
 ##   `EnemySpawner.spawn_type` at freshly-created Marker3Ds); defeat them all.
+## - "crowd_riot" (Act II): a `CrowdMoodMeter` starts at `params.start_mood`
+##   (a riot already boiling over); soothe it (brass) below
+##   `params.calm_threshold` within `time_limit` or it fails. See
+##   `CrowdMoodMeter`/`CrowdMember`.
 ##
 ## Also spawns collectibles (atium beads, crew notes) at "collectible_spawn"
 ## world markers; `GameState.collect_item`/`is_collected` persist them.
@@ -175,6 +179,8 @@ func start_activity(id: StringName, override_pos: Vector3 = Vector3.INF) -> bool
 			_start_pursuit(a, pos)
 		"obligator_ambush":
 			_start_ambush(a, pos)
+		"crowd_riot":
+			_start_crowd_riot(a, pos)
 		_:
 			return false
 	Events.hint_requested.emit(a.title, 3.0)
@@ -196,6 +202,13 @@ func _tick_activity(id: StringName, delta: float, player_pos: Vector3) -> void:
 					return
 				if thief.has_method("reached_end") and thief.call("reached_end"):
 					fail_activity(id, "thief_escaped")
+					return
+		"crowd_riot":
+			var meter: Node = st.get("meter")
+			if meter != null and is_instance_valid(meter):
+				var threshold := float(a.params.get("calm_threshold", 25.0))
+				if float(meter.get("mood")) <= threshold:
+					complete_activity(id)
 					return
 	if limit > 0.0 and float(st["elapsed"]) >= limit:
 		fail_activity(id, "time_up")
@@ -362,6 +375,27 @@ func _on_ambush_enemy_died(_killer: Node, id: StringName, enemy: Node) -> void:
 	st["alive"] = alive
 	if alive.is_empty():
 		complete_activity(id)
+
+
+# --- Crowd riot (Act II) -----------------------------------------------------
+
+func _start_crowd_riot(a: ActivityData, start_pos: Vector3) -> void:
+	var meter := CrowdMoodMeter.new()
+	# A riot in progress: no drift back to "neutral" here, it either gets
+	# soothed down for good or stays boiling until the time limit runs out.
+	meter.drift_per_sec = 0.0
+	get_tree().root.add_child(meter)
+	meter.mood = float(a.params.get("start_mood", 80.0))
+	var nodes: Array = [meter]
+	var count := int(a.params.get("member_count", 5))
+	var radius := float(a.params.get("spawn_radius", 6.0))
+	for i in count:
+		var member := CrowdMember.new()
+		get_tree().root.add_child(member)
+		var ang := TAU * float(i) / maxf(float(count), 1.0)
+		member.global_position = start_pos + Vector3(cos(ang), 0.0, sin(ang)) * radius
+		nodes.append(member)
+	_active[a.id] = {"type": "crowd_riot", "elapsed": 0.0, "nodes": nodes, "meter": meter}
 
 
 # --- Collectibles ---------------------------------------------------------

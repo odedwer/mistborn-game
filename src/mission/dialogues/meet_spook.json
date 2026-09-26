@@ -1,0 +1,8 @@
+{
+  "id": "meet_spook",
+  "lines": [
+    {"speaker": "Spook", "color": "#5c7a99", "text": "Word's already going round about you. Girl who walked out of Camon's crew and into Kelsier's. That's a story people tell twice."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "I'd rather they didn't tell it at all."},
+    {"speaker": "Spook", "color": "#5c7a99", "text": "Then don't get caught. That's the whole trick, isn't it?"}
+  ]
+}

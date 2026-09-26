@@ -45,6 +45,11 @@ const MAX_INTERNAL_STRENGTH := 3.0
 @export var controls_local_view := false
 ## Where lines start, in the body's local space (roughly the chest).
 @export var chest_offset := Vector3(0.0, 1.3, 0.0)
+## Metals this allomancer may ignite; empty (the default) allows every metal.
+## Story moments set this directly (Vin's pewter-only tutorial before she
+## drinks a vial, a noble-ball disguise) via `MissionDirector`'s
+## `set_allowed_metals` action.
+@export var allowed_metals: Array[int] = []
 
 @export_group("Push / Pull")
 ## Force (N) of a full-strength Push/Pull at close range, before flaring.
@@ -214,6 +219,8 @@ func is_burning(metal: int) -> bool:
 ## burst (see `burn_duralumin`).
 func set_burning(metal: int, on: bool) -> bool:
 	if metal < 0 or metal >= Metal.COUNT:
+		return false
+	if on and not allowed_metals.is_empty() and not allowed_metals.has(metal):
 		return false
 	if metal == Metal.Type.DURALUMIN:
 		if on:

@@ -1,0 +1,9 @@
+{
+  "id": "canton_briefing",
+  "lines": [
+    {"speaker": "Dockson", "color": "#5c7a8f", "text": "The Canton of Resource keeps its real ledgers under the obligators' own roof — tithe counts, army requisitions, every noble house's leverage. Get us those pages and we know exactly how much steel the Lord Ruler can actually field."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "There's at least one Seeker posted at night. Bronze-burner — he won't see you in the dark, but he'll feel you burning anything at all unless you're wrapped in copper."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "And if a guard spots me anyway?"},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "One guard, you can handle quietly. Raise the whole canton and we're done for the night — pull out before that happens."}
+  ]
+}

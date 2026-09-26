@@ -22,7 +22,7 @@ func _run() -> void:
 		f.store_string(out)
 		f.close()
 	print("\n=== soak: %d frames ===" % rep["frames"])
-	for k: String in ["time_scale_violations", "fallen_enemies", "max_coin_nodes", "max_pool_active", "deaths",
+	for k: String in ["time_scale_violations", "fallen_detail", "max_coin_nodes", "max_pool_active", "deaths",
 			"objects_at_revisits", "orphans_at_revisits", "orphans_end", "objects_end", "atium_uses",
 			"duralumin_uses", "coins_thrown", "hits", "activities_started", "saves", "loads", "metals", "enemies"]:
 		print("%-22s %s" % [k, str(rep[k])])

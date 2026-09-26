@@ -126,6 +126,10 @@
 		{"group": "activity_start", "activity_id": "ambush_market", "placement": "street", "pos": [-200, 180]},
 		{"group": "activity_start", "activity_id": "ambush_canal", "placement": "street", "pos": [170, 190]},
 
+		{"group": "activity_start", "activity_id": "obligator_courier_intercept", "placement": "rooftop", "pos": [-90, 60], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "soothing_riots", "placement": "street", "pos": [-130, 40]},
+		{"group": "activity_start", "activity_id": "noble_carriage_heist", "placement": "rooftop", "pos": [70, -60], "floors": 4, "flat": true},
+
 		{"group": "collectible_spawn", "collectible_id": "atium_bead_1", "collectible_kind": "atium_bead", "placement": "rooftop", "pos": [-120, 180], "floors": 3, "flat": true},
 		{"group": "collectible_spawn", "collectible_id": "atium_bead_2", "collectible_kind": "atium_bead", "placement": "street", "pos": [80, 150]},
 		{"group": "collectible_spawn", "collectible_id": "atium_bead_3", "collectible_kind": "atium_bead", "placement": "rooftop", "pos": [-60, -180], "floors": 3, "flat": true},
@@ -137,6 +141,10 @@
 		{"group": "collectible_spawn", "collectible_id": "crew_note_3", "collectible_kind": "crew_note", "placement": "street", "pos": [0, -200]},
 		{"group": "collectible_spawn", "collectible_id": "crew_note_4", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [-200, 50], "floors": 3, "flat": true},
 		{"group": "collectible_spawn", "collectible_id": "crew_note_5", "collectible_kind": "crew_note", "placement": "street", "pos": [200, -150]},
-		{"group": "collectible_spawn", "collectible_id": "crew_note_6", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [60, 60], "floors": 3, "flat": true}
+		{"group": "collectible_spawn", "collectible_id": "crew_note_6", "collectible_kind": "crew_note", "placement": "rooftop", "pos": [60, 60], "floors": 3, "flat": true},
+
+		{"group": "objective_point", "objective_id": "slum_checkpoint", "placement": "street", "pos": [-240, 290]},
+		{"group": "objective_point", "objective_id": "clubs_shop_entrance", "placement": "street", "pos": [-430, 400]},
+		{"group": "enemy_spawn", "enemy_type": "thug", "placement": "street", "pos": [-460, 400]}
 	]
 }

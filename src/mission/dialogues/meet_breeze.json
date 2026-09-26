@@ -1,0 +1,8 @@
+{
+  "id": "meet_breeze",
+  "lines": [
+    {"speaker": "Breeze", "color": "#90743a", "text": "Ah, the new addition. Come, sit, have a drink — I insist, and you'll find I'm quite persuasive."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "Is that brass talking, or just you?"},
+    {"speaker": "Breeze", "color": "#90743a", "text": "Both, dear girl, always both. A Soother who can't charm a room on his own merits is a poor Soother indeed."}
+  ]
+}

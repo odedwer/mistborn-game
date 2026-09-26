@@ -6,6 +6,10 @@ var _director: MissionDirector
 
 func before_each() -> void:
 	GameState.reset_run()
+	# These tests exercise the vertical-slice mission specifically; Act I's
+	# story chain now starts at "survivors_offer" by default (see
+	# test_story_chain.gd for chain/unlock-order coverage).
+	GameState.mission_id = &"mistwalk_to_keep_venture"
 	_director = MissionDirector.new()
 	add_child(_director)
 

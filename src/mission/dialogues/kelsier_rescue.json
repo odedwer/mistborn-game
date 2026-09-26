@@ -1,0 +1,11 @@
+{
+  "id": "kelsier_rescue",
+  "lines": [
+    {"speaker": "Dockson", "color": "#6b7280", "text": "Door's clear. Move."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Easy, girl. We're not obligators, and we're not with Camon anymore either."},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "Camon will gut you for this. Both of you."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Camon's finished. What matters is what just happened to you when that lock hit the floor. Did you feel it? A pull, right behind your ribs?"},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "...I felt something."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "That's a metal in your blood catching fire. You're Mistborn, Vin. There's a way out of here that isn't through Camon's crew. Follow me."}
+  ]
+}

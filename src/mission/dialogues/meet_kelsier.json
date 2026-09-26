@@ -1,0 +1,8 @@
+{
+  "id": "meet_kelsier",
+  "lines": [
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "There she is. Getting used to the shop?"},
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "It's louder than a canton cellar. That's something."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "Everyone here answers to me, and I answer to the job. Talk to the others — you'll want to know who's watching your back before we start training."}
+  ]
+}

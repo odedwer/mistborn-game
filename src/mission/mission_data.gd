@@ -25,10 +25,57 @@ extends RefCounted
 ##   `kind`; used for atium beads / Kelsier's notes / other collectibles.
 ## - `cutscene_hint`: no player action; fires `Events.hint_requested` with
 ##   `text` and completes immediately (used for Kelsier's tutorial lines).
+## - `dialogue`: complete when `Events.dialogue_finished` fires for
+##   `dialogue_id` (see `DialogueSystem`, `res://src/mission/dialogues/*.json`).
+##   Usually started by an NPC's own interact script, not the objective
+##   itself.
+## - `reach_speed`: complete once the player's `CharacterBody3D.velocity`
+##   reaches `min_speed` (polled; used for pull-swing/coin-jump lessons).
+## - `chain_pushes`: complete after `count` distinct Pushes/Pulls of `metal`
+##   (default steel) each within `max_gap` seconds of the last.
+## - `flare_metal`: complete the first time the player flares `metal`.
+## - `defeat_in_duel`: identical to `defeat` (an `Events.actor_died` for
+##   `target_group`); kept as its own name for clarity in a scripted duel.
+## - `flag_count`: complete once `count` of the story flags in `flags` are set
+##   (see `GameState.dialogue_flags`); used for "talk to 3 nobles".
+## - `crowd_mood` (Act II): complete once the first node in group
+##   `mood_group` (default `"crowd_mood"`, see `CrowdMoodMeter`) has its
+##   `mood` property past `target`, in the direction given by `direction`
+##   (`"above"` or `"below"`); used for "soothe the crowd below 30" /
+##   "riot the crowd above 70".
+## - `push_target` (Act II): complete the first time
+##   `Events.allomantic_line_used` fires with a `target` whose meta
+##   `objective_id` matches `marker_id` — any Push/Pull counts, any metal.
+##   Used for the House War set piece (topple the iron gate/chandelier).
+## - `survive` (Act II): complete `duration` seconds after the objective
+##   activates, purely by elapsed time (used for "survive the Inquisitor's
+##   first strike").
+## `interact`/`reach_marker`/`escape` also accept an optional `require_metal`
+## (a `Metal.Type`): the trigger only completes the objective while that
+## metal is burning (tin to eavesdrop on a rumor), otherwise it shows
+## `hint_locked`.
 ##
 ## `on_complete` is an array of action dictionaries applied when the
 ## objective completes, e.g. `{"action": "spawn_enemy", "type": "inquisitor"}`
-## or `{"action": "mission_complete"}`.
+## or `{"action": "mission_complete"}`. A stage may also carry `"on_enter"`,
+## the same action list, run once when the stage activates (used to lock/
+## unlock metals, start a cutscene or dialogue, or enter/exit an interior).
+## Actions: `spawn_enemy`, `hint`, `mission_complete`, `set_allowed_metals`
+## (`metals`: list of `Metal.Type`, empty = unlock all), `start_dialogue`
+## (`dialogue_id`), `start_cutscene` (`cutscene_id`), `enter_interior`/
+## `exit_interior` (`scene`, via `SceneTransition`), `set_flag` (`flag`,
+## `value`).
+##
+## `fail_conditions` (Act II on): a stage may carry `"fail_conditions"`, a
+## list of dictionaries checked whenever `Events.alert_level_changed` fires
+## while that stage is active. Exceeding `max` fails the mission
+## (`Events.mission_failed`):
+## - `{"type": "alert_level", "max": <0-2>}`: the district alert level itself.
+## - `{"type": "combat_count", "max": <n>}`: how many `enemy`-group actors are
+##   simultaneously in `EnemyBase.State.COMBAT` — lets one guard be quietly
+##   taken down without instantly failing a stealth heist, only failing once
+##   the alarm has genuinely spread to several at once. Used by the Canton of
+##   Resource heist.
 
 var id: StringName
 var title: String

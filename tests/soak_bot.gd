@@ -56,6 +56,7 @@ var _stop := -1
 var _stop_name := ""
 var _rng := RandomNumberGenerator.new()
 const FrameTimer := preload("res://tests/frame_timer.gd")
+const SoakStory := preload("res://tests/story_jump.gd")
 var _timer: RefCounted
 ## stop name -> {frames, proc, phys, max_frame_ms, max_phys_ms}
 var _perf: Dictionary = {}
@@ -71,15 +72,23 @@ var _dura_uses := 0
 var _coins_thrown := 0
 var _hits := 0
 var _stream_hitches: Array[String] = []
+var _fallen_detail: Array[String] = []
 var _activities := 0
 var _saves := 0
 var _loads := 0
 const SOAK_SLOT := 8
 
 
+## Story mission to play while soaking ("" keeps GameState's). Its
+## prerequisites are marked complete first.
+var mission_id: StringName = &"mistwalk_to_keep_venture"
+
+
 func _ready() -> void:
 	_rng.seed = 12345
 	OS.add_logger(catcher)
+	if mission_id != &"":
+		SoakStory.jump_to(mission_id)
 	game = (load(GAME_SCENE) as PackedScene).instantiate()
 	add_child(game)
 	world = game.get_node(^"World") as LuthadelWorld
@@ -163,8 +172,10 @@ func _act(t: int) -> void:
 	_release_all()
 	if player.dead:
 		return
-	# Keep metals flowing so every action stays possible.
+	# Keep metals flowing so every action stays possible (and lift any
+	# story-mandated metal restriction: the bot exercises all of them).
 	if t % 60 == 0:
+		al.allowed_metals = [] as Array[int]
 		for m: int in Metal.Type.values():
 			if m != Metal.Type.ATIUM and m != Metal.Type.DURALUMIN:
 				al.add_reserve(m, 30.0)
@@ -278,9 +289,10 @@ func _check() -> void:
 	for n in get_tree().get_nodes_in_group(&"enemy"):
 		var e := n as Node3D
 		if e != null and e.global_position.y < -30.0:
-			var desc := "%s at %s" % [e.name, e.global_position]
+			var desc := "%s (%s)" % [e.get_path(), e.get_script().get_global_name() if e.get_script() else ""]
 			if not _fallen.has(desc):
 				_fallen.append(desc)
+				_fallen_detail.append("%s at %s, stop %s, frame %d" % [desc, e.global_position, _stop_name, _f])
 
 
 func report() -> Dictionary:
@@ -296,6 +308,7 @@ func report() -> Dictionary:
 		"warnings": warnings,
 		"time_scale_violations": _time_scale_violations,
 		"fallen_enemies": _fallen,
+		"fallen_detail": _fallen_detail,
 		"max_coin_nodes": _max_coins,
 		"max_pool_active": _max_pool,
 		"deaths": _deaths,

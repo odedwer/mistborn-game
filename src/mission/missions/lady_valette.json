@@ -1,0 +1,59 @@
+{
+	"id": "lady_valette",
+	"title": "Lady Valette",
+	"act": "1",
+	"chapter": "The Venture Ball",
+	"prerequisites": ["lessons_in_the_mists"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_ball",
+			"label": "The Venture Ball",
+			"parallel": true,
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/keep_venture_ballroom.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "ball_intro"}
+			],
+			"objectives": [
+				{
+					"id": "gather_rumors",
+					"type": "flag_count",
+					"flags": ["talked_noble_1", "talked_noble_2", "talked_noble_3"],
+					"count": 3,
+					"text": "Gather rumors from three nobles"
+				},
+				{
+					"id": "eavesdrop",
+					"type": "interact",
+					"marker_group": "objective_point",
+					"marker_id": "ball_eavesdrop",
+					"interact_kind": "eavesdrop",
+					"require_metal": 3,
+					"hint_locked": "Burn tin to make out the hushed conversation.",
+					"text": "Eavesdrop on a quiet conversation (burn tin)"
+				}
+			]
+		},
+		{
+			"id": "the_exit",
+			"label": "A Quiet Exit",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "ball_exit"},
+				{"action": "exit_interior"}
+			],
+			"objectives": [
+				{
+					"id": "mistwalk_exit",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "keep_courtyard",
+					"text": "Mistwalk safely back over the rooftops",
+					"on_complete": [
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}

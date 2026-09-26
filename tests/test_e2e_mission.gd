@@ -23,6 +23,10 @@ var _events: Array[String] = []
 
 func before_each() -> void:
 	GameState.reset_run()
+	# The story starts at Act I's first mission; jump to the vertical slice.
+	GameState.mission_id = &"mistwalk_to_keep_venture"
+	for m: StringName in [&"survivors_offer", &"the_crew"]:
+		GameState.record_mission_complete(m)
 	_completed_missions.clear()
 	_events.clear()
 	Events.mission_completed.connect(_on_mission_completed)
@@ -61,6 +65,16 @@ func _start_game() -> void:
 	player = get_tree().get_first_node_in_group(&"player") as Player
 	director = game.get_node(^"MissionDirector") as MissionDirector
 	await physics_frames(2)
+	await _skip_dialogue()
+
+
+## Clicks through any dialogue the mission opened (bounded).
+func _skip_dialogue() -> void:
+	for i in 60:
+		if not DialogueSystem.is_active():
+			return
+		DialogueSystem.advance()
+		await get_tree().process_frame
 
 
 ## Waits up to `max_frames` physics frames for `cond` to become true.

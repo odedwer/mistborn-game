@@ -1,0 +1,81 @@
+{
+	"id": "the_inquisitors_shadow",
+	"title": "The Inquisitor's Shadow",
+	"act": "2",
+	"chapter": "Hunted",
+	"prerequisites": ["the_pits_of_hathsin"],
+	"rewards": {"unlocks": []},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_chase",
+			"label": "Something Is Hunting Spook",
+			"on_enter": [
+				{"action": "enter_interior", "scene": "res://src/mission/interiors/inquisitor_chase.tscn"},
+				{"action": "start_dialogue", "dialogue_id": "spook_flees"}
+			],
+			"objectives": [
+				{
+					"id": "chase_checkpoint_1",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "chase_checkpoint_1",
+					"text": "Keep pace with Spook across the rooftops"
+				},
+				{
+					"id": "chase_checkpoint_2",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "chase_checkpoint_2",
+					"text": "Don't let it catch up"
+				},
+				{
+					"id": "chase_checkpoint_3",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "chase_checkpoint_3",
+					"text": "Almost clear"
+				}
+			]
+		},
+		{
+			"id": "the_clash",
+			"label": "It Catches Up",
+			"objectives": [
+				{
+					"id": "reach_arena",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "chase_arena",
+					"text": "Make a stand — there's nowhere left to run"
+				},
+				{
+					"id": "survive_clash",
+					"type": "survive",
+					"duration": 12.0,
+					"text": "Survive the Inquisitor's first strike"
+				}
+			]
+		},
+		{
+			"id": "the_escape",
+			"label": "Break Away",
+			"on_enter": [
+				{"action": "start_dialogue", "dialogue_id": "inquisitor_survived"}
+			],
+			"objectives": [
+				{
+					"id": "chase_exit",
+					"type": "escape",
+					"marker_group": "objective_point",
+					"marker_id": "chase_exit",
+					"text": "Break away while it's still recovering",
+					"on_complete": [
+						{"action": "exit_interior"},
+						{"action": "mission_complete"}
+					]
+				}
+			]
+		}
+	]
+}
