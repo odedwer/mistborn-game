@@ -25,3 +25,10 @@ These are visual and feel issues found by reviewing screenshots. They're queued 
 
 ## Engine
 - **Freed-object error during tests**. The suite prints one "Trying to cast a freed object" error from `scene_transition.gd` during the SceneTransition tests.
+
+## Review of polish pass 1
+Found by screenshot review after the first polish pass.
+- **Ballroom exposure.** It's now overexposed and flat. The walls near the door blow out to white. Bring the ambient back down and let the chandeliers and the stained-glass shafts carry the light.
+- **Stained glass.** The shader reads as a coloured checkerboard. It needs irregular leaded shapes, a figurative or rose-window layout and less saturated glass.
+- **Main-menu skyline.** It reads as plain blocks. Use pitched roofs and chimneys like the world generator's, plus the Kredik Shaw spire silhouette against a faint red horizon glow.
+- **Fixed.** The TitleLabel, HeadingLabel and DimLabel theme variations had no `base_type`, so every title and heading in the UI rendered as a plain label. Fixed in `src/ui/theme.tres`.
