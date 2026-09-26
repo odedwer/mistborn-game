@@ -45,64 +45,98 @@ func _build_background() -> void:
 	moon.light_energy = 0.6
 	world.add_child(moon)
 
-	# Silhouette spire: a tall dark cone/box cluster.
-	var spire := MeshInstance3D.new()
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = 0.5
-	mesh.bottom_radius = 4.0
-	mesh.height = 40.0
-	spire.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.01, 0.01, 0.012)
-	mat.metallic = 0.0
-	mat.roughness = 1.0
-	spire.material_override = mat
-	spire.position = Vector3(-6, 5, -30)
-	world.add_child(spire)
+	_build_skyline(world)
 
-	var spire2 := MeshInstance3D.new()
-	spire2.mesh = mesh
-	spire2.material_override = mat
-	spire2.position = Vector3(10, -2, -40)
-	spire2.scale = Vector3(0.6, 1.4, 0.6)
-	world.add_child(spire2)
-
-	# Drifting mist: a slow GPUParticles3D field of soft points.
+	# Drifting mist: a slow GPUParticles3D field of soft, depth-faded puffs
+	# (the soft_particle sprite + a shader that fades a puff out rather than
+	# cutting a hard quad edge into the skyline/ground).
 	var mist := GPUParticles3D.new()
-	mist.amount = 80
-	mist.lifetime = 12.0
+	mist.amount = 90
+	mist.lifetime = 14.0
 	mist.position = Vector3(0, -2, -20)
 	var pm := ParticleProcessMaterial.new()
 	pm.direction = Vector3(1, 0, 0)
 	pm.spread = 20.0
-	pm.initial_velocity_min = 0.3
-	pm.initial_velocity_max = 0.8
+	pm.initial_velocity_min = 0.25
+	pm.initial_velocity_max = 0.7
 	pm.gravity = Vector3.ZERO
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	pm.emission_box_extents = Vector3(20, 6, 20)
+	pm.emission_box_extents = Vector3(24, 7, 24)
 	pm.scale_min = 5.0
-	pm.scale_max = 10.0
+	pm.scale_max = 11.0
 	pm.color = Color(1.0, 1.0, 1.0, 1.0)
 	mist.process_material = pm
 	var quad := QuadMesh.new()
 	quad.size = Vector2(1, 1)
 	mist.draw_pass_1 = quad
-	var mist_mat := StandardMaterial3D.new()
-	mist_mat.albedo_color = Color(0.35, 0.35, 0.4, 1.0)
-	mist_mat.albedo_texture = _soft_circle_texture()
-	mist_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mist_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mist_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mist_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	var mist_mat := ShaderMaterial.new()
+	var soft_shader := "res://assets/shaders/soft_mist_particle.gdshader"
+	var soft_tex := "res://assets/textures/soft_particle.png"
+	if ResourceLoader.exists(soft_shader):
+		mist_mat.shader = load(soft_shader)
+		if ResourceLoader.exists(soft_tex):
+			mist_mat.set_shader_parameter("albedo_tex", load(soft_tex))
+		else:
+			mist_mat.set_shader_parameter("albedo_tex", _soft_circle_texture())
+		mist_mat.set_shader_parameter("tint", Vector3(0.5, 0.51, 0.57))
 	quad.material = mist_mat
 	world.add_child(mist)
 
 	var cam := Camera3D.new()
-	cam.position = Vector3(0, 4, 10)
+	cam.position = Vector3(0, 5, 14)
 	cam.rotation_degrees = Vector3(-8, 0, 0)
-	cam.fov = 60
+	cam.fov = 55
 	world.add_child(cam)
 	_animate_camera(cam)
+
+
+## Luthadel silhouette: a jagged skyline of dark building blocks with Kredik
+## Shaw's cluster of black obsidian spires rising above them, slowly
+## revealed by the drifting mist.
+func _build_skyline(world: Node3D) -> void:
+	var dark_mat := StandardMaterial3D.new()
+	dark_mat.albedo_color = Color(0.012, 0.011, 0.014)
+	dark_mat.roughness = 1.0
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260925
+	for i in 16:
+		var b := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		var w := rng.randf_range(2.0, 5.0)
+		var h := rng.randf_range(4.0, 16.0)
+		bm.size = Vector3(w, h, w)
+		b.mesh = bm
+		b.material_override = dark_mat
+		var x := rng.randf_range(-40.0, 40.0)
+		var z := rng.randf_range(-55.0, -25.0)
+		b.position = Vector3(x, h * 0.5 - 3.0, z)
+		world.add_child(b)
+
+	# Kredik Shaw: one tall central spire plus a ring of shorter needle
+	# spires, echoing the real landmark's "forest of black spires" shape.
+	var spire_center := Vector3(-4.0, -3.0, -48.0)
+	_spire(world, dark_mat, spire_center, 2.2, 34.0)
+	var n := 7
+	for i in n:
+		var a := TAU * float(i) / float(n)
+		var rad := rng.randf_range(6.0, 12.0)
+		var hgt := rng.randf_range(0.35, 0.7) * 34.0
+		var pos := spire_center + Vector3(sin(a) * rad, 0.0, cos(a) * rad * 0.6)
+		_spire(world, dark_mat, pos, rng.randf_range(0.9, 1.6), hgt)
+
+
+func _spire(world: Node3D, mat: Material, base: Vector3, radius: float, height: float) -> void:
+	var spire := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius * 0.08
+	mesh.bottom_radius = radius
+	mesh.height = height
+	mesh.radial_segments = 6
+	spire.mesh = mesh
+	spire.material_override = mat
+	spire.position = base + Vector3(0, height * 0.5, 0)
+	world.add_child(spire)
 
 
 func _soft_circle_texture() -> GradientTexture2D:
@@ -120,10 +154,20 @@ func _soft_circle_texture() -> GradientTexture2D:
 	return tex
 
 
+## A slow cinematic drift over the skyline: a wide side-to-side pan plus a
+## gentle push in/out and a matching yaw, so Kredik Shaw's spires slide past
+## rather than the camera just sliding on a rail.
 func _animate_camera(cam: Camera3D) -> void:
+	var start_pos := cam.position
 	var tw := create_tween().set_loops()
-	tw.tween_property(cam, "position:x", 2.0, 8.0).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(cam, "position:x", -2.0, 8.0).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(cam, "position:x", start_pos.x + 5.0, 22.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(cam, "position:x", start_pos.x - 5.0, 22.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var tw2 := create_tween().set_loops()
+	tw2.tween_property(cam, "position:z", start_pos.z - 2.0, 14.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw2.tween_property(cam, "position:z", start_pos.z + 2.0, 14.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var tw3 := create_tween().set_loops()
+	tw3.tween_property(cam, "rotation:y", deg_to_rad(4.0), 22.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw3.tween_property(cam, "rotation:y", deg_to_rad(-4.0), 22.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 # --- UI ------------------------------------------------------------------------
