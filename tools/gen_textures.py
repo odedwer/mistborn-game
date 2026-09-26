@@ -63,18 +63,21 @@ def periodic_coords(size: int):
     return np.meshgrid(c, c)  # xs, ys
 
 
-def tileable_worley(size: int, n_points: int, seed: int, metric_order=2):
+def tileable_worley(size: int, n_points: int, seed: int, metric_order=2, aniso=(1.0, 1.0)):
     """Cellular (Worley) noise on the unit torus: replicate the point set on
     a 3x3 tiling so nearest-neighbour queries wrap seamlessly at the edges.
+    `aniso` stretches the distance metric (sx, sy) so cells read as ellipses
+    rather than circles (e.g. rounded cobblestones) while staying tileable.
     Returns (f1, f2, cell_id) each shaped (size, size)."""
     rng = np.random.default_rng(seed)
     pts = rng.random((n_points, 2))
     offsets = [(dx, dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)]
     tiled = np.concatenate([pts + np.array(o) for o in offsets], axis=0)
     ids = np.tile(np.arange(n_points), len(offsets))
-    tree = cKDTree(tiled)
+    sx, sy = aniso
+    tree = cKDTree(tiled * np.array([sx, sy]))
     xs, ys = periodic_coords(size)
-    query = np.stack([xs.ravel(), ys.ravel()], axis=1)
+    query = np.stack([xs.ravel() * sx, ys.ravel() * sy], axis=1)
     dists, idxs = tree.query(query, k=2)
     f1 = dists[:, 0].reshape(size, size)
     f2 = dists[:, 1].reshape(size, size)
@@ -149,16 +152,36 @@ def tint(mask2d: np.ndarray, color_a, color_b) -> np.ndarray:
 # Material recipes
 # --------------------------------------------------------------------------
 
-def add_soot(albedo: np.ndarray, size: int, seed: int, strength: float = 0.35) -> np.ndarray:
+def add_soot(albedo: np.ndarray, size: int, seed: int, strength: float = 0.35, sharpness: float = 2.2) -> np.ndarray:
     """Darken toward the (periodic) top of the tile with streaky noise, to
     suggest ash/soot accumulation in Luthadel's ash-fall climate."""
     streaks = fbm(size, seed + 777, octaves=(2.0, 1.4), weights=(0.7, 0.3))
     # stretch streak noise vertically by resampling narrower horizontally
-    env = periodic_vertical_envelope(size, sharpness=2.2)
+    env = periodic_vertical_envelope(size, sharpness=sharpness)
     soot_mask = normalize01(streaks * 0.6 + env * 0.4) * env
     soot_color = np.array([0.05, 0.045, 0.045])
     out = albedo * (1 - soot_mask[..., None] * strength) + soot_color * (soot_mask[..., None] * strength)
     return np.clip(out, 0, 1)
+
+
+def desaturate(albedo: np.ndarray, amount: float, toward=(0.32, 0.3, 0.29)) -> np.ndarray:
+    """Pull an albedo toward a fixed grey-brown so it reads as ash-choked
+    Luthadel stone rather than a clean, saturated material swatch."""
+    grey = np.array(toward).reshape(1, 1, 3)
+    return np.clip(lerp(albedo, grey * np.mean(albedo, axis=-1, keepdims=True) / (np.mean(grey) + 1e-6), amount), 0, 1)
+
+
+def ash_dust_upward(albedo: np.ndarray, height: np.ndarray, size: int, seed: int, strength: float = 0.22) -> np.ndarray:
+    """Settle a lighter grey ash film onto locally-flat/upward-facing detail
+    (the tops of bricks, cobbles, slates, ridges) using the height field's
+    local convexity as a stand-in for "faces the sky" -- cheap but reads
+    correctly at grazing angles, and stays perfectly tileable."""
+    smoothed = gaussian_filter(height, sigma=2.0, mode="wrap")
+    convexity = normalize01(np.clip(height - smoothed, 0, None))
+    speckle = fbm(size, seed + 4242, octaves=(2.8, 1.6), weights=(0.6, 0.4))
+    mask = np.clip(convexity * (0.6 + 0.4 * speckle), 0, 1) * strength
+    ash_color = np.array([0.62, 0.61, 0.58])
+    return np.clip(lerp(albedo, ash_color, mask[..., None]), 0, 1)
 
 
 def add_color_variation(albedo: np.ndarray, size: int, seed: int, amount: float = 0.06) -> np.ndarray:
@@ -180,6 +203,7 @@ def gen_stone_wall(size, seed):
     albedo = add_soot(albedo, size, seed, 0.4)
     height = 0.5 * mortar_mask + 0.5 * (1 - normalize01(stone_noise)) * mortar_mask
     height = normalize01(height + (per_cell[..., None].squeeze() * 0.05))
+    albedo = ash_dust_upward(albedo, height, size, seed, 0.16)
     normal = height_to_normal(height, strength=5.0)
     rough = 0.75 + (1 - mortar_mask) * 0.15 + (stone_noise - 0.5) * 0.08
     ao = ao_from_height(height, 6)
@@ -197,40 +221,69 @@ def gen_brick_soot(size, seed):
     local_y = (ys * rows) % 1.0
     edge_x = np.minimum(local_x, 1 - local_x)
     edge_y = np.minimum(local_y, 1 - local_y)
-    mortar_w = 0.045
+    mortar_w = 0.06  # wider, deeper recessed mortar joint
     mortar = np.clip(1 - np.minimum(edge_x, edge_y) / mortar_w, 0, 1)
     brick_id = row * 97 + col
     per_brick = (np.sin(brick_id * 12.9898) * 43758.5453) % 1.0
     noise = fbm(size, seed + 3, octaves=(2.4, 1.8), weights=(0.6, 0.4))
     brick_shade = 0.5 + per_brick * 0.25 + (noise - 0.5) * 0.12
-    brick_color = tint(np.clip(brick_shade, 0.1, 0.95), (0.32, 0.13, 0.10), (0.62, 0.30, 0.20))
-    mortar_color = np.array([0.55, 0.53, 0.5])
+    # Grey-brown, heavily desaturated Luthadel brick rather than a clean red.
+    brick_color = tint(np.clip(brick_shade, 0.1, 0.95), (0.20, 0.13, 0.11), (0.40, 0.26, 0.20))
+    mortar_color = np.array([0.4, 0.39, 0.37])
     albedo = lerp(brick_color, mortar_color, mortar[..., None])
     albedo = add_color_variation(albedo, size, seed, 0.05)
-    albedo = add_soot(albedo, size, seed, 0.5)
+    albedo = desaturate(albedo, 0.35)
+    # Heavy soot: darker overall, and a steep gradient so the top of the tile
+    # (the top of a wall course) reads distinctly ash-choked.
+    albedo = add_soot(albedo, size, seed, 0.72, sharpness=1.6)
     height = normalize01((1 - mortar) * 0.7 + per_brick * 0.3)
-    normal = height_to_normal(height, strength=4.5)
-    rough = 0.7 + mortar * 0.15 + (noise - 0.5) * 0.1
+    # Ash settles into the recessed mortar joints too, not just brick faces.
+    grime_in_mortar = fbm(size, seed + 909, octaves=(2.2, 1.5), weights=(0.6, 0.4))
+    albedo = lerp(albedo, np.array([0.06, 0.055, 0.055]).reshape(1, 1, 3),
+                  (mortar * (0.35 + 0.25 * grime_in_mortar))[..., None])
+    albedo = ash_dust_upward(albedo, height, size, seed, 0.18)
+    # Deeper mortar recess in the normal map (stronger strength = more pronounced groove).
+    normal = height_to_normal(height, strength=7.5)
+    rough = 0.75 + mortar * 0.15 + (noise - 0.5) * 0.1
     ao = ao_from_height(height, 5)
     return albedo, normal, np.clip(rough, 0.3, 1.0), ao
 
 
 def gen_cobblestone(size, seed):
-    f1, f2, cell_id, _ = tileable_worley(size, 260, seed)
-    mortar = normalize01(f2 - f1)
-    mortar_mask = np.clip(mortar * 6.0, 0, 1)  # 1 = stone interior, 0 = thin gap
+    # Actual rounded cobbles rather than cracked-voronoi flagstone: instead of
+    # shading the whole Voronoi cell (which always has straight polygonal
+    # edges), each stone is its own circular/elliptical footprint around its
+    # point (radius < half the point spacing), so what's left between stones
+    # is a real gap -- rounded, and often wider than a mortar line -- packed
+    # with dirt and ash rather than a thin crack.
+    n_points = 300
+    f1, f2, cell_id, _ = tileable_worley(size, n_points, seed, aniso=(1.0, 0.85))
     per_cell = (np.sin(cell_id * 78.233) * 43758.5453) % 1.0
-    dome = np.clip(1.0 - f1 / (f2 + 1e-6), 0, 1)  # rounded stone bump per cell
+    spacing = 1.0 / np.sqrt(n_points)
+    radius = spacing * (0.5 + 0.22 * per_cell)  # organic size variation per stone, packed close
+    u = f1 / np.maximum(radius, 1e-6)
+    edge_soft = 0.12
+    stone_mask = np.clip((1.0 - u) / edge_soft, 0, 1)  # 1 = stone interior, 0 = gap
+    dome = np.sqrt(np.clip(1.0 - np.minimum(u, 1.0) ** 2, 0, 1))  # hemispherical cap
     noise = fbm(size, seed + 5, octaves=(2.2, 1.6), weights=(0.6, 0.4))
-    shade = 0.35 + per_cell * 0.25 + (noise - 0.5) * 0.1
-    stone_color = tint(np.clip(shade, 0.1, 0.9), (0.22, 0.21, 0.2), (0.5, 0.48, 0.45))
-    dirt_color = np.array([0.12, 0.1, 0.09])
-    albedo = lerp(dirt_color, stone_color, mortar_mask[..., None])
+    shade = 0.3 + per_cell * 0.22 + (noise - 0.5) * 0.08
+    # Grey-brown, low-saturation wet-stone palette rather than warm dirt.
+    stone_color = tint(np.clip(shade, 0.08, 0.85), (0.19, 0.185, 0.18), (0.42, 0.4, 0.38))
+    stone_color = desaturate(stone_color, 0.3)
+    # Gaps are packed dirt dusted with ash, not plain brown dirt.
+    gap_color = np.array([0.09, 0.085, 0.08])
+    albedo = lerp(gap_color, stone_color, stone_mask[..., None])
     albedo = add_color_variation(albedo, size, seed, 0.05)
-    albedo = add_soot(albedo, size, seed, 0.3)
-    height = normalize01(dome * mortar_mask)
-    normal = height_to_normal(height, strength=7.0)
-    rough = 0.8 - dome * 0.15 + (1 - mortar_mask) * 0.1
+    height = normalize01(dome * stone_mask)
+    # Ash collects and sits visibly in the dark rounded gaps between stones.
+    ash_in_gaps = fbm(size, seed + 606, octaves=(2.6, 1.6), weights=(0.6, 0.4))
+    ash_gap_mask = (1.0 - stone_mask) * (0.5 + 0.5 * ash_in_gaps)
+    albedo = lerp(albedo, np.array([0.34, 0.33, 0.31]).reshape(1, 1, 3), (ash_gap_mask * 0.6)[..., None])
+    albedo = add_soot(albedo, size, seed, 0.32)
+    albedo = ash_dust_upward(albedo, height, size, seed, 0.16)
+    # Strong domed normal per rounded cobble.
+    normal = height_to_normal(height, strength=9.0)
+    rough = 0.82 - dome * 0.2 + (1 - stone_mask) * 0.08
     ao = ao_from_height(height, 4)
     return albedo, normal, np.clip(rough, 0.35, 1.0), ao
 
@@ -254,6 +307,8 @@ def gen_slate_roof(size, seed):
     albedo = add_color_variation(albedo, size, seed, 0.04)
     albedo = add_soot(albedo, size, seed, 0.35)
     height = normalize01((1 - row_frac) * 0.6 + per_slate * 0.2 + seam * 0.4)
+    # Roofs face straight up into the ashfall -- the heaviest dusting of any set.
+    albedo = ash_dust_upward(albedo, height, size, seed, 0.3)
     normal = height_to_normal(height, strength=4.0)
     rough = 0.55 + seam * 0.1 + (noise - 0.5) * 0.08
     ao = ao_from_height(height, 5)
