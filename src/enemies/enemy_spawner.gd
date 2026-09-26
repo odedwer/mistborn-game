@@ -11,6 +11,7 @@ const TYPE_SCENES := {
 	&"thug": "res://src/enemies/thug.tscn",
 	&"coinshot": "res://src/enemies/coinshot.tscn",
 	&"inquisitor": "res://src/enemies/inquisitor.tscn",
+	&"seeker": "res://src/enemies/seeker.tscn",
 }
 
 @export var defer_inquisitor: bool = true

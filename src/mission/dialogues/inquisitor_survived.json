@@ -1,0 +1,8 @@
+{
+  "id": "inquisitor_survived",
+  "lines": [
+    {"speaker": "Vin", "color": "#8fa6c4", "text": "It's not dead. It's barely slowed down."},
+    {"speaker": "Kelsier", "color": "#c9a227", "text": "It's not meant to die tonight, and neither are you. Getting out alive is the whole victory — remember that, because it won't be the last time it finds us."},
+    {"speaker": "Spook", "color": "#7a7a80", "text": "Small mercies. I'd rather not find out what 'not the last time' means up close again."}
+  ]
+}

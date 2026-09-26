@@ -67,7 +67,7 @@ The end goal is to play the whole story of *The Final Empire* in a seamless, tra
 ## Roadmap
 1. **Vertical slice**, in progress: core allomancy, one mission, the streamed city core around the slice route.
 2. **Open-world foundation**: full city plan and streaming, map/journal, side activities, save anywhere.
-3. **Act I**, in progress: Vin's recruitment ("The Survivor's Offer"), meeting
+3. **Act I**, done: Vin's recruitment ("The Survivor's Offer"), meeting
    the crew at Clubs' shop ("The Crew"), the rooftop mistwalk to Keep
    Venture, advanced training with Kelsier ("Lessons in the Mists"), and the
    first noble ball as Lady Valette — five chained mission JSONs under
@@ -75,6 +75,49 @@ The end goal is to play the whole story of *The Final Empire* in a seamless, tra
    (`src/dialogue/`), interior scene transitions (`src/world/scene_transition.gd`),
    cutscene-lite letterboxing, and the ball's suspicion meter. Crew/noble
    NPCs are placeholder tinted capsules pending real `CharacterModel` GLB
-   variants.
-4. **Acts II–III**: the heists, the Pits of Hathsin, the skaa army, and the Kredik Shaw finale against the Lord Ruler.
-5. **Polish**: authored hero assets to replace procedural ones, voice, cinematics, accessibility, performance passes.
+   variants (in progress in parallel).
+4. **Act II**, done: the crew's plan unfolding — noble politics, heists and
+   the Pits — six chained mission JSONs continuing after `lady_valette`:
+   - **Dinner at Keep Venture**: a second, quieter social mission at the
+     Ventures'. Meeting Elend Venture (a choice-driven dialogue sets one of
+     three relationship flags), eavesdropping on house politics with tin,
+     and picking a pocket with Pull.
+   - **The Canton of Resource**: a night heist for the obligators' ledgers.
+     A stealth interior with patrolling guards and a bronze-burning
+     `Seeker` (`src/enemies/seeker.gd`) that senses the player's own
+     allomantic pulses — copper, not just staying in shadow, is the real
+     counter. One guard going hostile is a quiet takedown; several at once
+     trips the heist's alarm state and fails the mission.
+   - **Soothing the Masses**: Breeze teaches brass and zinc on a skaa
+     street crowd. A shared `CrowdMoodMeter`/`CrowdMember` pair (reusing
+     `receive_emotional_allomancy`) tracks the square's temper, soothed or
+     riled to steer the confrontation, alongside recruiting a soldier for
+     the rebellion.
+   - **House War**: a covert rooftop strike on Keep Tekiel — coinshots and
+     hazekillers — ending with a `push_target` set piece: Pushing or
+     Pulling down a suspended iron gate to stoke the Venture/Tekiel feud.
+   - **The Pits of Hathsin**: a separate mission space — a stepped crevasse
+     shaft with embedded iron spikes to Pull down onto, an atium geode
+     vein, a short stealth stretch past guards, and Kelsier's history told
+     through original dialogue and environmental storytelling (no book
+     text reproduced).
+   - **The Inquisitor's Shadow**: a Steel Inquisitor hunts the crew across
+     a rooftop chase protecting Spook, ending in a survivable first clash
+     (the new `survive` objective type).
+
+   Plus three new open-world activities between missions: "Obligator
+   Courier Interception" (a rooftop chase), "Soothing Riots" (a
+   `crowd_riot` `ActivityManager` type — calm a boiling-over crowd before
+   time runs out) and "Noble Carriage Coin-Heist" (a pursuit). All new
+   interiors bake their own `NavigationRegion3D` so real enemies can patrol
+   them; see `src/mission/interiors/` and `tests/test_act2_missions.gd` /
+   `test_act2_interiors.gd`.
+5. **Act III** (remaining): the skaa army mustering and Yeden's rebellion,
+   the Lord Ruler's forces closing on Luthadel, Elend's succession as Vin's
+   allies turn on House Venture, the Well of Ascension thread, TenSoon/
+   kandra intrigue if it fits the slice, the assault on Kredik Shaw, and the
+   final confrontation with the Lord Ruler. Likely needs: a large-scale
+   battle/siege set piece (skaa army vs. Luthadel's garrison), an
+   Elend-focused political stage (not just Vin's), and a hand-built Kredik
+   Shaw interior distinct from the procedural keeps.
+6. **Polish**: authored hero assets to replace procedural ones, voice, cinematics, accessibility, performance passes.

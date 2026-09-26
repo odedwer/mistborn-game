@@ -32,6 +32,8 @@ var _triggers: Array[Area3D] = []
 var _hinted_metal_use := false
 ## `chain_pushes` objective id -> {last: float (ticks sec), count: int}.
 var _chain_state: Dictionary = {}
+## `survive` objective id -> seconds of `_process` time accumulated so far.
+var _survive_start: Dictionary = {}
 var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
 ## Optional player-set waypoint (from the map screen) overriding the current
@@ -52,6 +54,7 @@ func _ready() -> void:
 	Events.actor_died.connect(_on_actor_died)
 	Events.dialogue_finished.connect(_on_dialogue_finished)
 	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
+	Events.alert_level_changed.connect(_on_alert_level_changed)
 	_build_fade_layer()
 	_start_or_resume()
 
@@ -59,17 +62,26 @@ func _ready() -> void:
 ## Polls `reach_speed` objectives (e.g. "hit a coin-jump chain at 12 m/s");
 ## everything else here is event-driven, so this stays a cheap no-op most of
 ## the time.
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _active_objectives.is_empty():
 		return
 	var player := get_tree().get_first_node_in_group("player")
-	if not (player is CharacterBody3D):
-		return
-	var speed := (player as CharacterBody3D).velocity.length()
+	var speed := 0.0
+	if player is CharacterBody3D:
+		speed = (player as CharacterBody3D).velocity.length()
 	for id in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[id]
-		if obj.get("type", "") == "reach_speed" and speed >= float(obj.get("min_speed", 10.0)):
+		var t: String = obj.get("type", "")
+		if t == "reach_speed" and player is CharacterBody3D and speed >= float(obj.get("min_speed", 10.0)):
 			complete_objective(obj)
+		elif t == "crowd_mood" and _crowd_mood_reached(obj):
+			complete_objective(obj)
+		elif t == "survive":
+			var elapsed: float = float(_survive_start.get(id, 0.0)) + delta
+			_survive_start[id] = elapsed
+			if elapsed >= float(obj.get("duration", 10.0)):
+				_survive_start.erase(id)
+				complete_objective(obj)
 
 
 func _start_or_resume() -> void:
@@ -105,6 +117,7 @@ func _on_checkpoint_body_entered(body: Node, area: Area3D) -> void:
 func _activate_stage(index: int) -> void:
 	_clear_triggers()
 	_active_objectives.clear()
+	_survive_start.clear()
 	if index >= mission.stages.size():
 		return
 	var stage: Dictionary = mission.stages[index]
@@ -155,8 +168,10 @@ func _activate_objective(obj: Dictionary) -> void:
 			complete_objective(obj)
 		"reach_marker", "escape", "interact":
 			_spawn_trigger_for(obj)
-		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes":
+		"use_metal", "flare_metal", "defeat", "defeat_in_duel", "collect", "dialogue", "reach_speed", "chain_pushes", "push_target":
 			pass # driven by Events, see the handlers below.
+		"crowd_mood", "survive":
+			pass # polled in _process, see above.
 		"flag_count":
 			_check_flag_count(obj)
 
@@ -317,9 +332,12 @@ func _on_metal_burn_changed(allomancer: Node, metal: int, burning: bool) -> void
 		_hinted_metal_use = true
 
 
-func _on_allomantic_line_used(allomancer: Node, _target: Node, metal: int, _strength: float) -> void:
+func _on_allomantic_line_used(allomancer: Node, target: Node, metal: int, _strength: float) -> void:
 	if not _is_player_owned(allomancer):
 		return
+	var target_obj_id := ""
+	if target != null and is_instance_valid(target):
+		target_obj_id = str(target.get_meta("objective_id", ""))
 	for id in _active_objectives.keys():
 		var obj: Dictionary = _active_objectives[id]
 		var t: String = obj.get("type", "")
@@ -327,6 +345,8 @@ func _on_allomantic_line_used(allomancer: Node, _target: Node, metal: int, _stre
 			complete_objective(obj)
 		elif t == "chain_pushes" and int(obj.get("metal", Metal.Type.STEEL)) == metal:
 			_tick_chain(id, obj)
+		elif t == "push_target" and target_obj_id != "" and target_obj_id == str(obj.get("marker_id", "")):
+			complete_objective(obj)
 
 
 ## Counts distinct Pushes/Pulls (debounced so one held button-press is one
@@ -394,6 +414,41 @@ func _on_dialogue_flag_set(_flag: StringName, _value: Variant) -> void:
 			_check_flag_count(obj)
 
 
+## The Canton of Resource heist's alarm state: a stage may carry
+## `"fail_conditions"` (see `MissionData`) checked against the district-wide
+## alert level. Exceeding a condition's `max` fails the mission — matches how
+## `SuspicionMeter` fails "Lady Valette" on detection, but driven by
+## `AlertDirector`/`EnemyBase` instead of a bespoke meter.
+func _on_alert_level_changed(level: int) -> void:
+	if mission == null or stage_index >= mission.stages.size():
+		return
+	var stage: Dictionary = mission.stages[stage_index]
+	for cond: Dictionary in stage.get("fail_conditions", []):
+		var kind := String(cond.get("type", ""))
+		if kind == "alert_level" and level > int(cond.get("max", 2)):
+			_fail_for(cond, "alert_level")
+			return
+		# One guard clocking you can still be handled quietly (a takedown
+		# before they shout); the heist only fails once several are hostile
+		# at once — the alarm has genuinely spread.
+		if kind == "combat_count" and level >= 2 and _enemies_in_combat() > int(cond.get("max", 1)):
+			_fail_for(cond, "combat_count")
+			return
+
+
+func _fail_for(cond: Dictionary, reason: String) -> void:
+	Events.hint_requested.emit(cond.get("reason", "The alarm is raised!"), 4.0)
+	Events.mission_failed.emit(mission.id, reason)
+
+
+func _enemies_in_combat() -> int:
+	var n := 0
+	for e in get_tree().get_nodes_in_group(&"enemy"):
+		if "state" in e and int(e.state) == EnemyBase.State.COMBAT:
+			n += 1
+	return n
+
+
 ## "Talk to 3 nobles"-style objective: complete once `count` of `flags` are
 ## set in `GameState.dialogue_flags`.
 func _check_flag_count(obj: Dictionary) -> void:
@@ -405,6 +460,21 @@ func _check_flag_count(obj: Dictionary) -> void:
 			have += 1
 	if have >= need:
 		complete_objective(obj)
+
+
+## `crowd_mood` objective: true once the first node in group `mood_group`
+## (default `"crowd_mood"`, see `CrowdMoodMeter`) has crossed `target` in the
+## requested `direction`.
+func _crowd_mood_reached(obj: Dictionary) -> bool:
+	var group := StringName(obj.get("mood_group", "crowd_mood"))
+	var meter := get_tree().get_first_node_in_group(group)
+	if meter == null or not ("mood" in meter):
+		return false
+	var mood: float = meter.mood
+	var target := float(obj.get("target", 50.0))
+	if String(obj.get("direction", "below")) == "above":
+		return mood >= target
+	return mood <= target
 
 
 func _is_player_owned(node: Node) -> bool:
