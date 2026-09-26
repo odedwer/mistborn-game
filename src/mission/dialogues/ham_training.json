@@ -1,0 +1,25 @@
+{
+  "id": "ham_training",
+  "lines": [
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "Don't let the spears fool you. Half of them had never held anything sharper than a harvest sickle when they got here."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "They look like soldiers."
+    },
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "They look like soldiers from far away. Up close they still flinch when someone shouts. Discipline takes years. We've had months."
+    },
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "Give me one more season of drills and they'll hold a line. Give me a week and they'll hold it until the first charge."
+    }
+  ]
+}

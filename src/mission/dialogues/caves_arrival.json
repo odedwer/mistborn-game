@@ -1,0 +1,25 @@
+{
+  "id": "caves_arrival",
+  "lines": [
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "Mind your head on the way in. Seven thousand men sleep in these caverns, and every one of them snores."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Seven thousand? Down here, all this time, and the obligators never smelled the smoke?"
+    },
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "Smoke goes up through cracks a mile wide. The hard part wasn't hiding them. It was convincing them to stay."
+    },
+    {
+      "speaker": "Kelsier",
+      "color": "#c9a227",
+      "text": "Walk the yard. Talk to Ham. See what the crew has been paying for — then tell me honestly whether they're ready."
+    }
+  ]
+}

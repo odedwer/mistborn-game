@@ -35,6 +35,10 @@ var _triggers: Array[Area3D] = []
 ## on `Events.interior_entered` until the marker appears.
 var _unresolved_triggers: Array[Dictionary] = []
 var _retry_timer := 0.0
+## Inside an interior, deaths respawn here rather than at the open-world
+## checkpoint: the interior's spawn marker, then the latest `reach_marker`/
+## `escape` objective the player reached in it (a mid-scene checkpoint).
+var _interior_respawn: Vector3 = Vector3.INF
 var _hinted_metal_use := false
 ## `chain_pushes` objective id -> {last: float (ticks sec), count: int}.
 var _chain_state: Dictionary = {}
@@ -61,7 +65,8 @@ func _ready() -> void:
 	Events.dialogue_finished.connect(_on_dialogue_finished)
 	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
 	Events.alert_level_changed.connect(_on_alert_level_changed)
-	Events.interior_entered.connect(func(_p: String) -> void: _retry_unresolved_triggers())
+	Events.interior_entered.connect(_on_interior_entered)
+	Events.interior_exited.connect(func() -> void: _interior_respawn = Vector3.INF)
 	_build_fade_layer()
 	_start_or_resume()
 
@@ -244,6 +249,19 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 		area.add_child(beacon)
 
 
+func _on_interior_entered(_path: String) -> void:
+	_interior_respawn = Vector3.INF
+	var spawn := get_tree().get_first_node_in_group(&"interior_spawn") as Node3D
+	var interior: Node = SceneTransition.current_interior()
+	if interior != null:
+		for n in get_tree().get_nodes_in_group(&"interior_spawn"):
+			if interior.is_ancestor_of(n):
+				spawn = n as Node3D
+	if spawn != null:
+		_interior_respawn = spawn.global_position
+	_retry_unresolved_triggers()
+
+
 func _retry_unresolved_triggers() -> void:
 	var pending := _unresolved_triggers.duplicate()
 	_unresolved_triggers.clear()
@@ -265,6 +283,8 @@ func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
 			return
 	if obj.get("type", "") == "interact":
 		Events.pickup_collected.emit(StringName(obj.get("interact_kind", "")), 1.0)
+	elif SceneTransition.is_inside_interior():
+		_interior_respawn = (body as Node3D).global_position
 	complete_objective(obj)
 
 
@@ -628,7 +648,9 @@ func _respawn_player() -> void:
 	if player == null:
 		return
 	var xform := (player as Node3D).global_transform
-	if GameState.last_checkpoint_id != &"":
+	if SceneTransition.is_inside_interior() and _interior_respawn != Vector3.INF:
+		xform = Transform3D(Basis.IDENTITY, _interior_respawn + Vector3.UP * 0.2)
+	elif GameState.last_checkpoint_id != &"":
 		xform = GameState.last_checkpoint_transform
 	else:
 		var spawn := get_tree().get_first_node_in_group("player_spawn") as Node3D

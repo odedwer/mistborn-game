@@ -1,0 +1,25 @@
+{
+  "id": "yeden_impatience",
+  "lines": [
+    {
+      "speaker": "Yeden",
+      "color": "#6d5a3a",
+      "text": "You're Kelsier's apprentice. Tell him I'm tired of drilling in the dark while the Final Empire drinks our blood up there."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Ham says they need more time."
+    },
+    {
+      "speaker": "Yeden",
+      "color": "#6d5a3a",
+      "text": "Ham is a thief who likes to fight. I've been leading skaa rebels since before he could lift a practice sword. The garrison is thin right now. Thinner than it will ever be again."
+    },
+    {
+      "speaker": "Yeden",
+      "color": "#6d5a3a",
+      "text": "Opportunities don't wait for thieves to finish their planning. Remember that I said so."
+    }
+  ]
+}
