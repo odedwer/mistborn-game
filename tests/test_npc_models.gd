@@ -7,6 +7,13 @@ const INTERIORS := {
 	"res://src/mission/interiors/clubs_shop_hub.tscn": 8,
 	"res://src/mission/interiors/keep_venture_ballroom.tscn": 3,
 	"res://src/mission/interiors/canton_office.tscn": 2,
+	# Act II
+	"res://src/mission/interiors/keep_venture_dinner.tscn": 3,
+	"res://src/mission/interiors/street_confrontation.tscn": 2,
+	"res://src/mission/interiors/inquisitor_chase.tscn": 1,
+	"res://src/mission/interiors/canton_resource.tscn": 0,
+	"res://src/mission/interiors/keep_tekiel_rooftop.tscn": 0,
+	"res://src/mission/interiors/pits_of_hathsin.tscn": 0,
 }
 
 
@@ -21,7 +28,11 @@ func _talkers_in(root: Node) -> Array[NPCTalker]:
 func test_npc_talker_resolves_models() -> void:
 	assert_eq(NPCTalker.resolve_model_id(&"sazed", ""), &"sazed")
 	assert_eq(NPCTalker.resolve_model_id(&"", "Ham"), &"ham", "guessed from the display name")
-	assert_eq(NPCTalker.resolve_model_id(&"", "Lord Nobody"), &"", "unknown names keep the capsule")
+	assert_eq(NPCTalker.resolve_model_id(&"", "Elend Venture"), &"elend")
+	assert_eq(NPCTalker.resolve_model_id(&"", "Lady Kliss"), &"noble_woman", "titled extras get a noble")
+	assert_eq(NPCTalker.resolve_model_id(&"", "Lord Ashweather"), &"noble_man")
+	assert_eq(NPCTalker.resolve_model_id(&"", "A Wary Skaa"), &"skaa_man")
+	assert_eq(NPCTalker.resolve_model_id(&"", "Mysterious Stranger"), &"", "unknown names keep the capsule")
 	assert_eq(NPCTalker.resolve_model_id(&"no_such_model", "Kelsier"), &"", "a bad explicit id is not guessed over")
 	var npc := NPCTalker.new()
 	npc.display_name = "Breeze"
@@ -31,7 +42,7 @@ func test_npc_talker_resolves_models() -> void:
 	var label := npc.get_node_or_null("NameLabel") as Label3D
 	assert_true(label != null and label.position.y > npc.model.get_model_height(), "name label above the head")
 	var fallback := NPCTalker.new()
-	fallback.display_name = "Lord Nobody"
+	fallback.display_name = "Mysterious Stranger"
 	add_child(fallback)
 	assert_true(fallback.model == null, "no model for unknown NPCs")
 	assert_true(fallback.get_node_or_null("Model") is MeshInstance3D, "capsule fallback")
@@ -47,6 +58,9 @@ func test_interiors_instantiate_with_real_models() -> void:
 		add_child(room)
 		var talkers := _talkers_in(room)
 		assert_true(talkers.size() >= INTERIORS[path], "%s has %d NPCs" % [path, talkers.size()])
+		for m in room.find_children("*", "CharacterBody3D", true, false):
+			if m is CrowdMember:
+				assert_true(m.model is CharacterModel, "%s: crowd member uses a skaa model" % path)
 		for t in talkers:
 			assert_true(t.model is CharacterModel, "%s: %s uses a real model" % [path, t.display_name])
 			if t.model != null:
@@ -113,6 +127,27 @@ func test_npc_talk_and_wander_animate() -> void:
 	assert_eq(started, [&"talk"], "talk gesture on interact")
 	await physics_frames(40)
 	assert_lt(absf(angle_difference(npc.model.rotation.y, PI)), 0.3, "turned to face the speaker")
+
+
+func test_elend_at_dinner_and_valette_in_her_gown() -> void:
+	var player := (load("res://src/player/player.tscn") as PackedScene).instantiate()
+	add_child(player)
+	await get_tree().process_frame
+	var room := (load("res://src/mission/interiors/keep_venture_dinner.tscn") as PackedScene).instantiate()
+	add_child(room)
+	var ids := []
+	for t in _talkers_in(room):
+		ids.append(t.model.character_id if t.model != null else &"")
+	assert_true(&"elend" in ids, "Elend has his own model (%s)" % [ids])
+	remove_child(player)
+	room.add_child(player)
+	assert_eq(player.model.scene_file_path, "res://assets/models/characters/vin_gown.tscn", "gown at dinner")
+	room.remove_child(player)
+	add_child(player)
+	await get_tree().process_frame
+	assert_eq(player.model.scene_file_path, "res://assets/models/characters/vin.tscn", "mistcloak again outside")
+	room.queue_free()
+	player.queue_free()
 
 
 func test_valette_wears_the_gown_in_the_ballroom() -> void:

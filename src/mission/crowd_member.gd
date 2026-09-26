@@ -1,7 +1,8 @@
 class_name CrowdMember
 extends CharacterBody3D
 ## A skaa crowd member for "Soothing the Masses" and the "Soothing riots"
-## side activity: a wandering placeholder body (same look as `NPCTalker`)
+## side activity: a wandering skaa `CharacterModel` (skaa_man/skaa_woman with a
+## per-member variant; capsule fallback, same as `NPCTalker`)
 ## that forwards zinc/brass to the scene's `CrowdMoodMeter` instead of
 ## reacting to it directly, so the mood is shared across the whole crowd
 ## rather than tracked per-NPC.
@@ -19,6 +20,7 @@ var _home := Vector3.ZERO
 var _target := Vector3.ZERO
 var _wait := 0.0
 var _meter: Node = null
+var model: CharacterModel
 
 
 func _ready() -> void:
@@ -32,6 +34,25 @@ func _ready() -> void:
 
 
 func _build_visual() -> void:
+	var kind := "skaa_woman" if get_instance_id() % 2 == 0 else "skaa_man"
+	var ps := load("res://assets/models/characters/%s.tscn" % kind) as PackedScene
+	if ps != null:
+		model = ps.instantiate() as CharacterModel
+	if model != null:
+		model.randomize_variant(get_instance_id() & 0x7fffffff)
+		add_child(model)
+	else:
+		_build_capsule()
+	var shape := CollisionShape3D.new()
+	var cap_shape := CapsuleShape3D.new()
+	cap_shape.radius = 0.32
+	cap_shape.height = 1.7
+	shape.shape = cap_shape
+	shape.position.y = 0.85
+	add_child(shape)
+
+
+func _build_capsule() -> void:
 	var mesh := MeshInstance3D.new()
 	var cap := CapsuleMesh.new()
 	cap.radius = 0.32
@@ -42,13 +63,6 @@ func _build_visual() -> void:
 	mat.albedo_color = body_color
 	mesh.material_override = mat
 	add_child(mesh)
-	var shape := CollisionShape3D.new()
-	var cap_shape := CapsuleShape3D.new()
-	cap_shape.radius = 0.32
-	cap_shape.height = 1.7
-	shape.shape = cap_shape
-	shape.position.y = 0.85
-	add_child(shape)
 
 
 func _physics_process(delta: float) -> void:
@@ -67,6 +81,11 @@ func _physics_process(delta: float) -> void:
 		velocity.x = dir.x
 		velocity.z = dir.z
 	move_and_slide()
+	if model != null:
+		var h := Vector2(velocity.x, velocity.z)
+		if h.length() > 0.2:
+			model.rotation.y = lerp_angle(model.rotation.y, atan2(h.x, h.y), minf(8.0 * delta, 1.0))
+		model.set_locomotion(h.length(), true)
 
 
 func _pick_new_target() -> void:

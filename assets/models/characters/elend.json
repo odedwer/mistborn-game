@@ -1,0 +1,77 @@
+{
+ "name": "elend",
+ "style": "elend",
+ "tris": 3600,
+ "height": 1.8324387403249867,
+ "garments": {},
+ "tris_max": 3600,
+ "materials": [
+  "Cloth"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5882422570575181,
+    -0.0008130876413697859,
+    0.9809833210652021
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5882422570575181,
+    -0.0008130876413697859,
+    0.9809833210652021
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.10400000000000001,
+    1.3741
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0020800000000000003,
+    1.7292600000000002
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

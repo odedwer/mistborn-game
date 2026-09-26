@@ -25,13 +25,10 @@ const GUESTS := [
 	{"model": &"noble_woman", "pos": Vector2(-8.0, 3.0)}, {"model": &"noble_man", "pos": Vector2(-6.5, 3.8)},
 	{"model": &"noble_woman", "pos": Vector2(2.0, 1.5)}, {"model": &"noble_man", "pos": Vector2(-1.5, 1.0)},
 ]
-## Vin's ball gown while she is disguised as Lady Valette (see _on_child_entered).
-const VALETTE_MODEL := "res://assets/models/characters/vin_gown.tscn"
 
 
 func _ready() -> void:
-	child_entered_tree.connect(_on_child_entered)
-	child_exiting_tree.connect(_on_child_exiting)
+	add_child(DisguiseZone.new())  # Lady Valette wears Vin's ball gown in here
 	_build_hall()
 	_build_stained_glass()
 	_build_chandeliers()
@@ -237,17 +234,6 @@ func _build_nobles() -> void:
 		guest.facing_deg = rad_to_deg(atan2(other.x - gp.x, other.y - gp.y))
 		add_child(guest)
 
-
-## Lady Valette: the player wears Vin's ball gown inside the keep, and her usual
-## clothes again once she leaves (SceneTransition reparents the player in/out).
-func _on_child_entered(node: Node) -> void:
-	if node.is_in_group(&"player") and node.has_method(&"set_model_scene"):
-		node.call(&"set_model_scene", VALETTE_MODEL)
-
-
-func _on_child_exiting(node: Node) -> void:
-	if node.is_in_group(&"player") and node.has_method(&"set_model_scene"):
-		node.call_deferred(&"set_model_scene", "")
 
 
 func _build_markers() -> void:

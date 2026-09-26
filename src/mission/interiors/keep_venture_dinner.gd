@@ -18,6 +18,7 @@ const HALL_SIZE := Vector3(16.0, 6.0, 12.0)
 
 
 func _ready() -> void:
+	add_child(DisguiseZone.new())  # Valette dines in her gown
 	_build_room()
 	_build_table()
 	_build_hearth()
@@ -165,6 +166,7 @@ func _build_people() -> void:
 	elend.display_name = "Elend Venture"
 	elend.dialogue_id = "elend_venture_intro"
 	elend.body_color = Color(0.55, 0.5, 0.75)
+	elend.model_id = &"elend"
 	elend.wander_radius = 0.0
 	elend.position = Vector3(2.2, 0.0, -1.5)
 	add_child(elend)

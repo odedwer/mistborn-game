@@ -66,7 +66,20 @@ static func resolve_model_id(explicit: StringName, p_display_name: String) -> St
 	if words.is_empty():
 		return &""
 	var guess := words[0]
-	return StringName(guess) if ResourceLoader.exists(MODEL_DIR + guess + ".tscn") else &""
+	if ResourceLoader.exists(MODEL_DIR + guess + ".tscn"):
+		return StringName(guess)
+	# generic extras by title / keyword: "Lord X", "Lady Y", "Obligator Z", "A Wary Skaa"
+	for w in words:
+		if TITLE_MODELS.has(w):
+			return TITLE_MODELS[w]
+	return &""
+
+
+## Base models (with a variant pool) chosen for untitled extras.
+const TITLE_MODELS := {
+	"lord": &"noble_man", "lady": &"noble_woman", "obligator": &"obligator", "prelan": &"obligator",
+	"skaa": &"skaa_man", "worker": &"skaa_man", "woman": &"skaa_woman",
+}
 
 
 func _build_visual() -> void:
@@ -79,6 +92,8 @@ func _build_visual() -> void:
 		model.name = "Model"
 		if variant_seed >= 0:
 			model.randomize_variant(variant_seed)
+		elif model_id == &"" and display_name != "":
+			model.randomize_variant(hash(display_name) & 0x7fffffff)  # "Lady Kliss" always looks the same
 		add_child(model)
 		model.rotation.y = _yaw
 		height = maxf(model.get_model_height(), 1.0)

@@ -10,6 +10,7 @@ const HEIGHTS := {
 	# the crew
 	"kelsier": [1.78, 1.95], "dockson": [1.7, 1.85], "breeze": [1.68, 1.82], "ham": [1.8, 1.96],
 	"clubs": [1.58, 1.72], "spook": [1.7, 1.88], "sazed": [1.95, 2.1], "marsh": [1.78, 1.92],
+	"elend": [1.76, 1.9],
 	# Lady Valette, nobles (base models + presets; hats count towards the height)
 	"vin_gown": [1.58, 1.74], "noble_man": [1.72, 1.9], "noble_woman": [1.58, 1.76],
 	"noble_man_1": [1.75, 2.15], "noble_man_2": [1.75, 2.1], "noble_man_3": [1.68, 1.9],
@@ -17,7 +18,7 @@ const HEIGHTS := {
 	# obligators and skaa
 	"obligator": [1.74, 1.9], "obligator_2": [1.64, 1.8], "skaa_man": [1.66, 1.86], "skaa_woman": [1.54, 1.72],
 }
-const NPC_IDS: Array[String] = ["kelsier", "dockson", "breeze", "ham", "clubs", "spook", "sazed", "marsh",
+const NPC_IDS: Array[String] = ["kelsier", "dockson", "breeze", "ham", "clubs", "spook", "sazed", "marsh", "elend",
 	"vin_gown", "noble_man_1", "noble_woman_1", "obligator", "obligator_2", "skaa_man", "skaa_woman"]
 const REQUIRED_ANIMS: Array[StringName] = [
 	&"idle", &"walk", &"run", &"sprint", &"crouch_idle", &"crouch_walk", &"jump", &"fall", &"land",

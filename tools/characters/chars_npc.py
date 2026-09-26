@@ -652,6 +652,57 @@ def build_marsh():
     return b, dict(mats={CLOTH: "Cloth"}, style="marsh")
 
 
+def build_elend():
+    """Elend Venture: young noble, slightly rumpled suit, an armful of books."""
+    b = Body(H=1.82, sh_w=0.176, hip_w=0.092, apose=40, width=0.94, limb=0.94, head=1.0)
+    coat, coat_d = hexcol("2a3448"), hexcol("1e2636")
+    vest, shirt, pants = hexcol("6a6a70"), hexcol("e6e0d2"), hexcol("2a2a30")
+    shoes, skin, hair = hexcol("1a1512"), hexcol("dcb8a0"), hexcol("5a3e26")
+    H, s = b.H, b.s
+    t = torso_table(waist=0.92, shoulders=0.98, chest=0.95, depth=0.95)
+
+    def tcol(p, i, th):
+        if p[2] < 0.5 * H:
+            return pants
+        # waistcoat buttoned one hole off: the placket is skewed, a shirt tail pokes out
+        skew = (p[2] - 0.66 * H) * 0.25
+        if abs(th - 90 - skew * 300) < 10 and p[2] > 0.74 * H:
+            return shirt
+        if 0.555 * H < p[2] < 0.6 * H and 96 < th < 118:
+            return shirt  # untucked shirt tail
+        if abs(th - 90) < 26 and p[2] > 0.58 * H:
+            return vest
+        return coat
+
+    b.torso(t, tcol)
+    b.neck(shirt, r=0.05)
+    b.head(skin, brow=hexcol("4a3020"), lips=hexcol("a87062"), jaw=0.98)
+    b.hair_shell(hair, puff=1.1, jag=0.028, back_z=b.head_lm["chin_z"] + 0.05 * s, spikes=9,
+                 fringe_z=b.head_lm["brow_z"] + 0.012 * s)
+    for side in (1, -1):
+        b.arm(side, color=lambda p, i, th, side=side: shirt if arm_t(b, side, p) > 1.92 else coat, flare=0.008)
+        b.hand(side, skin)
+        b.leg(side, pants, boot_z=0.1 * H, boot_col=shoes)
+        b.foot(side, shoes, sole=hexcol("060505"))
+    # loosened cravat hanging askew
+    tube(b.m, [v3(0.01 * s, 0.062 * s, 0.81 * H), v3(0.03 * s, 0.09 * s, 0.77 * H), v3(0.045 * s, 0.1 * s, 0.72 * H)],
+         [(0.022 * s, 0.006 * s), (0.02 * s, 0.006 * s), (0.016 * s, 0.005 * s)], n=4, hint=(0, 1, 0),
+         color=hexcol("7a2a2a"), weights=b.W(["UpperChest", "Chest"]))
+    # open frock coat, one collar flipped up
+    b.skirt(0.6 * H, 0.36 * H, (0.155 * s, 0.098 * s, 0.108 * s), (0.18 * s, 0.13 * s, 0.15 * s),
+            lambda p, i, th: coat_d if i == 4 else coat, rows=5, arc=(112, 428), leg_share=0.6)
+    collar(b, coat, h=0.05, r=(0.08, 0.075, 0.08), arc=(115, 300))
+    collar(b, coat_d, h=0.07, r=(0.085, 0.08, 0.085), arc=(300, 425))
+    # stack of books pinned against the left hip by the left hand
+    o, M = b.hand_frame(-1)
+    W = {"LeftHand": 1.0}
+    cols = [hexcol("6a2a22"), hexcol("2a4a3a"), hexcol("8a6a3a")]
+    for k, (w, h, d) in enumerate([(0.17, 0.035, 0.24), (0.15, 0.03, 0.22), (0.16, 0.04, 0.2)]):
+        c = o + M[:, 0] * (-0.02 - 0.037 * k) * s + M[:, 1] * 0.02 * s
+        box(b.m, c, (h * s, w * s, d * s), frame=M, color=cols[k], weights=W)
+    return b, dict(mats={CLOTH: "Cloth"}, style="elend")
+
+
 # ======================================================================= Vin
 def build_vin_gown():
     """Vin disguised as Lady Valette Renoux: pale silk ball gown, gloves, no metal."""
@@ -1025,6 +1076,7 @@ BUILDERS = {
     "spook": build_spook,
     "sazed": build_sazed,
     "marsh": build_marsh,
+    "elend": build_elend,
     "vin_gown": build_vin_gown,
     "noble_man": build_noble_man,
     "noble_woman": build_noble_woman,
