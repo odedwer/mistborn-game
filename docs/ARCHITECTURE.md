@@ -127,5 +127,14 @@ Damage kinds are `&"blunt" &"blade" &"coin" &"fall" &"crush" &"fire"`.
 - Shadows: one directional light (the moon) with 3–4 cascades, and few shadowed omni lights. Most lanterns are unshadowed omni lights with a short range and a `distance_fade`.
 - Target: 60 FPS at 1080p on a GTX 1060-class GPU at the "High" preset. The "Low" preset must run on integrated GPUs.
 
+## Story missions (Acts I–III)
+Missions are JSON under `src/mission/missions/` run by `MissionDirector` (the objective types and actions are documented in `src/mission/mission_data.gd`). Mission spaces are scenes under `src/mission/interiors/` entered through `SceneTransition` (`enter_interior`, `switch_interior`, `exit_interior`). The player node is reparented rather than recreated.
+- A mission space marks `interior_spawn`, `objective_point` markers (meta `objective_id`) and an exit door (`src/world/interior_door.gd` with `is_exit`). The Act III spaces are built from `InteriorKit` helpers.
+- Open-air mission scenes add a `MissionBackdrop` (`src/world/mission_backdrop.gd`) for the night sky and far skyline.
+- Scripted beats: a scene joins a group and exposes methods. The mission JSON's `call_group` action (held until a pending interior transition finishes) or a cutscene shot's `call` invokes them.
+- `MassBattle` (`src/mission/battle/`) simulates up to 60 data-only soldiers on one manager and draws them with MultiMesh.
+- `LordRuler` (`src/enemies/lord_ruler.gd`) is phase-driven through `set_phase`. It emits `Events.boss_phase_changed`.
+- The finale's `roll_credits` action shows `CreditsScreen` and then sets `GameState.post_game`. Post-game free roam has no story mission, and every activity stays open.
+
 ## Testing
 Run `tools/run_tests.sh`: it runs `godot --headless` on `tests/run_tests.gd`. That runner discovers `tests/test_*.gd` files, which extend `res://tests/test_case.gd`. Every system should ship tests for its non-visual logic. Before committing, check that scripts parse with `godot --headless --check-only --script <file>` or by importing the project with `godot --headless --import`.

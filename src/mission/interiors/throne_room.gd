@@ -47,6 +47,7 @@ func _ready() -> void:
 	bd.ground_y = SQUARE_Y
 	bd.clear_radius = 120.0
 	bd.hide_landmarks = [&"kredik_shaw"]
+	bd.volumetric_density = 0.0025  # mostly roofed halls: keep lanterns crisp
 	add_child(bd)
 	_nav = NavigationRegion3D.new()
 	add_child(_nav)

@@ -50,6 +50,7 @@ func _ready() -> void:
 	bd.anchor = Vector2(-100.0, -1060.0)
 	bd.clear_radius = 260.0
 	bd.hide_landmarks = [&"kredik_shaw"]
+	bd.volumetric_density = 0.0025  # mostly roofed halls: keep lanterns crisp
 	add_child(bd)
 	_nav = NavigationRegion3D.new()
 	add_child(_nav)

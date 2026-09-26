@@ -98,17 +98,23 @@ func _build_inquisitor() -> void:
 	add_child(inquisitor)
 	inquisitor.global_position = Vector3(0.0, 0.0, INQUISITOR_START_Z)
 	# Hold still for a beat, then stalk up the rooftops behind the player.
+	# (A child Timer, so it dies with the scene if the player leaves early.)
 	inquisitor.process_mode = Node.PROCESS_MODE_DISABLED
-	if is_inside_tree():
-		get_tree().create_timer(INQUISITOR_DELAY).timeout.connect(func() -> void:
-			if is_instance_valid(inquisitor):
-				inquisitor.process_mode = Node.PROCESS_MODE_INHERIT
-				inquisitor.call("set_patrol_points", PackedVector3Array([Vector3(0.0, 0.0, INQUISITOR_START_Z), Vector3(0.0, 0.0, CORRIDOR_LENGTH + 6.0)]))
-		)
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = INQUISITOR_DELAY
+	timer.autostart = true
+	timer.timeout.connect(_release_inquisitor.bind(inquisitor))
+	add_child(timer)
 
 
-## Night sky + the real Luthadel skyline around these rooftops (the skaa
-## quarter, five storeys up), instead of a flat black background.
+func _release_inquisitor(inquisitor: Node) -> void:
+	if not is_instance_valid(inquisitor):
+		return
+	inquisitor.process_mode = Node.PROCESS_MODE_INHERIT
+	inquisitor.call("set_patrol_points", PackedVector3Array([Vector3(0.0, 0.0, INQUISITOR_START_Z), Vector3(0.0, 0.0, CORRIDOR_LENGTH + 6.0)]))
+
+
 func _build_lighting() -> void:
 	var bd := MissionBackdrop.new()
 	bd.anchor = Vector2(-150.0, 60.0)

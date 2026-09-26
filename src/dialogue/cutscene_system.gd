@@ -22,6 +22,7 @@ extends Node
 const CUTSCENE_DIR := "res://src/mission/cutscenes"
 
 var playing := false
+var _skip := false
 var _letterbox: CanvasLayer
 var _top_bar: ColorRect
 var _bottom_bar: ColorRect
@@ -50,6 +51,7 @@ func play(id: StringName) -> void:
 		Events.cutscene_finished.emit(id)
 		return
 	playing = true
+	_skip = false
 	Events.cutscene_started.emit(id)
 	_ensure_letterbox()
 	_show_letterbox(true)
@@ -67,6 +69,8 @@ func play(id: StringName) -> void:
 		cam.global_transform = prev_cam.global_transform
 	var look_target := cam.global_position - cam.global_basis.z * 10.0
 	for shot: Dictionary in shots:
+		# Skipping still runs every shot's `call`, so the scene ends up
+		# staged exactly as if the cutscene had played through.
 		if shot.has("pos"):
 			cam.global_position = _v3(shot["pos"])
 		if shot.has("look_at"):
@@ -88,7 +92,7 @@ func play(id: StringName) -> void:
 			var from_look := look_target
 			var to_look: Vector3 = _v3(shot["to_look_at"]) if shot.has("to_look_at") else from_look
 			var t := 0.0
-			while t < duration:
+			while t < duration and not _skip:
 				await get_tree().process_frame
 				if not is_instance_valid(cam):
 					break
@@ -98,7 +102,10 @@ func play(id: StringName) -> void:
 				look_target = from_look.lerp(to_look, k)
 				_aim(cam, look_target)
 		else:
-			await get_tree().create_timer(duration).timeout
+			var waited := 0.0
+			while waited < duration and not _skip:
+				await get_tree().process_frame
+				waited += get_process_delta_time()
 	cam.queue_free()
 	if player != null and is_instance_valid(player):
 		player.process_mode = player_mode
@@ -106,6 +113,7 @@ func play(id: StringName) -> void:
 		prev_cam.current = true
 	_show_letterbox(false)
 	playing = false
+	_skip = false
 	Events.cutscene_finished.emit(id)
 
 
@@ -134,6 +142,19 @@ func _run_call(c: Dictionary) -> void:
 	var args: Array = [StringName(c.get("group", "")), StringName(c.get("method", ""))]
 	args.append_array(c.get("args", []))
 	get_tree().callv(&"call_group", args)
+
+
+## Fast-forwards the playing cutscene to its end (Esc during a cutscene;
+## tests). Every remaining shot's `call` still runs.
+func skip() -> void:
+	if playing:
+		_skip = true
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if playing and event.is_action_pressed(&"ui_cancel"):
+		get_viewport().set_input_as_handled()
+		skip()
 
 
 static func _v3(a: Array) -> Vector3:

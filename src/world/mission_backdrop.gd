@@ -41,6 +41,9 @@ extends Node3D
 ## Lower = the far skyline reads more clearly.
 @export var fog_density := 0.0028
 @export var seed_value := 1337
+## Volumetric haze density. The open city's mist look (lanterns haloed in
+## fog) at the default; lower it for scenes that are mostly roofed halls.
+@export var volumetric_density := 0.008
 
 var environment: Environment
 var world_env: WorldEnvironment
@@ -61,7 +64,7 @@ func _ready() -> void:
 		environment.fog_density = fog_density
 	# The mission scenes are small; keep the volumetric haze light so their
 	# own lanterns still carry.
-	environment.volumetric_fog_density = 0.008
+	environment.volumetric_fog_density = volumetric_density
 	_build_ground()
 	if build_skyline:
 		_build_skyline()

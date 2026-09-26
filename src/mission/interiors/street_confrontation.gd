@@ -92,7 +92,7 @@ func _build_crowd() -> void:
 	for i in count:
 		var member := CrowdMember.new()
 		var ang := TAU * float(i) / float(count)
-		member.global_position = Vector3(cos(ang) * 5.0, 0.0, sin(ang) * 5.0)
+		member.position = Vector3(cos(ang) * 5.0, 0.0, sin(ang) * 5.0)
 		member.wander_radius = 2.5
 		add_child(member)
 

@@ -65,8 +65,8 @@ The end goal is to play the whole story of *The Final Empire* in a seamless, tra
 - **Progression.** Allomantic mastery upgrades cover Push strength, range, flare efficiency, pewter endurance and tin range. Coin-pouch and vial capacity also grow. The noble-ball disguise sections are a social stealth mode.
 
 ## Roadmap
-1. **Vertical slice**, in progress: core allomancy, one mission, the streamed city core around the slice route.
-2. **Open-world foundation**: full city plan and streaming, map/journal, side activities, save anywhere.
+1. **Vertical slice**, done: core allomancy, one mission, the streamed city core around the slice route.
+2. **Open-world foundation**, done: full city plan and streaming, map/journal, side activities, save anywhere.
 3. **Act I**, done: Vin's recruitment ("The Survivor's Offer"), meeting
    the crew at Clubs' shop ("The Crew"), the rooftop mistwalk to Keep
    Venture, advanced training with Kelsier ("Lessons in the Mists"), and the
@@ -112,12 +112,60 @@ The end goal is to play the whole story of *The Final Empire* in a seamless, tra
    interiors bake their own `NavigationRegion3D` so real enemies can patrol
    them; see `src/mission/interiors/` and `tests/test_act2_missions.gd` /
    `test_act2_interiors.gd`.
-5. **Act III** (remaining): the skaa army mustering and Yeden's rebellion,
-   the Lord Ruler's forces closing on Luthadel, Elend's succession as Vin's
-   allies turn on House Venture, the Well of Ascension thread, TenSoon/
-   kandra intrigue if it fits the slice, the assault on Kredik Shaw, and the
-   final confrontation with the Lord Ruler. Likely needs: a large-scale
-   battle/siege set piece (skaa army vs. Luthadel's garrison), an
-   Elend-focused political stage (not just Vin's), and a hand-built Kredik
-   Shaw interior distinct from the procedural keeps.
-6. **Polish**: authored hero assets to replace procedural ones, voice, cinematics, accessibility, performance passes.
+5. **Act III**, done: the finale of *The Final Empire*, six chained mission
+   JSONs (act "3") continuing after `the_inquisitors_shadow`:
+   - **The Army in the Caves**: the skaa rebellion's hidden caverns outside
+     the city (a new mission space, the army drilling as a `MassBattle`),
+     then Yeden marches early and the army is crushed on the plain below
+     the south wall. A battlefield set piece: rescue three of five wounded
+     rebels and fall back to the ridge as the garrison advances. Many cheap
+     soldiers (`src/mission/battle/mass_battle.gd`: two factions, morale,
+     rout, at most 60 simulated with reinforcements queued, MultiMesh
+     rendering, distance-throttled thinking).
+   - **Fountain Square**: the executions. Fight through an Inquisitor-guarded
+     crowd to the front, but the platform is sealed off. Kelsier duels an
+     Inquisitor and the Lord Ruler strikes him down (the `kelsier_last_stand`
+     cutscene, with eased camera pans and staged `call_group` beats), then
+     escape. The Lord Ruler appears as a `LordRuler` placeholder boss (a tall
+     imperial figure, `src/enemies/lord_ruler.gd`).
+   - **The Survivor's Legacy**: the crew regroups under Clubs' shop (Sazed
+     and the logbook, Kelsier's eleventh metal), then an investigation in
+     Keep Venture's library: clues, a tin-gated annotation revealing the
+     bracers, eavesdropping on Straff, and Elend's choice-driven political
+     beat (he stays in Luthadel when his father leaves).
+   - **Into Kredik Shaw**: a hand-built palace distinct from the procedural
+     keeps. The Spire Court under the black spires, the vast Hall of Spires
+     with Inquisitor patrols, a Seeker and high iron braziers, and the Hall
+     of Gazes duel against an Inquisitor that hunts by bronze
+     (`Inquisitor.senses_pulses`; copper hides you). It ends in a scripted
+     capture (`vin_captured`).
+   - **The Pits Beneath the Palace**: Vin wakes drained (`drain_metals`).
+     Sazed opens her cell, Elend is in the next one, she rebuilds her
+     reserves from three smuggled vials and climbs an iron-runged shaft.
+   - **The Lord Ruler**: the final boss in the throne hall. He regenerates
+     and shrugs off coins. Phase 1: he Pushes on the metal inside you, so
+     burn it away. Phase 2: Soothe then Riot the skaa mob in the square
+     below the gallery. Phase 3: stagger him and Iron-Pull his bracers (his
+     metalminds) off, which works only while he's staggered, then finish
+     him. The finale cutscene (the city rising, Elend) rolls the credits,
+     then the game continues as **post-game free roam** with every activity
+     open (`GameState.post_game`).
+
+   Supporting systems: `MissionBackdrop` (`src/world/mission_backdrop.gd`)
+   gives every isolated open-air scene the real night sky and far Luthadel
+   skyline, reusing `EnvironmentBuilder` and a filtered `FarLod`. It is
+   applied to the Act II rooftop, chase and street scenes too. Also:
+   `SceneTransition.switch_interior`; new director actions (`switch_interior`,
+   `call_group`, `drain_metals`, `grant_metals`, `roll_credits`) and the
+   `cutscene` objective type; mission `journal` entries in the pause menu;
+   interior deaths respawn inside the interior; a scrolling `CreditsScreen`
+   (fan-game disclaimer, tools, CC0/OFL assets); and the Inquisitor chase
+   now starts its hunter 40 m back. Tests: `tests/test_act3_missions.gd`
+   and `tests/test_mass_battle.gd`.
+6. **Polish** (next): authored hero assets to replace procedural ones
+   (starting with the Lord Ruler, Inquisitors and the crew), voice, full
+   cinematics in place of the cutscene-lite set pieces, accessibility,
+   and performance passes (the mass battle, backdropped scenes and palace
+   halls on the Low preset).
+7. **Beyond *The Final Empire***: *The Well of Ascension* and *The Hero of
+   Ages* as expansions on the same open-world Luthadel.
