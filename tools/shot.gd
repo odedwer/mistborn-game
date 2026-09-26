@@ -24,6 +24,10 @@ func _pos(world: Node, id: String) -> Vector3:
 
 func _run() -> void:
 	var args := OS.get_cmdline_user_args()
+	# Shots are of the vertical slice (the story itself opens indoors, Act I).
+	var mission := OS.get_environment("SHOT_MISSION")
+	(load("res://tests/story_jump.gd") as GDScript).call("jump_to",
+			StringName(mission if mission != "" else "mistwalk_to_keep_venture"))
 	var game: Node = (load("res://scenes/game.tscn") as PackedScene).instantiate()
 	root.add_child(game)
 	var world: Node = game.get_node(^"World")
@@ -60,6 +64,10 @@ func _run() -> void:
 		root.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 		for i in 5:
 			await process_frame
+	if OS.get_environment("SHOT_NO_TENDRIL_VOLUME") != "":
+		world.get("mist").get("_tendrils").set("use_volume", false)
+		for i in 3:
+			await process_frame
 	if OS.get_environment("SHOT_NOGLOW") != "":
 		var we := get_first_node_in_group(&"world_environment") as WorldEnvironment
 		if we != null:
@@ -74,6 +82,17 @@ func _run() -> void:
 			(hn as Node3D).visible = false
 	await process_frame
 	await process_frame
+	if OS.get_environment("SHOT_BONES") != "":
+		for sk: Node in root.find_children("*", "Skeleton3D", true, false):
+			var skel := sk as Skeleton3D
+			var bad: Array = []
+			for b in skel.get_bone_count():
+				var t := skel.get_bone_global_pose(b)
+				if not (t.origin.is_finite() and t.basis.x.is_finite() and t.basis.y.is_finite() and t.basis.z.is_finite()) \
+						or absf(t.basis.determinant()) < 1e-6:
+					bad.append("%s det %.3g" % [skel.get_bone_name(b), t.basis.determinant()])
+			if not bad.is_empty():
+				print("bad bones in %s: %s" % [skel.get_path(), bad])
 	if OS.get_environment("SHOT_NODES") != "":
 		for n: Node in root.find_children("*", "VisualInstance3D", true, false):
 			var g := n as VisualInstance3D
