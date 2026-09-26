@@ -15,6 +15,10 @@ extends Node
 
 const FADE_TIME := 0.35
 
+## True from the start of an enter/switch/exit until its new scene is in
+## place (lets `MissionDirector` hold scripted calls aimed at a scene that
+## is still loading).
+var busy := false
 var _interior_root: Node
 var _outdoor_world: Node
 var _saved_transform := Transform3D.IDENTITY
@@ -26,7 +30,8 @@ func is_inside_interior() -> bool:
 	return _interior_root != null and is_instance_valid(_interior_root) and _interior_root.is_inside_tree()
 
 
-## Where the player was outdoors when they entered the current interior.
+## Where the player was outdoors when they entered the current interior
+## chain (what "save anywhere" should resume at).
 func outdoor_transform() -> Transform3D:
 	return _saved_transform
 
@@ -41,10 +46,13 @@ func enter_interior(scene_path: String) -> void:
 	var host := _host_node()
 	if player == null or host == null:
 		return
+	busy = true
 	await _fade_to(1.0)
-	# The game may have been torn down (or the player replaced) during the fade.
-	if not is_instance_valid(player) or not is_instance_valid(host) or not player.is_inside_tree() \
+	# The player (or a test's stand-in, or the whole game scene) can be freed
+	# during the fade.
+	if not is_instance_valid(player) or not is_instance_valid(host) or not (player as Node).is_inside_tree() \
 			or is_inside_interior():
+		busy = false
 		await _fade_to(0.0)
 		return
 	_saved_transform = (player as Node3D).global_transform
@@ -58,8 +66,56 @@ func enter_interior(scene_path: String) -> void:
 	var spawn := _find_in_group(_interior_root, &"interior_spawn")
 	if spawn != null:
 		(player as Node3D).global_transform = spawn.global_transform
+	busy = false
 	Events.interior_entered.emit(scene_path)
 	await _fade_to(0.0)
+
+
+## Swaps the current interior for `scene_path` under one fade, without
+## surfacing to the open world in between (Act III: the rebel caves straight
+## onto the battlefield, the palace halls down into the Pits). Falls back to a
+## plain `enter_interior` when no interior is active. The saved open-world
+## transform is kept, so the eventual `exit_interior` still returns the
+## player to where the chain of interiors began.
+func switch_interior(scene_path: String) -> void:
+	if not is_inside_interior():
+		await enter_interior(scene_path)
+		return
+	if not ResourceLoader.exists(scene_path):
+		return
+	# Already there (e.g. one mission ends by switching into the space the
+	# next one starts in): nothing to do.
+	if _interior_root.scene_file_path == scene_path:
+		Events.interior_entered.emit(scene_path)
+		return
+	var player := get_tree().get_first_node_in_group(&"player")
+	var host := _host_node()
+	if player == null or host == null:
+		return
+	busy = true
+	await _fade_to(1.0)
+	if not is_instance_valid(player) or not is_instance_valid(host):
+		busy = false
+		await _fade_to(0.0)
+		return
+	var next := (load(scene_path) as PackedScene).instantiate()
+	host.add_child(next)
+	_reparent(player, next)
+	var old := _interior_root
+	_interior_root = next
+	if old != null and is_instance_valid(old):
+		old.queue_free()
+	var spawn := _find_in_group(next, &"interior_spawn")
+	if spawn != null:
+		(player as Node3D).global_transform = spawn.global_transform
+	busy = false
+	Events.interior_entered.emit(scene_path)
+	await _fade_to(0.0)
+
+
+## The live interior scene root, or null when in the open world.
+func current_interior() -> Node:
+	return _interior_root if is_inside_interior() else null
 
 
 ## Removes the interior scene and restores the player to the outdoor world at
@@ -72,13 +128,13 @@ func exit_interior() -> void:
 	var interior := _interior_root
 	await _fade_to(1.0)
 	# Torn down during the fade (the game scene was freed, or another
-	# transition already exited): just clear the stale state.
-	if not is_instance_valid(interior) or interior != _interior_root:
-		if not is_instance_valid(_interior_root):
+	# transition already exited or switched): just clear the stale state.
+	if not is_inside_interior() or interior != _interior_root:
+		if not is_inside_interior():
 			_interior_root = null
 		await _fade_to(0.0)
 		return
-	if player != null and is_instance_valid(player) and host != null and is_instance_valid(host):
+	if is_instance_valid(player) and is_instance_valid(host):
 		_reparent(player, host)
 		(player as Node3D).global_transform = _saved_transform
 	if _outdoor_world != null and is_instance_valid(_outdoor_world):
@@ -151,6 +207,10 @@ func _fade_to(alpha: float) -> void:
 	var label := _fade_rect.get_node_or_null("LoadingLabel") as Label
 	if is_inside_tree():
 		var tw := get_tree().create_tween()
+		# Keep fading even if the tree pauses mid-transition (a mission that
+		# ends by switching interiors raises the paused mission-complete
+		# screen in the same frame).
+		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 		tw.tween_property(_fade_rect, "color:a", alpha, FADE_TIME)
 		if label != null:
 			tw.parallel().tween_property(label, "modulate:a", alpha, FADE_TIME)

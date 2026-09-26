@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -11,6 +12,16 @@ from meshkit import (Mesh, Skel, box, clean_weights, frame_from, hexcol, lerp, n
 # material slots (mapped to <=3 real materials per character)
 CLOTH, CLOAK, METAL, GLOSS, GLOW = range(5)
 MAT_NAMES = ["Cloth", "Cloak", "Metal", "Gloss", "Glow"]
+
+# Dye slots: the vertex-colour alpha marks regions the shader can recolour per
+# instance (CharacterModel.dye_colors -> instance uniforms dye_1..dye_3).
+# Author dyed regions near mid luminance; darker trim stays proportionally darker.
+DYE_ALPHA = {0: 1.0, 1: 0.75, 2: 0.5, 3: 0.25}
+
+
+def dyed(col, slot):
+    """Returns `col` tagged with dye slot 1..3 (0 = not dyeable)."""
+    return (col[0], col[1], col[2], DYE_ALPHA[slot])
 
 HUMANOID_BONES = [
     "Root", "Hips", "Spine", "Chest", "UpperChest", "Neck", "Head",
@@ -40,7 +51,19 @@ class Body:
         self.m = Mesh()
         self.extra_chains: list[list[str]] = []  # tassel bone chains
         self.sockets: dict[str, tuple[str, np.ndarray]] = {}
+        # optional garments: exported as separate meshes G_<name> on the same skeleton
+        self.garments: dict[str, Mesh] = {}
         self._make_skel()
+
+    @contextmanager
+    def garment(self, name):
+        """Everything built inside `with b.garment("hat"):` goes to the G_hat mesh."""
+        prev = self.m
+        self.m = self.garments.setdefault(name, Mesh())
+        try:
+            yield self.m
+        finally:
+            self.m = prev
 
     # ---------------------------------------------------------------- skeleton
     def _make_skel(self):
@@ -124,7 +147,8 @@ class Body:
              color=color, weights=self.W(["UpperChest", "Neck", "Head"], {"UpperChest": 0.5}))
 
     def head(self, skin, *, hair=None, brow=None, lips=None, eye=(0.12, 0.09, 0.08, 1),
-             ears=True, jaw=1.0, n=20, gaunt=0.0, eyes=True):
+             ears=True, jaw=1.0, n=20, gaunt=0.0, eyes=True, tattoo=None, tattoo_rank=1, bald_top=None,
+             earrings=None):
         """Builds head; returns dict of landmark positions."""
         s = self.s * self.P["head"] * 1.06
         H = self.H
@@ -177,9 +201,29 @@ class Body:
                     k -= gaunt * 0.07 * math.exp(-(((th - cx) / 15) ** 2 + ((z - (mouth_z + 0.03 * s)) / (0.02 * s)) ** 2))
             return k
 
+        def ink(th, z):
+            """Obligator eye tattoos: a dark ring around each eye plus rank spikes."""
+            best = 0.0
+            for ex_, sgn in ((62.0, 1.0), (118.0, -1.0)):
+                dx = math.radians(ex_ - th) * 0.078 * s * sgn  # >0 towards the temple
+                dz = z - eye_z
+                r = math.hypot(dx, dz)
+                a = math.degrees(math.atan2(dz, dx))
+                k = 1.0 if 0.012 * s < r < 0.02 * s else 0.0
+                for sa in [0.0, 40.0, -40.0, 75.0, -75.0, 110.0][:1 + tattoo_rank]:
+                    da = abs((a - sa + 180) % 360 - 180)
+                    if da < 12 and 0.016 * s < r < (0.042 + 0.005 * tattoo_rank) * s:
+                        k = 1.0
+                best = max(best, k)
+            return best
+
         def color(p, i, th):
             z = p[2]
             c = np.array(skin, dtype=float)
+            if bald_top is not None:
+                c = lerp(c, np.array(bald_top, dtype=float), smoothstep(brow_z + 0.03 * s, H - 0.02 * s, z) * 0.6)
+            if tattoo is not None:
+                c = lerp(c, np.array(tattoo, dtype=float), 0.92 * ink(th, z))
             for ex_ in (62.0, 118.0):
                 de = ((th - ex_) / 7.0) ** 2 + ((z - eye_z) / (0.007 * s)) ** 2
                 c = lerp(c, np.array(eye), 0.85 * math.exp(-de))
@@ -218,6 +262,13 @@ class Body:
                 tube(self.m, [v3(ex_x * 0.92, -0.012 * s, eye_z - 0.005 * s), v3(ex_x * 1.12, -0.02 * s, eye_z - 0.005 * s)],
                      [(0.018 * s, 0.009 * s), (0.02 * s, 0.01 * s)], n=6, hint=(0, 0, 1), color=skin,
                      weights={"Head": 1.0}, cap1=0.004 * s)
+                if earrings is not None:
+                    # a stack of metal rings down the (stretched) lobe: Sazed's metalminds
+                    for k_ in range(earrings[1]):
+                        zc = eye_z - 0.022 * s - k_ * 0.012 * s
+                        c0 = v3(ex_x * 1.1, -0.016 * s, zc)
+                        tube(self.m, [c0 - v3(0, 0.007 * s, 0), c0 + v3(0, 0.007 * s, 0)], [0.007 * s, 0.007 * s], n=6,
+                             hint=(0, 0, 1), mat=METAL, color=earrings[0], weights={"Head": 1.0})
         lm = dict(chin_z=chin_z, eye_z=eye_z, brow_z=brow_z, top=H, s=s, centers=centers, radii=radii,
                   eye_l=v3(-0.03 * s, face_y(eye_z) - 0.012 * s, eye_z),
                   eye_r=v3(0.03 * s, face_y(eye_z) - 0.012 * s, eye_z))
@@ -353,16 +404,17 @@ class Body:
              cap0=0.012 * s, cap1=0.012 * s, ex=2.4)
 
     def skirt(self, z_top, z_bot, r_top, r_bot, color, *, mat=CLOTH, arc=None, n=18, rows=6,
-              yc_top=0.0, yc_bot=0.0, leg_share=0.85, ex=2.2, front_scale=1.0):
-        """Flared skirt / robe / coat tails with leg-following weights."""
+              yc_top=0.0, yc_bot=0.0, leg_share=0.85, ex=2.2, front_scale=1.0, curve=0.9, jag=0.0, seed=0):
+        """Flared skirt / robe / coat tails with leg-following weights.
+        `curve` < 1 flares early (hoop skirt), > 1 late (bell); `jag` (m) tatters the hem."""
         s = self.s
         zs = np.linspace(z_top, z_bot, rows)
         centers, radii = [], []
         for i, z in enumerate(zs):
             f = i / (rows - 1)
-            rx = lerp(r_top[0], r_bot[0], f ** 0.9)
-            rf = lerp(r_top[1], r_bot[1], f ** 0.9) * front_scale
-            rb = lerp(r_top[2], r_bot[2], f ** 0.9)
+            rx = lerp(r_top[0], r_bot[0], f ** curve)
+            rf = lerp(r_top[1], r_bot[1], f ** curve) * front_scale
+            rb = lerp(r_top[2], r_bot[2], f ** curve)
             centers.append(v3(0, lerp(yc_top, yc_bot, f), z))
             radii.append((rx, rx, rf, rb))
 
@@ -376,7 +428,12 @@ class Body:
                 w = {"Hips": 0.6, "Spine": 0.4}
             return clean_weights(w)
 
-        tube(self.m, centers, radii, n=n, ex=ex, mat=mat, color=color, weights=weights, arc=arc)
+        rings = tube(self.m, centers, radii, n=n, ex=ex, mat=mat, color=color, weights=weights, arc=arc)
+        if jag > 0:
+            rng = np.random.default_rng(seed + 11)
+            for j, (idx, _, _) in enumerate(rings[-1]):
+                d = jag * s * (0.25 + 0.75 * rng.random()) * (1.0 if j % 2 else 0.3)
+                self.m.verts[idx] = self.m.verts[idx] + v3(0, 0, -d)
         return centers, radii
 
     def mistcloak(self, *, z_hem, z_collar, n_strips, len_range, color, color_dark, arc=(128, 412),
@@ -466,3 +523,42 @@ class Body:
                    normal_hint=v3(math.cos(thc), math.sin(thc), 0))
         self.extra_chains += chains
         return chains
+
+    # ------------------------------------------------------------ head shells
+    def head_shell(self, color, z0, z1, *, puff=1.1, add=0.006, arc=None, n=16, rows=8, shape=None,
+                   cap1=None, mat=CLOTH, weights=None, yoff=0.0):
+        """Shell following the head profile between heights z0..z1 (beards, caps, scarves)."""
+        lm = self.head_lm
+        s = lm["s"]
+        cs, rs = lm["centers"], lm["radii"]
+        zs = [c[2] for c in cs]
+        centers, radii = [], []
+        for z in np.linspace(z0, z1, rows):
+            zc = min(max(z, zs[0]), zs[-1])
+            yc = np.interp(zc, zs, [c[1] for c in cs])
+            r = [np.interp(zc, zs, [rr[k] for rr in rs]) for k in range(4)]
+            centers.append(v3(0, yc + yoff, z))
+            radii.append(tuple(max(x, 0.03 * s) * puff + add * s for x in r))
+        tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, arc=arc, mat=mat,
+             weights=weights or {"Head": 1.0}, cap1=cap1)
+        return centers, radii
+
+    def beard(self, color, *, length=0.03, full=True, n=18):
+        """Beard: shell over the jaw and chin, open at the back; `full` also covers the cheeks."""
+        lm = self.head_lm
+        s = lm["s"]
+        z0 = lm["chin_z"] - length * s
+        z1 = lm["eye_z"] - (0.03 if full else 0.055) * s
+        mouth_z = lm["chin_z"] + 0.04 * s
+
+        def shape(i, th):
+            # fuller at the chin, thinning towards the sideburns
+            return 1.0 + 0.12 * math.exp(-((th - 90) / 40.0) ** 2) * (1 - i / 6)
+
+        def col(p, i, th):
+            if abs(th - 90) < 20 and abs(p[2] - mouth_z) < 0.009 * s:
+                return tuple(np.array(color[:3]) * 0.55) + (color[3] if len(color) > 3 else 1.0,)
+            return color
+
+        self.head_shell(col, z0, z1, puff=1.0, add=0.009, arc=(-20, 200), n=n, rows=7, shape=shape,
+                        weights=self.W(["Head", "Neck"], {"Neck": 0.05}))

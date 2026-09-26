@@ -85,21 +85,16 @@ func _build_rooftops() -> void:
 		add_child(body)
 
 
+## Night sky + the real skyline around Keep Tekiel's roofs (see
+## `MissionBackdrop`), with the keep itself masked out — this scene *is* its
+## rooftop.
 func _build_lighting() -> void:
-	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.03, 0.03, 0.05)
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.18, 0.18, 0.22)
-	e.ambient_light_energy = 1.0
-	env.environment = e
-	add_child(env)
-	var moon := DirectionalLight3D.new()
-	moon.light_energy = 0.5
-	moon.light_color = Color(0.75, 0.8, 0.95)
-	moon.rotation_degrees = Vector3(-60, 25, 0)
-	add_child(moon)
+	var bd := MissionBackdrop.new()
+	bd.anchor = Vector2(520.0, -640.0)
+	bd.ground_y = -18.0
+	bd.clear_radius = 80.0
+	bd.hide_landmarks = [&"keep_tekiel"]
+	add_child(bd)
 
 
 ## The suspended iron gate: a heavy `Metallic` prop tagged with the objective

@@ -2,7 +2,9 @@ extends Node3D
 ## Character lineup / preview scene.
 ##
 ## Run: godot res://scenes/test/character_lineup.tscn -- [options]
-##   --only=<id>            show a single character (vin, guard, hazekiller, thug, coinshot, inquisitor)
+##   --only=<id>            show a single character (any id in GROUPS, e.g. vin, kelsier, noble_woman_2)
+##   --group=<name>         enemies (default), crew, gentry, folk (crowd variants), all
+##   --variants=<n>         with --only: n randomize_variant() copies of a base model (crowd check)
 ##   --anim=<name>          play this animation on everyone (AnimationPlayer, tree disabled)
 ##   --t=<seconds>          freeze the animation at this time (with --anim)
 ##   --action=<name>        call play_action(name) through the CharacterModel API after 0.5 s
@@ -15,6 +17,14 @@ extends Node3D
 ##   --quit=<seconds>       quit after this many seconds (headless smoke test)
 
 const IDS: Array[StringName] = [&"vin", &"guard", &"hazekiller", &"thug", &"coinshot", &"inquisitor"]
+const GROUPS := {
+	"enemies": [&"vin", &"guard", &"hazekiller", &"thug", &"coinshot", &"inquisitor"],
+	"crew": [&"kelsier", &"dockson", &"breeze", &"ham", &"clubs", &"spook", &"sazed", &"marsh"],
+	"gentry": [&"vin_gown", &"noble_man_1", &"noble_woman_1", &"noble_man_2", &"noble_woman_2",
+		&"noble_man_3", &"noble_woman_3"],
+	"folk": [&"obligator", &"obligator_2", &"skaa_man", &"skaa_woman", &"skaa_man", &"skaa_woman",
+		&"skaa_man", &"skaa_woman"],
+}
 
 var opts := {}
 var models: Array[CharacterModel] = []
@@ -32,12 +42,24 @@ func _ready() -> void:
 	_moving = opts.has("moving")
 	_build_environment(opts.get("light", "night"))
 	var ids: Array[StringName] = IDS
+	var group: String = opts.get("group", "enemies")
+	if group == "all":
+		ids = []
+		for g: String in ["enemies", "crew", "gentry"]:
+			for id: StringName in GROUPS[g]:
+				ids.append(id)
+	elif GROUPS.has(group):
+		ids.assign(GROUPS[group])
 	if opts.has("only"):
 		ids = [StringName(opts["only"])]
+		for i in int(opts.get("variants", "1")) - 1:
+			ids.append(StringName(opts["only"]))
 	var spacing := 1.25
 	for i in ids.size():
 		var ps: PackedScene = load("res://assets/models/characters/%s.tscn" % ids[i])
 		var m: CharacterModel = ps.instantiate()
+		if group == "folk" and i >= 4 or opts.has("variants") and i > 0:
+			m.randomize_variant(i * 7919)
 		add_child(m)
 		m.position = Vector3((i - (ids.size() - 1) * 0.5) * spacing, 0, 0)
 		models.append(m)
@@ -101,7 +123,7 @@ func _setup_camera(count: int) -> void:
 	_camera = Camera3D.new()
 	add_child(_camera)
 	_camera.fov = 40.0
-	var dist := 2.6 if count == 1 else 8.8
+	var dist := 2.6 if count == 1 else 8.8 * maxf(1.0, count / 6.0)
 	var h := 1.05 if count == 1 else 1.1
 	var cam: String = opts.get("cam", "34")
 	var dir := Vector3(0, 0, 1)  # models face +Z, camera looks from the front
@@ -120,6 +142,8 @@ func _setup_camera(count: int) -> void:
 	if count == 1 and models.size() == 1:
 		target.y = models[0].get_model_height() * 0.55
 		dist = models[0].get_model_height() * 1.75
+	if opts.has("dist"):
+		dist = float(opts["dist"])
 	if opts.has("zoom") and models.size() == 1:
 		# frame the head: --zoom=head
 		target.y = models[0].get_model_height() - 0.14

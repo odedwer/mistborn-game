@@ -15,6 +15,7 @@ const PAUSE_SCENE := "res://src/ui/pause_menu.tscn"
 const MISSION_COMPLETE_SCENE := "res://src/ui/mission_complete.tscn"
 const DEATH_SCENE := "res://src/ui/death_screen.tscn"
 const ACTIVITY_MANAGER_SCRIPT := "res://src/mission/activities/activity_manager.gd"
+const CROWD_SCRIPT := "res://src/world/crowd/crowd_system.gd"
 
 var world: Node3D
 var enemy_spawner: Node
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_build_world()
 	_spawn_player()
 	_build_enemy_spawner()
+	_add_crowd()
 	_spawn_pickups(get_tree().get_nodes_in_group("pickup_spawn"))
 	if world.has_signal(&"markers_spawned"):
 		world.connect(&"markers_spawned", _on_markers_spawned)
@@ -176,6 +178,16 @@ func _spawn_pickups(markers: Array) -> void:
 		_live_pickups[key] = pickup
 		if pickup.has_signal(&"collected"):
 			pickup.connect(&"collected", func(_p: Node) -> void: _collected_pickups[key] = true)
+
+
+## Ambient skaa/obligator pedestrians, parented per streamed chunk (like the
+## enemies) with a pooled, LOD'd set of at most ~30 visible models.
+func _add_crowd() -> void:
+	if not ResourceLoader.exists(CROWD_SCRIPT) or world == null or not world.has_signal(&"unit_loaded"):
+		return
+	var crowd: Node = (load(CROWD_SCRIPT) as GDScript).new()
+	add_child(crowd)
+	crowd.call(&"setup", world)
 
 
 func _add_ui() -> void:

@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://assets/models/characters/character_model.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/obligator_2.glb" id="2"]
+
+[node name="Obligator2" type="Node3D"]
+script = ExtResource("1")
+character_id = &"obligator_2"
+sockets = {
+"hand_r": ["RightHand", Vector3(-0.5599, 0.9271, -0.0008)],
+"hand_l": ["LeftHand", Vector3(0.5599, 0.9271, -0.0008)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.2986, 0.0983)],
+"head": ["Head", Vector3(-0.0000, 1.6342, -0.0020)]
+}
+lantern_light = false
+variant_pool = {
+"garment_groups": [],
+"palettes": [],
+"scale": Vector2(0.96, 1.04)
+}
+
+[node name="Model" parent="." instance=ExtResource("2")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)

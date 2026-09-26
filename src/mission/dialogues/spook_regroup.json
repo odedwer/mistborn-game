@@ -1,0 +1,15 @@
+{
+  "id": "spook_regroup",
+  "lines": [
+    {
+      "speaker": "Spook",
+      "color": "#5c7a99",
+      "text": "Kept watch on the palace all night. Lights in the spires till dawn. Inquisitors in and out like they're looking for something."
+    },
+    {
+      "speaker": "Spook",
+      "color": "#5c7a99",
+      "text": "Or someone. Watch yourself, Vin."
+    }
+  ]
+}

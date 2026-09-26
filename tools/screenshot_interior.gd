@@ -14,16 +14,30 @@ func _find_in_group(root: Node, group: StringName) -> Node3D:
 	return null
 
 
+func _parse_v3(s: String) -> Vector3:
+	var p := s.split(",")
+	return Vector3(float(p[0]), float(p[1]), float(p[2]))
+
+
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var scene: PackedScene = load(args[0])
 	var inst := scene.instantiate()
 	root.add_child(inst)
+	# The scene's _ready (which builds its markers) runs once the main loop
+	# starts, not inside _initialize: wait a frame before looking them up.
+	await process_frame
 	var spawn := _find_in_group(inst, &"interior_spawn")
 	var cam := Camera3D.new()
 	var center: Vector3 = spawn.global_position if spawn != null else Vector3.ZERO
+	# Optional 4th/5th args: camera position and look-at target as "x,y,z"
+	# (for framing a specific part of a large space).
 	var pos: Vector3 = center + Vector3(0, 2.4, 4.5)
-	cam.look_at_from_position(pos, center + Vector3(0, -2.0, -8.0), Vector3.UP)
+	var look: Vector3 = center + Vector3(0, -2.0, -8.0)
+	if args.size() > 4:
+		pos = _parse_v3(args[3])
+		look = _parse_v3(args[4])
+	cam.look_at_from_position(pos, look, Vector3.UP)
 	root.add_child(cam)
 	cam.current = true
 	# A debug headlamp so a dim night interior is still checkable by eye;
@@ -32,6 +46,10 @@ func _initialize() -> void:
 	lamp.light_energy = 8.0
 	lamp.omni_range = 60.0
 	cam.add_child(lamp)
+	# Build any MissionBackdrop skyline up front instead of waiting on its
+	# background tasks for hundreds of (slow, software-rendered) frames.
+	for bd in get_nodes_in_group(&"mission_backdrop"):
+		bd.call("finish_now")
 	var frames := int(args[2]) if args.size() > 2 else 60
 	for i in frames:
 		await process_frame

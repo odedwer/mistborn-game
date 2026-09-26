@@ -7,10 +7,11 @@ extends Node3D
 ##   set_locomotion(speed, grounded, vertical_speed)
 ##   set_crouching(on)
 ##   play_action(&"jump" | &"land" | &"throw" | &"melee" | &"attack" | &"hit" | &"die"
-##               | &"block" | &"alert" | &"push" | &"pull" | &"drink") -> bool
+##               | &"block" | &"alert" | &"push" | &"pull" | &"drink" | &"talk") -> bool
 ##   set_aim(world_dir)            (Vector3.ZERO disables)
 ##   get_attachment(&"hand_r" | &"hand_l" | &"chest" | &"head" | &"lantern" | <bone name>)
 ##   revive()
+##   apply_variant(garments, dyes, scale) / randomize_variant(seed)   (nobles, skaa: crowd variety)
 
 signal action_started(action: StringName)
 signal action_finished(action: StringName)
@@ -19,9 +20,12 @@ const LOOPING_ANIMATIONS: Array[StringName] = [
 	&"idle", &"walk", &"run", &"sprint", &"crouch_idle", &"crouch_walk", &"fall"]
 const ACTIONS: Array[StringName] = [
 	&"jump", &"land", &"throw", &"melee", &"attack", &"hit", &"die", &"block", &"alert",
-	&"push", &"pull", &"drink"]
+	&"push", &"pull", &"drink", &"talk"]
 ## Actions that only drive the spine, arms and head (so they can play while running).
-const UPPER_BODY_ACTIONS: Array[StringName] = [&"throw", &"melee", &"push", &"pull", &"drink"]
+const UPPER_BODY_ACTIONS: Array[StringName] = [&"throw", &"melee", &"push", &"pull", &"drink", &"talk"]
+## Optional garment meshes are named G_<garment> in the GLB.
+const GARMENT_PREFIX := "G_"
+const DYE_PARAMS: Array[StringName] = [&"dye_1", &"dye_2", &"dye_3"]
 const UPPER_BODY_BONES: Array[StringName] = [
 	&"Spine", &"Chest", &"UpperChest", &"Neck", &"Head",
 	&"LeftShoulder", &"LeftUpperArm", &"LeftLowerArm", &"LeftHand",
@@ -51,6 +55,16 @@ const HUMANOID_BONES: Array[StringName] = [
 ## name -> [bone name, Vector3 position in model space (rest pose)]
 @export var sockets: Dictionary = {}
 @export var lantern_light := true
+@export_group("Variant")
+## Optional garments (G_<name> meshes) that are shown; all others are hidden.
+@export var garments: PackedStringArray = PackedStringArray()
+## sRGB dye per dye slot (1..3) of the model; alpha 0 (or a missing entry) keeps the authored colour.
+@export var dye_colors: Array[Color] = []
+## Uniform scale of the Model (height variation within a crowd).
+@export var body_scale := 1.0
+## What randomize_variant() may pick: {"garment_groups": [[name|"", ...], ...] (one pick per
+## group), "palettes": [[Color, ...] per dye slot], "scale": Vector2(min, max)}.
+@export var variant_pool: Dictionary = {}
 
 var skeleton: Skeleton3D
 var animation_player: AnimationPlayer
@@ -76,6 +90,7 @@ func _ready() -> void:
 	if animation_player == null or skeleton == null:
 		push_error("CharacterModel: model is missing an AnimationPlayer or Skeleton3D")
 		return
+	_apply_variant_now()
 	_build_tree()
 	_setup_aim()
 	if cloak_physics:
@@ -226,13 +241,72 @@ func get_attachment(attach_name: StringName) -> Node3D:
 	return socket
 
 
-## Standing height of the rest pose (metres), from the mesh AABB.
+## Standing height of the rest pose (metres), from the visible meshes' AABBs.
 func get_model_height() -> float:
 	var h := 0.0
 	for mi: MeshInstance3D in find_children("*", "MeshInstance3D", true, false):
+		if not mi.visible:
+			continue
 		var aabb := mi.get_aabb()
 		h = maxf(h, aabb.end.y)
-	return h
+	return h * body_scale
+
+
+# ------------------------------------------------------------------- variants
+## Names of the optional garments this model has (without the G_ prefix).
+func get_garment_names() -> PackedStringArray:
+	var out := PackedStringArray()
+	for mi: MeshInstance3D in find_children(GARMENT_PREFIX + "*", "MeshInstance3D", true, false):
+		out.append(mi.name.trim_prefix(GARMENT_PREFIX))
+	return out
+
+
+## Shows exactly `p_garments`, dyes the dye slots with `dyes` (sRGB; alpha 0 = authored
+## colour) and scales the model. Works before or after the node enters the tree.
+func apply_variant(p_garments: PackedStringArray, dyes: Array = [], scale_factor := 1.0) -> void:
+	garments = p_garments
+	dye_colors.clear()
+	for c in dyes:
+		dye_colors.append(c)
+	body_scale = scale_factor
+	if is_inside_tree():
+		_apply_variant_now()
+
+
+## Picks garments, dyes and scale from `variant_pool`, deterministically from `seed_value`.
+## Models without a pool keep their look (returns false).
+func randomize_variant(seed_value: int) -> bool:
+	if variant_pool.is_empty():
+		return false
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var picked := PackedStringArray()
+	for group: Array in variant_pool.get("garment_groups", []):
+		if group.is_empty():
+			continue
+		var g := String(group[rng.randi() % group.size()])
+		if g != "" and not picked.has(g):
+			picked.append(g)
+	var dyes: Array = []
+	for pal: Array in variant_pool.get("palettes", []):
+		dyes.append(pal[rng.randi() % pal.size()] if not pal.is_empty() else Color(1, 1, 1, 0))
+	var sr: Vector2 = variant_pool.get("scale", Vector2.ONE)
+	apply_variant(picked, dyes, rng.randf_range(sr.x, sr.y))
+	return true
+
+
+func _apply_variant_now() -> void:
+	for mi: MeshInstance3D in find_children("*", "MeshInstance3D", true, false):
+		if mi.name.begins_with(GARMENT_PREFIX):
+			mi.visible = garments.has(mi.name.trim_prefix(GARMENT_PREFIX))
+		if dye_colors.is_empty() and mi.get_instance_shader_parameter(DYE_PARAMS[0]) == null:
+			continue  # never dyed: leave the shader defaults (authored colours)
+		for i in DYE_PARAMS.size():
+			var c := dye_colors[i] if i < dye_colors.size() else Color(1, 1, 1, 0)
+			mi.set_instance_shader_parameter(DYE_PARAMS[i], c)
+	var model := get_node_or_null(^"Model") as Node3D
+	if model != null:
+		model.scale = Vector3.ONE * body_scale
 
 
 # ------------------------------------------------------------------- internals

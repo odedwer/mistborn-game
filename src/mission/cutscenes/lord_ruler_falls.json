@@ -1,0 +1,11 @@
+{
+	"id": "lord_ruler_falls",
+	"shots": [
+		{"pos": [6, 3, -8], "look_at": [0, 1, -18], "to_pos": [3, 2.2, -12], "fov": 55, "duration": 4.5, "subtitle": "Without his bracers, a thousand years arrive all at once. The Lord Ruler falls to his knees on his own dais, and does not rise."},
+		{"pos": [0, 6, 22], "look_at": [0, -10, 44], "to_pos": [0, 9, 26], "to_look_at": [0, -12, 60], "duration": 5.0, "subtitle": "Below the gallery, the square hears the silence in the throne hall — and then it roars.", "call": {"group": "throne_room", "method": "crowd_surges"}},
+		{"pos": [-9, 2.5, 18], "look_at": [0, 1.7, 25], "to_pos": [-5, 2.2, 19], "duration": 4.0, "subtitle": "Elend Venture runs in from the servants' stair with Sazed close behind.", "call": {"group": "throne_room", "method": "elend_arrives"}},
+		{"pos": [0, 2.2, 20], "look_at": [3, 1.7, 25], "duration": 4.5, "subtitle": "Elend Venture: They're going to need someone to argue with them tomorrow. And the day after. I'd like to try."},
+		{"pos": [0, 4, 24], "look_at": [0, 2, 60], "to_pos": [0, 30, 40], "to_look_at": [-60, 10, -300], "duration": 7.0, "subtitle": "Across Luthadel the skaa are in the streets, and for the first time in a thousand years nobody is sending them home."},
+		{"pos": [0, 30, 40], "look_at": [-60, 10, -300], "duration": 3.0, "subtitle": "The mists came down that night as they always did. Nobody hid from them."}
+	]
+}

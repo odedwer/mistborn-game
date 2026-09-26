@@ -1,0 +1,25 @@
+{
+  "id": "army_marched",
+  "lines": [
+    {
+      "speaker": "Rebel Runner",
+      "color": "#8c6b45",
+      "text": "Lord Kelsier's people? Thank the — you have to come. Yeden's gone. He took them. All of them."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Took them where?"
+    },
+    {
+      "speaker": "Rebel Runner",
+      "color": "#8c6b45",
+      "text": "Out. To the plain below the south wall. He said the garrison was half-asleep and we'd take the gate before dawn."
+    },
+    {
+      "speaker": "Rebel Runner",
+      "color": "#8c6b45",
+      "text": "It wasn't asleep. It was waiting."
+    }
+  ]
+}

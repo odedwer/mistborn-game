@@ -1,0 +1,78 @@
+{
+ "name": "clubs",
+ "style": "clubs",
+ "tris": 3448,
+ "height": 1.655215454760008,
+ "garments": {},
+ "tris_max": 3448,
+ "materials": [
+  "Cloth",
+  "Metal"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5365286520414726,
+    -0.0007416074091614513,
+    0.8947430291034258
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5365286520414726,
+    -0.0007416074091614513,
+    0.8947430291034258
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.09485714285714286,
+    1.2532999999999999
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.001897142857142857,
+    1.5772371428571428
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

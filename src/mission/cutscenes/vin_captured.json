@@ -1,0 +1,10 @@
+{
+	"id": "vin_captured",
+	"shots": [
+		{"pos": [0, 14, -64], "look_at": [0, 1, -78], "to_pos": [0, 9, -68], "fov": 65, "duration": 3.5, "subtitle": "Footsteps from every arch at once. Three more Inquisitors step out of the dark.", "call": {"group": "kredik_shaw", "method": "surround"}},
+		{"pos": [7, 2.5, -72], "look_at": [0, 1.6, -78], "to_pos": [4, 2.2, -74], "duration": 4.0, "subtitle": "And behind them, unhurried, the tall white figure of the Lord Ruler."},
+		{"pos": [-2, 1.8, -71], "look_at": [0, 2.2, -82], "to_pos": [-1, 1.7, -74], "duration": 5.0, "subtitle": "Vin burns the eleventh metal. For a heartbeat another man stands where he stands: younger, plainer, dressed like a Terris servant. Then he's gone."},
+		{"pos": [0, 6, -70], "look_at": [0, 0.5, -77], "to_pos": [0, 3, -74], "duration": 4.0, "subtitle": "The Lord Ruler: Take her below. I want to know who taught a skaa girl to look at me like that."},
+		{"pos": [0, 20, -76], "look_at": [0, 0, -76], "duration": 2.5, "subtitle": "Darkness."}
+	]
+}

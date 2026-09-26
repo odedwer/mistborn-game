@@ -220,3 +220,24 @@ func test_save_load_round_trip_mid_mission() -> void:
 		await _reach(id)
 	assert_eq(_completed_missions.size(), 1, "mission completes after loading")
 	assert_eq(_inquisitors().size(), 1, "one Inquisitor after loading")
+
+
+func test_save_inside_interior_keeps_open_world_position() -> void:
+	# Act I opens inside the canton office interior.
+	GameState.reset_run()
+	await _start_game()
+	var inside := await _wait_until(func() -> bool: return SceneTransition.is_inside_interior() and not SceneTransition.busy, 600)
+	assert_true(inside, "story opens inside an interior")
+	var outdoor := SceneTransition.outdoor_transform().origin
+	var interior_path := SceneTransition.current_interior().scene_file_path
+	player.global_position += Vector3(0.5, 0, 0.5)
+	assert_true(GameState.save_game(7), "saved inside the interior")
+	assert_eq(GameState.interior_scene, interior_path, "interior scene stored separately")
+	assert_lt(GameState.open_world_position.origin.distance_to(outdoor), 0.01,
+		"open-world position is where the interior was entered, not interior coordinates")
+	assert_true(GameState.load_game(7), "loaded")
+	var back := await _wait_until(func() -> bool: return SceneTransition.is_inside_interior() and not SceneTransition.busy \
+			and player.get_parent() == SceneTransition.current_interior(), 600)
+	assert_true(back, "load puts the player back inside the interior")
+	assert_eq(SceneTransition.current_interior().scene_file_path, interior_path, "same interior")
+	assert_lt(SceneTransition.outdoor_transform().origin.distance_to(outdoor), 0.5, "exit still leads to the saved outdoor spot")

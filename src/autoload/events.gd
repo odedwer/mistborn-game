@@ -61,3 +61,10 @@ signal cutscene_finished(id: StringName)
 ## The player crossed a scene-transition door into/out of an interior.
 signal interior_entered(scene_path: String)
 signal interior_exited
+
+# --- Act III: finale ----------------------------------------------------------
+## The final story mission `final_mission_id` and its credits are done; the
+## game now continues as post-game free roam.
+signal post_game_started(final_mission_id: StringName)
+## A scripted boss phase changed (see `LordRuler`). `phase` is boss-specific.
+signal boss_phase_changed(boss: Node, phase: int)

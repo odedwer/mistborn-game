@@ -191,6 +191,42 @@ STYLES = {
     "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 58, "r_flex": 6, "l_elbow": 20, "spine_lean": 6,
                              "head_pitch": 8, "r_wrist": -10},
                        stride=1.12, swing=0.7, hunch=6.0),
+    # ---- NPCs (crew, nobles, obligators, skaa)
+    "kelsier": dict(base={"r_elbow": 16, "l_elbow": 14, "r_abd": 9, "l_abd": 9, "head_pitch": -4, "spine_lean": -2},
+                    stride=1.06, swing=1.0, hunch=0.0),
+    "dockson": dict(base={"r_elbow": 24, "l_elbow": 22, "r_abd": 13, "l_abd": 13, "spine_lean": 1},
+                    stride=0.95, swing=0.8, hunch=0.0, wide=0.012),
+    "breeze": dict(base={"r_elbow": 34, "r_flex": 16, "r_abd": 15, "r_twist": -6, "l_elbow": 48, "l_flex": 14,
+                         "l_abd": 16, "l_twist": 12, "spine_lean": -4, "head_pitch": -5},
+                   arm_lock={"r"}, stride=0.9, swing=0.5, hunch=0.0, wide=0.01),
+    "ham": dict(base={"r_abd": 17, "l_abd": 17, "r_elbow": 24, "l_elbow": 22, "r_shrug": 3, "l_shrug": 3,
+                      "head_pitch": -2}, stride=1.05, swing=0.9, hunch=0.0, wide=0.022),
+    "clubs": dict(base={"spine_lean": 13, "head_pitch": -12, "r_abd": 13, "l_abd": 12, "r_elbow": 32, "l_elbow": 26,
+                        "r_shrug": 4, "l_shrug": 2, "hips_x": -0.02, "r_fy": 0.05},
+                  stride=0.8, swing=0.6, hunch=10.0, limp=1.0),
+    "spook": dict(base={"spine_lean": 6, "head_pitch": 5, "r_abd": 6, "l_abd": 6, "r_elbow": 12, "l_elbow": 10,
+                        "r_shrug": 5, "l_shrug": 5, "r_twist": 8, "l_twist": 8}, stride=1.05, swing=0.9, hunch=4.0),
+    "sazed": dict(base={"r_abd": 12, "l_abd": 12, "r_flex": 5, "l_flex": 5, "r_elbow": 68, "l_elbow": 68,
+                        "r_twist": -60, "l_twist": -60, "r_wrist": 10, "l_wrist": 10, "head_pitch": 3},
+                  arm_lock={"r", "l"}, stride=1.0, swing=0.3, hunch=2.0),
+    "marsh": dict(base={"r_abd": 7, "l_abd": 7, "r_elbow": 9, "l_elbow": 9, "head_pitch": 4, "spine_lean": -1},
+                  stride=1.0, swing=0.45, hunch=0.0),
+    "elend": dict(base={"l_abd": 28, "l_flex": 20, "l_elbow": 76, "l_twist": -90, "r_abd": 9, "r_elbow": 18,
+                        "head_pitch": 5, "spine_lean": 3, "head_roll": 3}, arm_lock={"l"}, stride=1.0, swing=0.8,
+                  hunch=2.0),
+    "gown": dict(base={"r_abd": 13, "l_abd": 13, "r_elbow": 42, "l_elbow": 40, "r_flex": 12, "l_flex": 10,
+                       "r_twist": -18, "l_twist": -18, "head_pitch": -3, "spine_lean": -2},
+                 stride=0.78, swing=0.45, hunch=0.0),
+    "noble_m": dict(base={"r_abd": 10, "l_abd": 10, "r_elbow": 18, "l_elbow": 20, "head_pitch": -5, "spine_lean": -3},
+                    stride=1.0, swing=0.7, hunch=0.0),
+    "obligator": dict(base={"r_abd": 16, "l_abd": 16, "r_flex": 15, "l_flex": 15, "r_elbow": 68, "l_elbow": 68,
+                            "r_twist": -70, "l_twist": -70, "head_pitch": 6, "spine_lean": 2},
+                      arm_lock={"r", "l"}, stride=0.95, swing=0.25, hunch=1.0),
+    "obligator_b": dict(base={"r_abd": 12, "l_abd": 12, "r_flex": -25, "l_flex": -25, "r_elbow": 52, "l_elbow": 52,
+                              "r_twist": -90, "l_twist": -90, "spine_lean": -3, "head_pitch": -4},
+                        arm_lock={"r", "l"}, stride=0.9, swing=0.2, hunch=0.0),
+    "skaa": dict(base={"spine_lean": 9, "head_pitch": -7, "r_abd": 10, "l_abd": 10, "r_elbow": 22, "l_elbow": 18,
+                       "r_shrug": 3, "l_shrug": 3}, stride=0.88, swing=0.65, hunch=8.0),
 }
 
 
@@ -242,6 +278,19 @@ def gait(t, T, base, S: Skel, *, stride, lift, duty, bob, drop, lean, arm_amp, e
     p["spine_lean"] = base.get("spine_lean", 0.0) + lean * 0.6 + st.get("hunch", 0.0) * 0.3
     p["head_pitch"] = base.get("head_pitch", 0.0) - lean * 0.5
     p["hips_roll"] = -sway * 60 * math.cos(2 * math.pi * (ph - mid))
+    limp = st.get("limp", 0.0)
+    if limp > 0.0:
+        # stiff right leg: the hip dips and the body lurches while it bears weight
+        k = S.head("Head")[2] / 0.893 / 1.75
+        f = ph % 1.0
+        on_r = math.sin(math.pi * f / duty) if f < duty else 0.0
+        p["hips_z"] -= limp * 0.03 * k * on_r
+        p["hips_roll"] += limp * 5.0 * on_r
+        p["spine_side"] = -limp * 6.0 * on_r
+        p["head_roll"] = limp * 3.0 * on_r
+        if f >= duty:
+            p["r_fz"] *= 1.0 - 0.55 * limp
+            p["r_fpitch"] *= 0.5
     return p
 
 
@@ -548,9 +597,24 @@ def make_anims(style: str, S: Skel):
                       (1.4, {})], t, base)
 
     add("drink", 1.4, drink)
+
+    def talk(t):
+        # conversational gesture: right hand opens palm-up, a nod, a small shrug of the left
+        g = {"r_abd": 22, "r_flex": 42, "r_elbow": 78, "r_twist": -30, "r_wrist": 18, "head_pitch": 3,
+             "head_yaw": 6, "spine_twist": 5, "l_flex": 10, "l_elbow": 30, "l_abd": 14, "l_twist": 0}
+        return keyed([
+            (0.0, {}),
+            (0.3, g),
+            (0.55, dict(g, r_flex=48, r_elbow=66, r_wrist=-6, head_pitch=-4, r_abd=26)),
+            (0.85, dict(g, r_flex=38, r_abd=32, r_elbow=82, head_pitch=6, head_yaw=-5, l_shrug=6)),
+            (1.15, dict(g, r_flex=44, r_elbow=72, head_pitch=0, l_shrug=0)),
+            (1.6, {}),
+        ], t, base)
+
+    add("talk", 1.6, talk)
     return A
 
 
 ANIM_NAMES = ["idle", "walk", "run", "sprint", "crouch_idle", "crouch_walk", "fall", "jump", "land",
-              "throw", "melee", "attack", "hit", "die", "block", "alert", "push", "pull", "drink"]
+              "throw", "melee", "attack", "hit", "die", "block", "alert", "push", "pull", "drink", "talk"]
 LOOPING = {"idle", "walk", "run", "sprint", "crouch_idle", "crouch_walk", "fall"}

@@ -1,0 +1,84 @@
+{
+ "name": "noble_man",
+ "style": "noble_m",
+ "tris": 3406,
+ "height": 1.8123020508708658,
+ "garments": {
+  "tails": 96,
+  "longcoat": 216,
+  "hat_top": 184,
+  "hat_bowler": 208,
+  "cape": 160
+ },
+ "tris_max": 4270,
+ "materials": [
+  "Cloak",
+  "Cloth"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.587949485001941,
+    -0.0008041526123437484,
+    0.9702032845699801
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.587949485001941,
+    -0.0008041526123437484,
+    0.9702032845699801
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.10285714285714287,
+    1.359
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.002057142857142857,
+    1.710257142857143
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

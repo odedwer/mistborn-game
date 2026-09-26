@@ -1,0 +1,30 @@
+{
+  "id": "sazed_logbook",
+  "lines": [
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "Mistress. I have not slept, forgive my appearance. The logbook is nearly translated, and it troubles me more with every page."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "It's his journal. The Lord Ruler's. From before he took the throne."
+    },
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "So we assumed. But the man who wrote this doubts himself on every page. He writes of a packman who hates him, and of a duty he does not want. It is not the voice of the one who sits in Kredik Shaw."
+    },
+    {
+      "speaker": "Sazed",
+      "color": "#c2a878",
+      "text": "And there is Feruchemy in these margins, Mistress. Storing strength, storing health, storing years — in metal worn against the skin. If the Lord Ruler is a Feruchemist as well as an Allomancer, then his metalminds would be the most guarded objects in the empire."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "Then we find out what he wears, and never takes off."
+    }
+  ]
+}

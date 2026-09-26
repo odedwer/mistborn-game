@@ -15,7 +15,7 @@ const CREW := [
 	{"id": "clubs", "name": "Clubs", "color": Color("#4a4a4a"), "pos": Vector2(5.5, 2.0)},
 	{"id": "spook", "name": "Spook", "color": Color("#5c7a99"), "pos": Vector2(-2.0, 3.5)},
 	{"id": "sazed", "name": "Sazed", "color": Color("#c2a878"), "pos": Vector2(2.0, 3.5)},
-	{"id": "marsh", "name": "Marsh", "color": Color("#3f5a4a"), "pos": Vector2(0.0, 4.5)},
+	{"id": "marsh", "name": "Marsh", "color": Color("#3f5a4a"), "pos": Vector2(-6.2, -3.6)},  # aloof in a corner, clear of the door/spawn
 ]
 
 
@@ -123,8 +123,13 @@ func _build_crew() -> void:
 		npc.display_name = member["name"]
 		npc.dialogue_id = "meet_%s" % member["id"]
 		npc.body_color = member["color"]
+		npc.model_id = StringName(member["id"])  # res://assets/models/characters/<id>.tscn
+		npc.idle_chatter = true
 		var p: Vector2 = member["pos"]
 		npc.position = Vector3(p.x, 0.0, p.y)
+		# gathered round the room: face its middle
+		var to_mid := Vector2(0.0, 0.5) - p
+		npc.facing_deg = rad_to_deg(atan2(to_mid.x, to_mid.y))
 		add_child(npc)
 
 

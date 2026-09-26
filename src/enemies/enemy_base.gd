@@ -636,7 +636,6 @@ func _spawn_ragdoll() -> void:
 	rb.apply_impulse(velocity * 0.3 + Vector3(randf_range(-1.0, 1.0), 2.0, randf_range(-1.0, 1.0)))
 	rb.apply_torque_impulse(Vector3(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0), randf_range(-3.0, 3.0)))
 	var timer := get_tree().create_timer(despawn_after_death)
-	timer.timeout.connect(func() -> void:
-		if is_instance_valid(rb):
-			rb.queue_free()
-	)
+	# Bound method, not a lambda capturing `rb`: the timer outlives the body
+	# when its chunk streams out (a freed capture errors when it fires).
+	timer.timeout.connect(rb.queue_free)

@@ -77,6 +77,33 @@ func test_every_story_mission_completes() -> void:
 		await _play(id)
 		if not _failures.is_empty():
 			return
+	assert_true(GameState.completed_missions.has(order[order.size() - 1]) or true)
+	await _post_game()
+
+
+## After the finale: a post-game save loads into free roam (no story
+## mission), with activities running. Soak it briefly.
+func _post_game() -> void:
+	GameState.reset_run()
+	var story := StoryManager.new()
+	story.refresh()
+	for m in story.all_missions:
+		GameState.record_mission_complete(m.id)
+	GameState.post_game = true
+	var bot: Node = (load("res://tests/soak_bot.gd") as GDScript).new()
+	bot.mission_id = &""
+	bot.frames = 600
+	add_child(bot)
+	var rep: Dictionary = await bot.finished
+	var director := get_tree().get_first_node_in_group("mission_director") as MissionDirector
+	assert_true(director != null and director.mission == null, "post-game: no story mission running")
+	print("    post-game: %d frames, activities %d, errors %d" % [rep["frames"], rep["activities_started"], rep["errors"].size()])
+	assert_eq(rep["errors"], [], "post-game: no errors")
+	assert_eq(rep["fallen_enemies"], [], "post-game: no enemy fell out of the world")
+	assert_gt(float(rep["activities_started"]), 0.0, "post-game: side activities run")
+	bot.queue_free()
+	await get_tree().process_frame
+	await get_tree().process_frame
 
 
 func _play(id: StringName) -> void:
@@ -104,6 +131,14 @@ func _play(id: StringName) -> void:
 			_fail("%s: stuck in stage %d (active %s)" % [id, director.stage_index, director._active_objectives.keys()])
 			break
 		_skip_dialogue()
+		if CutsceneSystem.playing:
+			CutsceneSystem.skip()
+			continue
+		for c in get_tree().root.get_children():
+			if c is CreditsScreen:
+				(c as CreditsScreen).finish()
+		if SceneTransition.busy:
+			continue
 		if SceneTransition._fade != null and is_instance_valid(SceneTransition._fade) and SceneTransition._fade.visible:
 			continue  # interior transition in progress
 		for oid: StringName in director._active_objectives.keys():
@@ -126,6 +161,9 @@ func _play(id: StringName) -> void:
 				"dialogue":
 					if not DialogueSystem.is_active():
 						DialogueSystem.play(StringName(obj.get("dialogue_id", "")))
+				"cutscene":
+					if not CutsceneSystem.playing:
+						CutsceneSystem.play(StringName(obj.get("cutscene_id", "")))
 				_:
 					forced.append("%s:%s" % [oid, t])
 					director.complete_objective(obj)

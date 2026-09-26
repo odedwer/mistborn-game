@@ -1,0 +1,78 @@
+{
+ "name": "sazed",
+ "style": "sazed",
+ "tris": 4028,
+ "height": 2.014325413935665,
+ "garments": {},
+ "tris_max": 4028,
+ "materials": [
+  "Cloth",
+  "Metal"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.6634221798762815,
+    0.0001695788368188799,
+    1.0587571966777454
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.6634221798762815,
+    0.0001695788368188799,
+    1.0587571966777454
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.11542857142857144,
+    1.5251000000000001
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.002308571428571429,
+    1.9192885714285715
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

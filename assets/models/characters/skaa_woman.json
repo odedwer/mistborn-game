@@ -1,0 +1,82 @@
+{
+ "name": "skaa_woman",
+ "style": "skaa",
+ "tris": 3742,
+ "height": 1.6319239737444597,
+ "garments": {
+  "headscarf": 206,
+  "shawl": 160,
+  "basket": 60
+ },
+ "tris_max": 4168,
+ "materials": [
+  "Cloak",
+  "Cloth"
+ ],
+ "tassel_chains": [],
+ "sockets": {
+  "hand_r": {
+   "bone": "RightHand",
+   "pos": [
+    0.5041602507874613,
+    -0.0007237373511093693,
+    0.8731829561129821
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5041602507874613,
+    -0.0007237373511093693,
+    0.8731829561129821
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.09257142857142858,
+    1.2231
+   ]
+  },
+  "head": {
+   "bone": "Head",
+   "pos": [
+    0.0,
+    -0.0018514285714285716,
+    1.5392314285714286
+   ]
+  }
+ },
+ "loops": [
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "idle",
+  "run",
+  "sprint",
+  "walk"
+ ],
+ "animations": [
+  "idle",
+  "walk",
+  "run",
+  "sprint",
+  "crouch_idle",
+  "crouch_walk",
+  "fall",
+  "jump",
+  "land",
+  "throw",
+  "melee",
+  "attack",
+  "hit",
+  "die",
+  "block",
+  "alert",
+  "push",
+  "pull",
+  "drink",
+  "talk"
+ ]
+}

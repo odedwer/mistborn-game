@@ -3,6 +3,8 @@
  "style": "vin",
  "tris": 4038,
  "height": 1.6623931320453007,
+ "garments": {},
+ "tris_max": 4038,
  "materials": [
   "Cloak",
   "Cloth",
@@ -168,6 +170,7 @@
   "alert",
   "push",
   "pull",
-  "drink"
+  "drink",
+  "talk"
  ]
 }

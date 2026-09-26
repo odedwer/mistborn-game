@@ -1,0 +1,20 @@
+{
+  "id": "vin_grief",
+  "lines": [
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "Vin. Vin! Look at me. He's gone, and they're coming for everyone who looks like they understood what they just saw."
+    },
+    {
+      "speaker": "Vin",
+      "color": "#8fa6c4",
+      "text": "I could have reached him. I was right there —"
+    },
+    {
+      "speaker": "Ham",
+      "color": "#8a4b3d",
+      "text": "You were right where he wanted you: alive. The Inquisitors are off the platform. Keep them busy until Breeze gets the crowd moving, then run for the west alley."
+    }
+  ]
+}

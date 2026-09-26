@@ -1,0 +1,151 @@
+{
+	"id": "the_pits_beneath_the_palace",
+	"title": "The Pits Beneath the Palace",
+	"act": "3",
+	"chapter": "Below Kredik Shaw",
+	"prerequisites": [
+		"into_kredik_shaw"
+	],
+	"journal": "I woke in a cell under the palace with nothing left to burn. Sazed came for me, spending strength he'd stored for years, and Elend was in the next cell, having knocked on the front gate like a fool. I scraped together the vials the crew had smuggled in and climbed out. The skaa are gathering outside the throne hall.",
+	"rewards": {
+		"unlocks": []
+	},
+	"fail_conditions": [],
+	"stages": [
+		{
+			"id": "the_cell",
+			"label": "Nothing to Burn",
+			"on_enter": [
+				{
+					"action": "switch_interior",
+					"scene": "res://src/mission/interiors/palace_pits.tscn"
+				},
+				{
+					"action": "drain_metals",
+					"metals": []
+				},
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "pits_wake"
+				}
+			],
+			"objectives": [
+				{
+					"id": "pits_wait_for_sazed",
+					"type": "dialogue",
+					"dialogue_id": "pits_wake",
+					"text": "Get your bearings",
+					"on_complete": [
+						{
+							"action": "start_dialogue",
+							"dialogue_id": "sazed_rescue"
+						}
+					]
+				},
+				{
+					"id": "pits_sazed_opens",
+					"type": "dialogue",
+					"dialogue_id": "sazed_rescue",
+					"text": "Listen to Sazed",
+					"on_complete": [
+						{
+							"action": "call_group",
+							"group": "palace_pits",
+							"method": "open_cell"
+						}
+					]
+				},
+				{
+					"id": "pits_leave_cell",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "pits_cell_door",
+					"text": "Step out of the cell"
+				}
+			]
+		},
+		{
+			"id": "the_vials",
+			"label": "Scraping Together Metal",
+			"interior": "res://src/mission/interiors/palace_pits.tscn",
+			"on_enter": [
+				{
+					"action": "hint",
+					"text": "The crew's bribed jailer left vials in the empty cells. Three should be enough to climb out.",
+					"duration": 4.0
+				}
+			],
+			"objectives": [
+				{
+					"id": "pits_vial_1",
+					"type": "collect",
+					"kind": "vial",
+					"text": "Find a hidden vial (1/3)"
+				},
+				{
+					"id": "pits_vial_2",
+					"type": "collect",
+					"kind": "vial",
+					"text": "Find another vial (2/3)"
+				},
+				{
+					"id": "pits_vial_3",
+					"type": "collect",
+					"kind": "vial",
+					"text": "Find the last vial (3/3)"
+				},
+				{
+					"id": "pits_burn_again",
+					"type": "use_metal",
+					"metal": 1,
+					"text": "Drink a vial (R) and burn iron again"
+				}
+			]
+		},
+		{
+			"id": "the_shaft",
+			"label": "The Old Shaft",
+			"interior": "res://src/mission/interiors/palace_pits.tscn",
+			"objectives": [
+				{
+					"id": "pits_reach_shaft",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "pits_shaft_base",
+					"text": "Get past the guards to the shaft at the far end"
+				},
+				{
+					"id": "pits_climb_shaft",
+					"type": "reach_marker",
+					"marker_group": "objective_point",
+					"marker_id": "pits_shaft_top",
+					"text": "Pull yourself up the shaft on the iron rungs"
+				}
+			]
+		},
+		{
+			"id": "the_crowd_gathers",
+			"label": "Above",
+			"interior": "res://src/mission/interiors/palace_pits.tscn",
+			"on_enter": [
+				{
+					"action": "start_dialogue",
+					"dialogue_id": "pits_climb"
+				}
+			],
+			"objectives": [
+				{
+					"id": "pits_hear_sazed",
+					"type": "dialogue",
+					"dialogue_id": "pits_climb",
+					"text": "Hear the news from the city",
+					"on_complete": [
+						{
+							"action": "mission_complete"
+						}
+					]
+				}
+			]
+		}
+	]
+}

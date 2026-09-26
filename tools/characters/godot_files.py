@@ -87,25 +87,57 @@ def to_godot(p):
     return (x, z, -y)
 
 
-def write_scene(name, meta):
+def _color(hexstr):
+    h = hexstr.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+    return f"Color({r:.4f}, {g:.4f}, {b:.4f}, 1)"
+
+
+def _variant_lines(base, variant):
+    """CharacterModel variant exports: garments shown, dye colours (sRGB), scale, crowd pool."""
+    try:
+        import chars_npc
+    except ImportError:  # numpy missing: plain python without the venv
+        return []
+    lines = []
+    pool = chars_npc.POOLS.get(base)
+    if variant is None:
+        variant = chars_npc.DEFAULT_VARIANTS.get(base)
+    if variant is not None:
+        garments, dyes, scale = variant
+        lines.append("garments = PackedStringArray(" + ", ".join(f'"{g}"' for g in garments) + ")")
+        lines.append("dye_colors = Array[Color]([" + ", ".join(_color(c) for c in dyes) + "])")
+        lines.append(f"body_scale = {float(scale)}")
+    if pool is not None:
+        groups = "[" + ", ".join("[" + ", ".join(f'"{g}"' for g in grp) + "]" for grp in pool["garment_groups"]) + "]"
+        pals = "[" + ", ".join("[" + ", ".join(_color(c) for c in pal) + "]" for pal in pool["palettes"]) + "]"
+        lo, hi = pool["scale"]
+        lines.append('variant_pool = {\n"garment_groups": ' + groups + ',\n"palettes": ' + pals +
+                     f',\n"scale": Vector2({lo}, {hi})\n}}')
+    return lines
+
+
+def write_scene(name, meta, base=None, variant=None):
     # The glTF faces -Z; the Model child is rotated 180 degrees so the CharacterModel root
     # faces +Z (the convention of player.gd / enemy_base.gd: yaw = atan2(dir.x, dir.z)).
+    base = base or name
     socks = {}
     for k, s in meta["sockets"].items():
         x, y, z = to_godot(s["pos"])
         x, z = -x, -z  # sockets are in root space (model rotated 180 deg)
         socks[k] = f'["{s["bone"]}", Vector3({x:.4f}, {y:.4f}, {z:.4f})]'
     sock_txt = "{\n" + ",\n".join(f'"{k}": {v}' for k, v in socks.items()) + "\n}"
-    node = name.capitalize()
+    node = "".join(p.capitalize() for p in name.split("_"))
     lines = [
         '[gd_scene load_steps=3 format=3]', "",
         f'[ext_resource type="Script" path="{RES}/character_model.gd" id="1"]',
-        f'[ext_resource type="PackedScene" path="{RES}/{name}.glb" id="2"]', "",
+        f'[ext_resource type="PackedScene" path="{RES}/{base}.glb" id="2"]', "",
         f'[node name="{node}" type="Node3D"]',
         'script = ExtResource("1")',
         f'character_id = &"{name}"',
         f"sockets = {sock_txt}",
         f"lantern_light = {'true' if 'lantern' in meta['sockets'] else 'false'}",
+    ] + _variant_lines(base, variant) + [
         "",
         '[node name="Model" parent="." instance=ExtResource("2")]',
         "transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)", "",
@@ -116,6 +148,10 @@ def write_scene(name, meta):
 
 def write_all(names=None):
     write_materials()
+    try:
+        from chars_npc import PRESETS
+    except ImportError:
+        PRESETS = {}
     for fn in sorted(os.listdir(OUT)):
         if not fn.endswith(".json"):
             continue
@@ -125,6 +161,9 @@ def write_all(names=None):
         meta = json.load(open(os.path.join(OUT, fn)))
         write_import(name, meta)
         write_scene(name, meta)
+        for pid, (base, garments, dyes, scale) in PRESETS.items():
+            if base == name:
+                write_scene(pid, meta, base=base, variant=(garments, dyes, scale))
 
 
 if __name__ == "__main__":

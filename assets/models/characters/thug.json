@@ -3,6 +3,8 @@
  "style": "thug",
  "tris": 3414,
  "height": 2.114292215039823,
+ "garments": {},
+ "tris_max": 3414,
  "materials": [
   "Cloth"
  ],
@@ -69,6 +71,7 @@
   "alert",
   "push",
   "pull",
-  "drink"
+  "drink",
+  "talk"
  ]
 }

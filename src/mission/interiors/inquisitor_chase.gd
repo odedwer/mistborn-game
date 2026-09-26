@@ -11,6 +11,15 @@ extends Node3D
 
 const CORRIDOR_LENGTH := 60.0
 const SEGMENT_COUNT := 4
+## A run-up of rooftop behind the player's spawn. The Inquisitor starts at
+## its far end, well out of sight, so the opening checkpoints read as being
+## hunted rather than already caught (it used to spawn 4.5 m away).
+const RUNUP_LENGTH := 44.0
+## Where the Inquisitor starts (z). Kept beyond its unlit vision range
+## (`EnemyBase.vision_range_base`, 18 m) from the spawn at z = -1.5.
+const INQUISITOR_START_Z := -40.0
+## Seconds before the Inquisitor starts moving at all.
+const INQUISITOR_DELAY := 3.0
 
 ## See `canton_resource.gd`'s `_nav` doc: the Inquisitor's `NavigationAgent3D`
 ## needs a baked navmesh to close the chase distance at all.
@@ -52,6 +61,20 @@ func _build_corridor() -> void:
 		body.add_child(mesh)
 		body.position = Vector3(0, -0.3, z)
 		_nav.add_child(body)
+	# The run-up behind the spawn, where the Inquisitor starts.
+	var runup := StaticBody3D.new()
+	var r_shape := CollisionShape3D.new()
+	var r_box := BoxShape3D.new()
+	r_box.size = Vector3(8.0, 0.6, RUNUP_LENGTH)
+	r_shape.shape = r_box
+	runup.add_child(r_shape)
+	var r_mesh := MeshInstance3D.new()
+	r_mesh.mesh = BoxMesh.new()
+	(r_mesh.mesh as BoxMesh).size = r_box.size
+	r_mesh.material_override = mat
+	runup.add_child(r_mesh)
+	runup.position = Vector3(0, -0.3, -seg_len * 0.5 - RUNUP_LENGTH * 0.5 + 0.5)
+	_nav.add_child(runup)
 	# The arena at the far end, wider than the corridor.
 	var arena := StaticBody3D.new()
 	var a_shape := CollisionShape3D.new()
@@ -74,26 +97,33 @@ func _build_corridor() -> void:
 func _build_inquisitor() -> void:
 	var scene: PackedScene = load("res://src/enemies/inquisitor.tscn")
 	var inquisitor := scene.instantiate()
+	inquisitor.name = "Inquisitor"
 	add_child(inquisitor)
-	inquisitor.global_position = Vector3(0.0, 0.0, -6.0)
-	inquisitor.call("set_patrol_points", PackedVector3Array([Vector3(0.0, 0.0, -6.0), Vector3(0.0, 0.0, CORRIDOR_LENGTH + 6.0)]))
+	inquisitor.global_position = Vector3(0.0, 0.0, INQUISITOR_START_Z)
+	# Hold still for a beat, then stalk up the rooftops behind the player.
+	# (A child Timer, so it dies with the scene if the player leaves early.)
+	inquisitor.process_mode = Node.PROCESS_MODE_DISABLED
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = INQUISITOR_DELAY
+	timer.autostart = true
+	timer.timeout.connect(_release_inquisitor.bind(inquisitor))
+	add_child(timer)
+
+
+func _release_inquisitor(inquisitor: Node) -> void:
+	if not is_instance_valid(inquisitor):
+		return
+	inquisitor.process_mode = Node.PROCESS_MODE_INHERIT
+	inquisitor.call("set_patrol_points", PackedVector3Array([Vector3(0.0, 0.0, INQUISITOR_START_Z), Vector3(0.0, 0.0, CORRIDOR_LENGTH + 6.0)]))
 
 
 func _build_lighting() -> void:
-	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.03, 0.03, 0.05)
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.2, 0.2, 0.24)
-	e.ambient_light_energy = 1.0
-	env.environment = e
-	add_child(env)
-	var moon := DirectionalLight3D.new()
-	moon.light_energy = 0.55
-	moon.light_color = Color(0.8, 0.83, 0.95)
-	moon.rotation_degrees = Vector3(-58, 40, 0)
-	add_child(moon)
+	var bd := MissionBackdrop.new()
+	bd.anchor = Vector2(-150.0, 60.0)
+	bd.ground_y = -15.0
+	bd.clear_radius = 120.0
+	add_child(bd)
 
 
 func _build_spook() -> void:
