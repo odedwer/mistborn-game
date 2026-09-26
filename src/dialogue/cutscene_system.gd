@@ -9,6 +9,15 @@ extends Node
 ## shot's camera in place (a pure subtitle beat). `play(id)` swaps in a
 ## temporary `Camera3D`, so it never has to know how the player's own camera
 ## rig works, and restores whichever camera was active before it ran.
+##
+## Act III additions (all optional per shot):
+## - `"to_pos"` / `"to_look_at"`: a camera pan — the camera glides from
+##   `pos`/`look_at` to these over the shot's `duration` (smoothstep eased).
+##   Either may be given alone; the other end holds still.
+## - `"fov"`: field of view for the shot (degrees).
+## - `"call"`: `{"group": ..., "method": ..., "args": [...]}` run via
+##   `SceneTree.call_group` when the shot starts, so a scene can stage its
+##   own beats (an actor falls, a crowd surges) in step with the camera.
 
 const CUTSCENE_DIR := "res://src/mission/cutscenes"
 
@@ -45,27 +54,86 @@ func play(id: StringName) -> void:
 	_ensure_letterbox()
 	_show_letterbox(true)
 	var prev_cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+	# Freeze the player for the length of the shot list (no walking off a
+	# rooftop while the camera is elsewhere); restored afterwards.
+	var player := get_tree().get_first_node_in_group(&"player") if is_inside_tree() else null
+	var player_mode := Node.PROCESS_MODE_INHERIT
+	if player != null:
+		player_mode = player.process_mode
+		player.process_mode = Node.PROCESS_MODE_DISABLED
 	var cam := Camera3D.new()
 	get_tree().root.add_child(cam)
 	if prev_cam != null:
 		cam.global_transform = prev_cam.global_transform
+	var look_target := cam.global_position - cam.global_basis.z * 10.0
 	for shot: Dictionary in shots:
 		if shot.has("pos"):
 			cam.global_position = _v3(shot["pos"])
 		if shot.has("look_at"):
-			cam.look_at(_v3(shot["look_at"]), Vector3.UP)
+			look_target = _v3(shot["look_at"])
+		_aim(cam, look_target)
+		if shot.has("fov"):
+			cam.fov = float(shot["fov"])
 		cam.current = true
 		_subtitle.text = String(shot.get("subtitle", ""))
 		_subtitle.visible = _subtitle.text != ""
+		if shot.has("call"):
+			_run_call(shot["call"])
 		var duration := float(shot.get("duration", 2.0))
-		if duration > 0.0:
+		if duration <= 0.0:
+			continue
+		if shot.has("to_pos") or shot.has("to_look_at"):
+			var from_pos := cam.global_position
+			var to_pos: Vector3 = _v3(shot["to_pos"]) if shot.has("to_pos") else from_pos
+			var from_look := look_target
+			var to_look: Vector3 = _v3(shot["to_look_at"]) if shot.has("to_look_at") else from_look
+			var t := 0.0
+			while t < duration:
+				await get_tree().process_frame
+				if not is_instance_valid(cam):
+					break
+				t += get_process_delta_time()
+				var k := smoothstep(0.0, 1.0, clampf(t / duration, 0.0, 1.0))
+				cam.global_position = from_pos.lerp(to_pos, k)
+				look_target = from_look.lerp(to_look, k)
+				_aim(cam, look_target)
+		else:
 			await get_tree().create_timer(duration).timeout
 	cam.queue_free()
+	if player != null and is_instance_valid(player):
+		player.process_mode = player_mode
 	if prev_cam != null and is_instance_valid(prev_cam):
 		prev_cam.current = true
 	_show_letterbox(false)
 	playing = false
 	Events.cutscene_finished.emit(id)
+
+
+## Pure pan interpolation (exposed for tests): camera position and look
+## target `k` (0..1, already eased) of the way through a pan.
+static func pan_sample(shot: Dictionary, k: float) -> Array:
+	var p0 := _v3(shot.get("pos", [0, 0, 0]))
+	var l0 := _v3(shot.get("look_at", [0, 0, -1]))
+	var p1: Vector3 = _v3(shot["to_pos"]) if shot.has("to_pos") else p0
+	var l1: Vector3 = _v3(shot["to_look_at"]) if shot.has("to_look_at") else l0
+	var e := smoothstep(0.0, 1.0, clampf(k, 0.0, 1.0))
+	return [p0.lerp(p1, e), l0.lerp(l1, e)]
+
+
+static func _aim(cam: Camera3D, target: Vector3) -> void:
+	var to := target - cam.global_position
+	if to.length() < 0.01:
+		return
+	var up := Vector3.UP if absf(to.normalized().dot(Vector3.UP)) < 0.99 else Vector3.FORWARD
+	cam.look_at(target, up)
+
+
+func _run_call(c: Dictionary) -> void:
+	if not is_inside_tree():
+		return
+	var args: Array = [StringName(c.get("group", "")), StringName(c.get("method", ""))]
+	args.append_array(c.get("args", []))
+	get_tree().callv(&"call_group", args)
 
 
 static func _v3(a: Array) -> Vector3:

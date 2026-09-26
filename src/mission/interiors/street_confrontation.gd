@@ -70,20 +70,19 @@ func _build_square() -> void:
 	# No ceiling: this is an open-air street square under the ash sky.
 
 
+## Open-air square in the skaa slums under the real night sky/skyline (see
+## `MissionBackdrop`), plus a warm lantern so the crowd stays readable.
 func _build_lighting() -> void:
-	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.05, 0.05, 0.06)
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.3, 0.28, 0.3)
-	e.ambient_light_energy = 1.1
-	env.environment = e
-	add_child(env)
-	var sun := DirectionalLight3D.new()
-	sun.light_energy = 0.6
-	sun.rotation_degrees = Vector3(-55, 35, 0)
-	add_child(sun)
+	var bd := MissionBackdrop.new()
+	bd.anchor = Vector2(-240.0, 290.0)
+	bd.clear_radius = 40.0
+	add_child(bd)
+	var lamp := OmniLight3D.new()
+	lamp.light_color = Color(1.0, 0.62, 0.3)
+	lamp.light_energy = 1.4
+	lamp.omni_range = 16.0
+	lamp.position = Vector3(0, 4.5, 0)
+	add_child(lamp)
 
 
 func _build_crowd() -> void:

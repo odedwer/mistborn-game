@@ -29,6 +29,12 @@ var _active_objectives: Dictionary = {}
 ## Remaining objectives of a sequential stage, activated one at a time.
 var _pending_objectives: Array[Dictionary] = []
 var _triggers: Array[Area3D] = []
+## Objectives whose marker could not be found yet (typically because the
+## stage's `enter_interior`/`switch_interior` is still fading in and the
+## scene holding the marker isn't instantiated). Retried from `_process` and
+## on `Events.interior_entered` until the marker appears.
+var _unresolved_triggers: Array[Dictionary] = []
+var _retry_timer := 0.0
 var _hinted_metal_use := false
 ## `chain_pushes` objective id -> {last: float (ticks sec), count: int}.
 var _chain_state: Dictionary = {}
@@ -55,6 +61,7 @@ func _ready() -> void:
 	Events.dialogue_finished.connect(_on_dialogue_finished)
 	Events.dialogue_flag_set.connect(_on_dialogue_flag_set)
 	Events.alert_level_changed.connect(_on_alert_level_changed)
+	Events.interior_entered.connect(func(_p: String) -> void: _retry_unresolved_triggers())
 	_build_fade_layer()
 	_start_or_resume()
 
@@ -63,6 +70,11 @@ func _ready() -> void:
 ## everything else here is event-driven, so this stays a cheap no-op most of
 ## the time.
 func _process(delta: float) -> void:
+	if not _unresolved_triggers.is_empty():
+		_retry_timer -= delta
+		if _retry_timer <= 0.0:
+			_retry_timer = 0.25
+			_retry_unresolved_triggers()
 	if _active_objectives.is_empty():
 		return
 	var player := get_tree().get_first_node_in_group("player")
@@ -85,9 +97,24 @@ func _process(delta: float) -> void:
 
 
 func _start_or_resume() -> void:
+	# Post-game free roam (after "The Lord Ruler" and the credits): no story
+	# mission runs; the open world and every side activity stay available.
+	if GameState.post_game:
+		mission = null
+		return
 	mission = story.get_mission(GameState.mission_id)
+	# A save made on the mission-complete screen still names the mission
+	# just finished: move on to the next one in the chain instead of
+	# replaying it.
+	if mission != null and GameState.completed_missions.has(mission.id):
+		mission = story.next_story_mission(GameState.completed_missions)
+		GameState.mission_stage = 0
+		GameState.last_checkpoint_id = &""
+		if mission == null:
+			GameState.post_game = true
+			return
 	if mission == null:
-		mission = story.next_story_mission(GameState.completed_objectives.map(func(x): return x))
+		mission = story.next_story_mission(GameState.completed_missions)
 	if mission == null and not story.all_missions.is_empty():
 		mission = story.all_missions[0]
 	if mission == null:
@@ -96,6 +123,17 @@ func _start_or_resume() -> void:
 	GameState.mission_id = mission.id
 	stage_index = clampi(GameState.mission_stage, 0, maxi(mission.stages.size() - 1, 0))
 	_activate_stage(stage_index)
+
+
+## Starts the next story mission in place (the mission-complete screen's
+## "Continue" button). Returns false once the story is over (post-game).
+func start_next_mission() -> bool:
+	_clear_triggers()
+	_active_objectives.clear()
+	_pending_objectives.clear()
+	GameState.mission_stage = 0
+	_start_or_resume()
+	return mission != null
 
 
 func _connect_checkpoints() -> void:
@@ -115,6 +153,8 @@ func _on_checkpoint_body_entered(body: Node, area: Area3D) -> void:
 # --- Stage / objective lifecycle --------------------------------------------
 
 func _activate_stage(index: int) -> void:
+	if mission == null:
+		return
 	_clear_triggers()
 	_active_objectives.clear()
 	_survive_start.clear()
@@ -179,6 +219,8 @@ func _activate_objective(obj: Dictionary) -> void:
 func _spawn_trigger_for(obj: Dictionary) -> void:
 	var pos := _find_marker_position(obj.get("marker_group", "objective_point"), obj.get("marker_id", ""))
 	if pos == Vector3.INF:
+		if not _unresolved_triggers.has(obj):
+			_unresolved_triggers.append(obj)
 		return
 	var area := Area3D.new()
 	area.collision_layer = 0
@@ -200,6 +242,14 @@ func _spawn_trigger_for(obj: Dictionary) -> void:
 		var beacon := ActivityBeacon.new()
 		beacon.beacon_color = Color(0.55, 0.78, 0.95)
 		area.add_child(beacon)
+
+
+func _retry_unresolved_triggers() -> void:
+	var pending := _unresolved_triggers.duplicate()
+	_unresolved_triggers.clear()
+	for obj: Dictionary in pending:
+		if _active_objectives.has(StringName(obj.get("id", ""))):
+			_spawn_trigger_for(obj)
 
 
 func _on_objective_trigger_entered(body: Node, obj: Dictionary) -> void:
@@ -256,6 +306,7 @@ func complete_objective(obj: Dictionary) -> void:
 		return
 	_active_objectives.erase(id)
 	_pending_objectives.erase(obj)
+	_unresolved_triggers.erase(obj)
 	Events.objective_updated.emit(id, obj.get("text", ""), true)
 	AudioManager.play_ui(&"objective_complete")
 	for action: Dictionary in obj.get("on_complete", []):
@@ -269,6 +320,8 @@ func complete_objective(obj: Dictionary) -> void:
 
 
 func _advance_stage() -> void:
+	if mission == null:
+		return
 	stage_index += 1
 	GameState.mission_stage = stage_index
 	if stage_index >= mission.stages.size():
@@ -298,6 +351,58 @@ func _run_action(action: Dictionary) -> void:
 			SceneTransition.exit_interior()
 		"set_flag":
 			GameState.set_dialogue_flag(StringName(action.get("flag", "")), action.get("value", true))
+		"switch_interior":
+			SceneTransition.switch_interior(String(action.get("scene", "")))
+		"call_group":
+			var call_args: Array = [StringName(action.get("group", "")), StringName(action.get("method", ""))]
+			call_args.append_array(action.get("args", []))
+			get_tree().callv(&"call_group", call_args)
+		"drain_metals":
+			_drain_metals(action.get("metals", []))
+		"roll_credits":
+			_roll_credits()
+
+
+## Act III ("Into Kredik Shaw" capture / "The Pits Beneath the Palace"):
+## empties the player's reserves of `metals` (all metals when empty) and stops
+## them burning — the Inquisitors made sure Vin woke with nothing to burn.
+func _drain_metals(metals: Array) -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not ("allomancer" in player) or player.allomancer == null:
+		return
+	var list: Array = metals if not metals.is_empty() else Metal.Type.values()
+	for m in list:
+		player.allomancer.set_burning(int(m), false)
+		player.allomancer.set_reserve(int(m), 0.0)
+	if "vials" in player:
+		player.vials = 0
+
+
+## The finale: records the last story mission as done, then plays the
+## credits (`CreditsScreen`); once they end the game drops into post-game
+## free roam instead of the usual mission-complete screen.
+func _roll_credits() -> void:
+	var final_id: StringName = mission.id if mission != null else &""
+	GameState.post_game = true
+	if final_id != &"":
+		GameState.record_mission_complete(final_id)
+	var credits := CreditsScreen.new()
+	get_tree().root.add_child(credits)
+	credits.finished.connect(_on_credits_finished.bind(final_id))
+	credits.play()
+
+
+func _on_credits_finished(final_id: StringName) -> void:
+	mission = null
+	_active_objectives.clear()
+	_pending_objectives.clear()
+	_clear_triggers()
+	if final_id != &"":
+		# `MissionComplete` skips its screen in post-game; `GameState`
+		# still records + autosaves off this signal.
+		Events.mission_completed.emit(final_id)
+		mission_finished.emit(final_id)
+	Events.post_game_started.emit(final_id)
 
 
 ## Restricts the player's `Allomancer` to `metals` (a list of `Metal.Type`

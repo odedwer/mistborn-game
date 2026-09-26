@@ -32,6 +32,10 @@ func _initialize() -> void:
 	lamp.light_energy = 8.0
 	lamp.omni_range = 60.0
 	cam.add_child(lamp)
+	# Build any MissionBackdrop skyline up front instead of waiting on its
+	# background tasks for hundreds of (slow, software-rendered) frames.
+	for bd in get_nodes_in_group(&"mission_backdrop"):
+		bd.call("finish_now")
 	var frames := int(args[2]) if args.size() > 2 else 60
 	for i in frames:
 		await process_frame

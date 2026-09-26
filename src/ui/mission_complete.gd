@@ -40,16 +40,34 @@ func _build_ui() -> void:
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(stats_label)
 
+	# Continue straight into the next story mission, in place (the save was
+	# already written by `GameState` on `mission_completed`).
+	var next_btn := UIHelpers.button("Continue")
+	next_btn.name = "ContinueButton"
+	next_btn.pressed.connect(_on_continue)
+	box.add_child(next_btn)
 	var continue_btn := UIHelpers.button("Main Menu")
 	continue_btn.pressed.connect(func(): get_tree().change_scene_to_file(MAIN_MENU_SCENE))
 	box.add_child(continue_btn)
 
 
 func _on_mission_completed(_id: StringName) -> void:
+	# The finale hands over to the credits and then post-game free roam;
+	# no stats card on top of that.
+	if GameState.post_game:
+		return
 	get_tree().paused = true
 	visible = true
 	var stats_label: Label = find_child("StatsLabel", true, false)
 	stats_label.text = _format_stats()
+
+
+func _on_continue() -> void:
+	visible = false
+	get_tree().paused = false
+	var director := get_tree().get_first_node_in_group("mission_director")
+	if director != null and director.has_method("start_next_mission"):
+		director.call("start_next_mission")
 
 
 func _format_stats() -> String:

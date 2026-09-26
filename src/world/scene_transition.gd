@@ -37,6 +37,10 @@ func enter_interior(scene_path: String) -> void:
 	if player == null or host == null:
 		return
 	await _fade_to(1.0)
+	# The player (or a test's stand-in) can be freed during the fade.
+	if not is_instance_valid(player) or not is_instance_valid(host) or is_inside_interior():
+		await _fade_to(0.0)
+		return
 	_saved_transform = (player as Node3D).global_transform
 	_outdoor_world = get_tree().get_first_node_in_group(&"world")
 	if _outdoor_world != null:
@@ -52,6 +56,45 @@ func enter_interior(scene_path: String) -> void:
 	await _fade_to(0.0)
 
 
+## Swaps the current interior for `scene_path` under one fade, without
+## surfacing to the open world in between (Act III: the rebel caves straight
+## onto the battlefield, the palace halls down into the Pits). Falls back to a
+## plain `enter_interior` when no interior is active. The saved open-world
+## transform is kept, so the eventual `exit_interior` still returns the
+## player to where the chain of interiors began.
+func switch_interior(scene_path: String) -> void:
+	if not is_inside_interior():
+		await enter_interior(scene_path)
+		return
+	if not ResourceLoader.exists(scene_path):
+		return
+	var player := get_tree().get_first_node_in_group(&"player")
+	var host := _host_node()
+	if player == null or host == null:
+		return
+	await _fade_to(1.0)
+	if not is_instance_valid(player) or not is_instance_valid(host):
+		await _fade_to(0.0)
+		return
+	var next := (load(scene_path) as PackedScene).instantiate()
+	host.add_child(next)
+	_reparent(player, next)
+	var old := _interior_root
+	_interior_root = next
+	if old != null and is_instance_valid(old):
+		old.queue_free()
+	var spawn := _find_in_group(next, &"interior_spawn")
+	if spawn != null:
+		(player as Node3D).global_transform = spawn.global_transform
+	Events.interior_entered.emit(scene_path)
+	await _fade_to(0.0)
+
+
+## The live interior scene root, or null when in the open world.
+func current_interior() -> Node:
+	return _interior_root if is_inside_interior() else null
+
+
 ## Removes the interior scene and restores the player to the outdoor world at
 ## the transform it had before `enter_interior` (its exact open-world spot).
 func exit_interior() -> void:
@@ -60,7 +103,10 @@ func exit_interior() -> void:
 	var player := get_tree().get_first_node_in_group(&"player")
 	var host := _host_node()
 	await _fade_to(1.0)
-	if player != null and host != null:
+	if not is_inside_interior():
+		await _fade_to(0.0)
+		return
+	if is_instance_valid(player) and is_instance_valid(host):
 		_reparent(player, host)
 		(player as Node3D).global_transform = _saved_transform
 	if _outdoor_world != null and is_instance_valid(_outdoor_world):

@@ -48,6 +48,10 @@ var mastery_levels: Dictionary = {}   # upgrade id (String) -> level (int)
 ## nobles Valette has talked to). Key is the flag name (String); value is
 ## free-form, usually `true`. See `set_dialogue_flag`/`get_dialogue_flag`.
 var dialogue_flags: Dictionary = {}
+## True once "The Lord Ruler" and the credits are done: the story is over and
+## the game continues as post-game free roam (every activity still open,
+## `MissionDirector` runs no story mission).
+var post_game: bool = false
 
 ## Last checkpoint reached.
 var last_checkpoint_id: StringName = &""
@@ -175,6 +179,7 @@ func reset_run() -> void:
 	mastery_points = 0
 	mastery_levels.clear()
 	dialogue_flags.clear()
+	post_game = false
 
 
 # --- Side activities ---------------------------------------------------------
@@ -294,6 +299,7 @@ func to_dict() -> Dictionary:
 		"mastery_points": mastery_points,
 		"mastery_levels": _stringname_keys_to_str(mastery_levels),
 		"dialogue_flags": dialogue_flags,
+		"post_game": post_game,
 	}
 
 
@@ -327,6 +333,7 @@ func from_dict(data: Dictionary) -> void:
 	mastery_points = data.get("mastery_points", 0)
 	mastery_levels = _str_keys_to_stringname(data.get("mastery_levels", {}))
 	dialogue_flags = data.get("dialogue_flags", {})
+	post_game = bool(data.get("post_game", false))
 	if version != SAVE_VERSION:
 		push_warning("GameState: loaded save version %d, current is %d" % [version, SAVE_VERSION])
 

@@ -250,25 +250,14 @@ func _on_settings() -> void:
 
 
 func _on_credits() -> void:
-	for c in _credits_popup.get_children():
-		c.queue_free()
-	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(520, 0)
-	box.add_theme_constant_override("separation", 8)
-	_credits_popup.add_child(box)
-	box.add_child(UIHelpers.heading_label("Credits"))
-	box.add_child(UIHelpers.dim_label(
-		"\"Mistborn: Ashes of Luthadel\" is an unofficial, non-commercial fan " +
-		"project. Mistborn, its characters, world and all related names are " +
-		"the property of Brandon Sanderson / Dragonsteel Entertainment. This " +
-		"project is not affiliated with or endorsed by them, and is made by " +
-		"fans for fans, free of charge."
-	))
-	box.add_child(UIHelpers.dim_label(
-		"Fonts: Cinzel and EB Garamond, licensed under the SIL Open Font " +
-		"License 1.1 (see assets/fonts/*-OFL.txt)."
-	))
-	var close_btn := UIHelpers.button("Close")
-	close_btn.pressed.connect(func(): _credits_popup.hide())
-	box.add_child(close_btn)
-	_credits_popup.popup_centered(Vector2i(560, 320))
+	# The same scrolling credits the finale rolls (disclaimer, tools, CC0/OFL
+	# assets), so there is one source of truth for them.
+	if get_tree().get_first_node_in_group(&"credits_screen") != null:
+		return
+	var credits := CreditsScreen.new()
+	add_child(credits)
+	credits.finished.connect(func() -> void:
+		if _first_button != null and is_instance_valid(_first_button):
+			_first_button.grab_focus()
+	)
+	credits.play()
