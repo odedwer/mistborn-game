@@ -106,19 +106,27 @@ func _build_background() -> void:
 func _build_horizon_glow(world: Node3D) -> void:
 	var glow := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(220.0, 34.0)
+	plane.size = Vector2(220.0, 60.0)
 	plane.orientation = PlaneMesh.FACE_Z
 	glow.mesh = plane
 	var tex := GradientTexture2D.new()
 	tex.width = 8
-	tex.height = 64
+	tex.height = 128
 	tex.fill = GradientTexture2D.FILL_LINEAR
-	tex.fill_from = Vector2(0.5, 1.0)
-	tex.fill_to = Vector2(0.5, 0.0)
+	tex.fill_from = Vector2(0.5, 0.0)
+	tex.fill_to = Vector2(0.5, 1.0)
+	# Both ends of the ramp are fully transparent, with the glow as a soft
+	# hump near the horizon (around the middle of the plane) -- rather than
+	# a ramp that peaks right at one edge of the mesh, which is what left a
+	# hard horizontal line where the plane's top edge met the sky.
 	var grad := Gradient.new()
 	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
-	grad.add_point(0.55, Color(0.5, 0.14, 0.05, 0.35))
-	grad.set_color(1, Color(0.7, 0.2, 0.07, 0.55))
+	grad.add_point(0.32, Color(0.35, 0.1, 0.04, 0.0))
+	grad.add_point(0.46, Color(0.5, 0.15, 0.06, 0.3))
+	grad.add_point(0.56, Color(0.65, 0.2, 0.07, 0.4))
+	grad.add_point(0.7, Color(0.4, 0.12, 0.05, 0.12))
+	grad.add_point(0.85, Color(0.2, 0.08, 0.04, 0.0))
+	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))
 	tex.gradient = grad
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = tex

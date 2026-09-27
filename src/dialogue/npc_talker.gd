@@ -127,9 +127,18 @@ func _build_visual() -> void:
 		label.text = display_name
 		label.position.y = height + 0.3
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		label.font_size = 40
-		label.outline_size = 8
-		label.modulate = Color(0.95, 0.95, 0.9, 0.9)
+		# The engine's default Label3D font plus an 8px outline (20% of the
+		# 40px font) rendered as garbled mush at typical talk range -- the
+		# outline was thick enough to eat the glyph strokes. Use the game's
+		# own body font (crisper at this size) and a much thinner outline.
+		var font_path := "res://assets/fonts/EBGaramond.ttf"
+		if ResourceLoader.exists(font_path):
+			label.font = load(font_path)
+		label.font_size = 56
+		label.outline_size = 3
+		label.pixel_size = 0.0065
+		label.modulate = Color(0.95, 0.95, 0.9, 0.95)
+		label.outline_modulate = Color(0.05, 0.05, 0.05, 0.9)
 		add_child(label)
 
 

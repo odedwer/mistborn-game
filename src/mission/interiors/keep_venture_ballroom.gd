@@ -43,6 +43,27 @@ func _ready() -> void:
 		add_child((load(bar_scene) as PackedScene).instantiate())
 
 
+## Grainy, darkened plaster for the hall's walls/ceiling -- textured and
+## dimmed so surfaces near the spawn camera (the entrance jambs) don't blow
+## out to white the way a flat, pale StandardMaterial3D did.
+func _plaster_wall_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.24, 0.225, 0.21)
+	var albedo_path := "res://assets/textures/plaster_dirty_albedo.png"
+	var normal_path := "res://assets/textures/plaster_dirty_normal.png"
+	var rough_path := "res://assets/textures/plaster_dirty_roughness.png"
+	if ResourceLoader.exists(albedo_path):
+		mat.albedo_texture = load(albedo_path)
+		mat.uv1_scale = Vector3(3.0, 3.0, 1.0)
+	if ResourceLoader.exists(normal_path):
+		mat.normal_enabled = true
+		mat.normal_texture = load(normal_path)
+	if ResourceLoader.exists(rough_path):
+		mat.roughness_texture = load(rough_path)
+	mat.roughness = 0.85
+	return mat
+
+
 func _build_hall() -> void:
 	var floor_mat := StandardMaterial3D.new()
 	floor_mat.albedo_color = Color(0.55, 0.5, 0.45)
@@ -60,8 +81,11 @@ func _build_hall() -> void:
 	floor_body.position = Vector3(0, -0.2, 0)
 	add_child(floor_body)
 
-	var wall_mat := StandardMaterial3D.new()
-	wall_mat.albedo_color = Color(0.42, 0.4, 0.4)
+	# Textured plaster instead of a flat pale colour: a flat StandardMaterial3D
+	# at this brightness reads as blown-out white the moment any light hits
+	# it head-on -- the entrance jambs sit right next to the spawn camera.
+	# The grain and a darker base tone keep it readable up close.
+	var wall_mat := _plaster_wall_material()
 	var half_x := HALL_SIZE.x * 0.5
 	var half_z := HALL_SIZE.z * 0.5
 	var door_half_w := 1.4
