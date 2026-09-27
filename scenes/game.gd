@@ -16,6 +16,7 @@ const MISSION_COMPLETE_SCENE := "res://src/ui/mission_complete.tscn"
 const DEATH_SCENE := "res://src/ui/death_screen.tscn"
 const ACTIVITY_MANAGER_SCRIPT := "res://src/mission/activities/activity_manager.gd"
 const CROWD_SCRIPT := "res://src/world/crowd/crowd_system.gd"
+const FAST_TRAVEL_SCRIPT := "res://src/world/fast_travel_manager.gd"
 
 var world: Node3D
 var enemy_spawner: Node
@@ -36,6 +37,7 @@ func _ready() -> void:
 	_add_ui()
 	_add_mission_director()
 	_add_activity_manager()
+	_add_fast_travel_manager()
 
 
 ## A streamed world chunk loaded: populate its enemies and pickups.
@@ -213,4 +215,13 @@ func _add_activity_manager() -> void:
 	var manager := Node.new()
 	manager.set_script(load(ACTIVITY_MANAGER_SCRIPT))
 	manager.name = "ActivityManager"
+	add_child(manager)
+
+
+func _add_fast_travel_manager() -> void:
+	if not ResourceLoader.exists(FAST_TRAVEL_SCRIPT):
+		return
+	var manager := Node.new()
+	manager.set_script(load(FAST_TRAVEL_SCRIPT))
+	manager.name = "FastTravelManager"
 	add_child(manager)

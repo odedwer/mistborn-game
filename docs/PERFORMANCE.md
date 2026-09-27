@@ -40,6 +40,39 @@ In the soak (`tools/soak.sh 3000`), the bot flies around, throws 570 coins, keep
 - opening the pause menu (map/journal rebuild, 50–75 ms, UI only, while paused);
 - a teleport across the city (deliberately instant; excluded from the stops).
 
+## City-wide content re-measurement
+
+After bringing the merchant, noble, docks, market and kredik_shaw districts up
+to the slice's anchor-density standard, streaming activity beacons/rings per
+chunk, and adding ~40 collectibles and city-wide activities/safehouses (see
+docs/OPEN_WORLD.md), the soak route was extended
+(`tests/soak_bot.gd` `STOPS`) with three stops outside the slice — merchant
+(`-1200,30,-1000`), noble (`100,30,-1550`) and docks (`900,30,400`) — and run
+for 4200 frames (`tools/soak.sh 4200`):
+
+| Stop (district) | avg process / avg physics / avg CPU (ms) | max frame (ms) |
+|---|---|---|
+| merchant (`-1200,-1000`) | 2.56 / 4.80 / 7.37 | 65.0 |
+| noble (`100,-1550`) | 1.99 / 4.62 / 6.62 | 42.6 |
+| docks (`900,400`) | 1.03 / 4.55 / 5.58 | 38.7 |
+
+These are in the same range as the existing slice stops (3.9–7.7 ms average
+CPU) — the extra districts don't cost more per frame than the slice does.
+0 errors and 0 warnings over the full 4200-frame run; the only max-frame
+outlier (374.7 ms) is the deliberately-instant teleport back to spawn after
+the docks stop, same class of excluded hitch as before. Anchor density per
+district type is now also covered by a dedicated test
+(`tests/test_district_generation.gd`), measured at seed 1337:
+
+| District type | anchors / 100 sq m |
+|---|---|
+| skaa_slums (slice baseline) | 0.42 |
+| merchant | 0.66 |
+| noble | 0.76 |
+| market | 0.81 |
+| docks | 0.65 |
+| kredik_shaw (bare approach grounds by design) | 0.07 |
+
 ## What was fixed
 
 | Area | Problem | Fix |

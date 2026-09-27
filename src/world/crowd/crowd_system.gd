@@ -25,8 +25,8 @@ const SKAA_KINDS: Array[StringName] = [&"skaa_man", &"skaa_woman"]
 const OBLIGATOR_KINDS: Array[StringName] = [&"obligator", &"obligator_2"]
 ## district type -> [agents per chunk, obligator share]
 const DENSITY := {
-	&"skaa_slums": [7, 0.08], &"docks": [6, 0.1], &"market": [8, 0.18], &"merchant": [5, 0.25],
-	&"noble": [3, 0.4],
+	&"skaa_slums": [7, 0.08], &"docks": [6, 0.1], &"market": [8, 0.18], &"merchant": [6, 0.28],
+	&"noble": [4, 0.55],
 }
 const DEFAULT_DENSITY := [5, 0.12]
 

@@ -17,7 +17,7 @@ These are visual and feel issues found by reviewing screenshots. They're queued 
 
 ## Feel
 - **Race rings and pursuit paths** are authored as offsets from their start marker, and some may clip buildings. Validate them against the geometry.
-- **Activity nodes** (rings, beacons) are parented to the root instead of their streamed chunk. That's fine for the slice district, but they need to stream at full-city scale.
+- **Fixed.** Activity beacons/rings/pursuit runners/ambush spawns/riot members now stream with their own chunk (`ActivityManager._activity_parent`), like the enemies and pickups in `scenes/game.gd`; a running activity's start chunk is pinned (`WorldStreamer.pin`/`unpin`) so it can't unload mid-race. Progress/records live in `GameState`, not on the node, so nothing is lost across an unload. See `tests/test_open_world_content.gd`.
 
 ## Engine
 - **Freed-object error during tests**. The suite prints one "Trying to cast a freed object" error from `scene_transition.gd` during the SceneTransition tests.

@@ -51,6 +51,10 @@ var _baking: Array[ChunkInstancer] = []
 var _bake_queue: Array[ChunkInstancer] = []
 ## Prebuilt data (landmarks computed for the marker index), consumed on load.
 var _prebuilt: Dictionary = {}
+## key -> pin count. A pinned unit is never unloaded (e.g. a running open-world
+## activity keeps its start chunk resident while it plays out), even far past
+## `unload_radius`. See `pin`/`unpin`.
+var _pinned: Dictionary = {}
 var _timer := 0.0
 var _player: Node3D
 var _range: Rect2i
@@ -265,7 +269,7 @@ func _update_wanted() -> void:
 	var keep := wanted_units(p, unload_radius)
 	var drop: Array = []
 	for k: String in _units.keys():
-		if not keep.has(k):
+		if not keep.has(k) and not _pinned.has(k):
 			var inst: ChunkInstancer = _units[k]
 			if not inst.is_done():
 				_unload(k)  # never finished building: cheap, drop now
@@ -372,6 +376,20 @@ func _exit_tree() -> void:
 ## Returns the instancer for a loaded unit (or null).
 func get_unit(key: String) -> ChunkInstancer:
 	return _units.get(key)
+
+
+## Keeps `key` loaded regardless of distance until a matching `unpin` (counted,
+## so overlapping pins from different callers don't race each other).
+func pin(key: String) -> void:
+	_pinned[key] = int(_pinned.get(key, 0)) + 1
+
+
+func unpin(key: String) -> void:
+	var n := int(_pinned.get(key, 0)) - 1
+	if n <= 0:
+		_pinned.erase(key)
+	else:
+		_pinned[key] = n
 
 
 func unit_count() -> int:

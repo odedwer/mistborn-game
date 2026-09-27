@@ -20,7 +20,10 @@ const GAME_SCENE := "res://scenes/game.tscn"
 ## Route stops (objective ids, or "@x,y,z" for raw positions).
 const STOPS: Array[String] = ["spawn", "rooftop_lesson_2", "cp_1", "cp_2", "cp_3", "keep_courtyard",
 		"ledger", "extraction", "@-600,30,250", "@-420,30,-150", "cp_2", "keep_courtyard", "spawn",
-		"cp_1", "extraction", "@300,30,-600"]
+		"cp_1", "extraction", "@300,30,-600",
+		# Cross into the merchant, noble and docks districts (city-wide content
+		# and fast-travel safehouses), not just the vertical-slice skaa quarter.
+		"@-1200,30,-1000", "@100,30,-1550", "@900,30,400", "spawn"]
 
 
 class ErrorCatcher:

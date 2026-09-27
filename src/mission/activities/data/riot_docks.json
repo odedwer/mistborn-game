@@ -1,0 +1,14 @@
+{
+	"id": "riot_docks",
+	"type": "crowd_riot",
+	"title": "Dockworkers' Unrest",
+	"start_marker": "riot_docks",
+	"params": {
+		"start_mood": 78.0,
+		"calm_threshold": 25.0,
+		"member_count": 6,
+		"spawn_radius": 7.0,
+		"time_limit": 34.0
+	},
+	"rewards": {"coins": 50, "vials": 1, "mastery_points": 1}
+}

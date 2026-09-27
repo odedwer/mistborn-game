@@ -5,6 +5,7 @@ extends CanvasLayer
 var _root: Control
 var _tabs: TabContainer
 var _map: MapView
+var _fast_travel_list: VBoxContainer
 var _journal_list: VBoxContainer
 var _skills_list: VBoxContainer
 var _settings_instance: CanvasLayer
@@ -64,6 +65,7 @@ func set_paused(paused: bool) -> void:
 	Events.pause_toggled.emit(paused)
 	if paused:
 		_refresh_map()
+		_refresh_fast_travel()
 		_refresh_journal()
 		_refresh_skills()
 		_refresh_controls()
@@ -102,18 +104,59 @@ func _build_ui() -> void:
 	vbox.add_child(_tabs)
 
 	_tabs.add_child(_build_menu_tab())
-	_map = MapView.new()
-	_map.name = "Map"
-	_map.custom_minimum_size = Vector2(1160, 700)
-	_map.waypoint_picked.connect(_on_waypoint_picked)
-	_map.waypoint_cleared.connect(_on_waypoint_cleared)
-	_tabs.add_child(_map)
+	_tabs.add_child(_build_map_tab())
 	_tabs.add_child(_build_journal_tab())
 	_tabs.add_child(_build_skills_tab())
 	_tabs.add_child(_build_controls_tab())
 
 	_slot_popup = PopupPanel.new()
 	add_child(_slot_popup)
+
+
+## The map plus a "Fast Travel" list of unlocked crew safehouses beside it.
+func _build_map_tab() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "Map"  # the tab title comes from the tab root's name
+	row.add_theme_constant_override("separation", 12)
+
+	_map = MapView.new()
+	_map.custom_minimum_size = Vector2(920, 700)
+	_map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_map.waypoint_picked.connect(_on_waypoint_picked)
+	_map.waypoint_cleared.connect(_on_waypoint_cleared)
+	row.add_child(_map)
+
+	var side := VBoxContainer.new()
+	side.custom_minimum_size = Vector2(230, 700)
+	side.add_theme_constant_override("separation", 6)
+	side.add_child(UIHelpers.heading_label("Fast Travel"))
+	_fast_travel_list = VBoxContainer.new()
+	_fast_travel_list.add_theme_constant_override("separation", 4)
+	side.add_child(_fast_travel_list)
+	row.add_child(side)
+	return row
+
+
+func _refresh_fast_travel() -> void:
+	for c in _fast_travel_list.get_children():
+		c.queue_free()
+	var ft := get_tree().get_first_node_in_group(&"fast_travel_manager")
+	var list: Array = ft.call("unlocked_list") if ft != null and ft.has_method("unlocked_list") else []
+	if list.is_empty():
+		_fast_travel_list.add_child(UIHelpers.dim_label("No safehouses found yet."))
+		return
+	for entry: Dictionary in list:
+		var btn := UIHelpers.button(str(entry.get("name", "")))
+		btn.pressed.connect(_on_fast_travel_chosen.bind(entry.get("id", &"")))
+		_fast_travel_list.add_child(btn)
+
+
+func _on_fast_travel_chosen(sid: StringName) -> void:
+	var ft := get_tree().get_first_node_in_group(&"fast_travel_manager")
+	if ft == null:
+		return
+	set_paused(false)
+	ft.call("travel_to", sid)
 
 
 func _build_menu_tab() -> Control:

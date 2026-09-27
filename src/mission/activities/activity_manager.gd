@@ -23,6 +23,17 @@ extends Node
 ##
 ## Lifecycle methods below are called both by real 3D triggers/collisions and
 ## directly by tests, so the logic is exercised without needing physics.
+##
+## Streaming: start-trigger beacons are parented to their marker's own
+## streamed chunk (like `CrowdSystem` pedestrians and the pickups spawned in
+## `scenes/game.gd`), so they exist only while that chunk is loaded and are
+## rebuilt from `markers_spawned` when it streams back in. `GameState`
+## (`activity_records`, `collectibles`) is the actual source of truth for
+## progress, not the node, so nothing is lost when a chunk unloads. While an
+## activity is *running*, its rings/thief/enemies are parented to the start
+## chunk too, but that chunk is pinned (`WorldStreamer.pin`) for the duration
+## so it can't unload out from under a race in progress; the pin is released
+## in `_cleanup`.
 
 signal activity_started(id: StringName)
 signal activity_completed(id: StringName, medal: StringName, elapsed: float)
@@ -87,6 +98,48 @@ func _find_world_node() -> Node:
 	return get_tree().get_first_node_in_group(&"world")
 
 
+## The chunk key + node containing `pos`, if that chunk is loaded (streaming
+## world) — else [`""`, `null`], so callers fall back to the tree root.
+func _chunk_at(pos: Vector3) -> Array:
+	var world := _find_world_node()
+	if world == null or not ("plan" in world) or world.plan == null or not ("streamer" in world) or world.streamer == null:
+		return ["", null]
+	var key: String = ChunkGenerator.chunk_key(world.plan.chunk_of(Vector2(pos.x, pos.z)))
+	var inst = world.streamer.get_unit(key)
+	if inst == null or inst.root == null or not is_instance_valid(inst.root):
+		return ["", null]
+	return [key, inst.root]
+
+
+## Parent node for a start/runtime node at `pos`: the owning chunk if loaded
+## (so it streams and unloads with it), else the tree root as a fallback
+## (tests, or a marker whose chunk isn't resident).
+func _activity_parent(pos: Vector3) -> Node:
+	var found: Array = _chunk_at(pos)
+	return found[1] if found[1] != null else get_tree().root
+
+
+## Keeps the chunk under `pos` loaded for the lifetime of a running activity
+## (a race/ambush in progress must not have its start chunk stream out from
+## under it). Returns the pinned key, or "" if there was nothing to pin.
+func _pin_chunk(pos: Vector3) -> String:
+	var world := _find_world_node()
+	var found: Array = _chunk_at(pos)
+	var key: String = found[0]
+	if key != "" and world != null and "streamer" in world and world.streamer != null:
+		world.streamer.pin(key)
+		return key
+	return ""
+
+
+func _unpin_chunk(key: String) -> void:
+	if key == "":
+		return
+	var world := _find_world_node()
+	if world != null and "streamer" in world and world.streamer != null:
+		world.streamer.unpin(key)
+
+
 func _on_markers_spawned(nodes: Array) -> void:
 	var starts: Array = []
 	var collectibles: Array = []
@@ -100,39 +153,33 @@ func _on_markers_spawned(nodes: Array) -> void:
 	for m in starts:
 		_add_trigger_for_marker(m)
 	_spawn_collectibles(collectibles)
+	# Beacons are freed with their chunk (they're parented to it); drop the
+	# stale references so `_start_triggers` doesn't grow forever as chunks
+	# stream in and out.
+	var live: Array[Area3D] = []
+	for a in _start_triggers:
+		if is_instance_valid(a):
+			live.append(a)
+	_start_triggers = live
 
 
 func _build_start_triggers() -> void:
+	# Only for chunks already resident at startup (near spawn); everywhere
+	# else, a beacon is built when its chunk streams in (`_on_markers_spawned`)
+	# and freed with it when it streams back out — `start_marker_position`
+	# still resolves a citywide position via the marker index either way, so
+	# the map/journal can point at an activity that isn't loaded right now.
 	for m in get_tree().get_nodes_in_group(&"activity_start"):
 		_add_trigger_for_marker(m)
-	# Markers in unloaded chunks still report their position via the marker
-	# index, so a beacon/trigger exists city-wide even before streaming in.
-	var world := _find_world_node()
-	if world == null or not world.has_method("get_marker_data"):
-		return
-	var live_ids := {}
-	for m in get_tree().get_nodes_in_group(&"activity_start"):
-		live_ids[str(m.get_meta("activity_id", ""))] = true
-	for entry: Dictionary in world.call("get_marker_data", &"activity_start"):
-		var meta: Dictionary = entry.get("meta", {})
-		var aid := str(meta.get("activity_id", ""))
-		if aid == "" or live_ids.has(aid):
-			continue
-		_add_trigger_at(StringName(aid), entry.get("position", Vector3.INF))
 
 
 func _add_trigger_for_marker(marker: Node) -> void:
 	if not (marker is Node3D):
 		return
 	var aid: StringName = marker.get_meta("activity_id", &"")
-	if aid == &"":
+	if aid == &"" or not activities.has(aid):
 		return
-	_add_trigger_at(aid, (marker as Node3D).global_position)
-
-
-func _add_trigger_at(aid: StringName, pos: Vector3) -> void:
-	if pos == Vector3.INF or not activities.has(aid):
-		return
+	var pos := (marker as Node3D).global_position
 	var area := Area3D.new()
 	area.collision_layer = 0
 	area.collision_mask = 1 << 1  # "player" physics layer
@@ -142,7 +189,10 @@ func _add_trigger_at(aid: StringName, pos: Vector3) -> void:
 	sphere.radius = TRIGGER_RADIUS
 	shape.shape = sphere
 	area.add_child(shape)
-	get_tree().root.add_child(area)
+	# Streams with the marker's own chunk (see the class doc comment), instead
+	# of living forever under the tree root.
+	var parent: Node = marker.get_parent() if marker.get_parent() != null else get_tree().root
+	parent.add_child(area)
 	area.global_position = pos
 	area.body_entered.connect(_on_trigger_entered.bind(aid))
 	_start_triggers.append(area)
@@ -183,6 +233,9 @@ func start_activity(id: StringName, override_pos: Vector3 = Vector3.INF) -> bool
 			_start_crowd_riot(a, pos)
 		_:
 			return false
+	# Pin the start chunk for the duration: its nodes are parented to it (see
+	# `_activity_parent`), and it must not stream out mid-activity.
+	_active[id]["pin_key"] = _pin_chunk(pos)
 	Events.hint_requested.emit(a.title, 3.0)
 	activity_started.emit(id)
 	return true
@@ -263,6 +316,7 @@ func _cleanup(id: StringName) -> void:
 	for n in st.get("nodes", []):
 		if is_instance_valid(n):
 			n.queue_free()
+	_unpin_chunk(str(st.get("pin_key", "")))
 	_active.erase(id)
 	_cooldowns[id] = START_COOLDOWN
 
@@ -273,9 +327,10 @@ func _start_coin_race(a: ActivityData, start_pos: Vector3) -> void:
 	var offsets: Array = a.params.get("ring_offsets", [])
 	var rings: Array[Node3D] = []
 	var nodes: Array = []
+	var parent := _activity_parent(start_pos)
 	for off: Array in offsets:
 		var pos := start_pos + Vector3(float(off[0]), float(off[1]), float(off[2]))
-		var ring := _make_ring(pos)
+		var ring := _make_ring(pos, parent)
 		nodes.append(ring)
 		rings.append(ring)
 	_active[a.id] = {"type": "coin_race", "elapsed": 0.0, "nodes": nodes, "ring_index": 0, "rings": rings}
@@ -284,7 +339,7 @@ func _start_coin_race(a: ActivityData, start_pos: Vector3) -> void:
 		area.body_entered.connect(_on_ring_entered.bind(a.id, i))
 
 
-func _make_ring(pos: Vector3) -> Area3D:
+func _make_ring(pos: Vector3, parent: Node) -> Area3D:
 	var area := Area3D.new()
 	area.collision_layer = 0
 	area.collision_mask = 1 << 1
@@ -306,7 +361,7 @@ func _make_ring(pos: Vector3) -> Area3D:
 	mat.emission_energy_multiplier = 1.6
 	mesh.material_override = mat
 	area.add_child(mesh)
-	get_tree().root.add_child(area)
+	parent.add_child(area)
 	area.global_position = pos
 	return area
 
@@ -335,7 +390,7 @@ func _start_pursuit(a: ActivityData, start_pos: Vector3) -> void:
 	var thief := ThiefRunner.new()
 	thief.speed = float(a.params.get("thief_speed", 6.0))
 	thief.path = path
-	get_tree().root.add_child(thief)
+	_activity_parent(start_pos).add_child(thief)
 	thief.global_position = path[0] if not path.is_empty() else start_pos
 	_active[a.id] = {"type": "rooftop_pursuit", "elapsed": 0.0, "nodes": [thief], "thief": thief}
 
@@ -348,12 +403,13 @@ func _start_ambush(a: ActivityData, start_pos: Vector3) -> void:
 	var spawner := get_tree().get_first_node_in_group(&"enemy_spawner")
 	var spawned: Array = []
 	var nodes: Array = []
+	var parent := _activity_parent(start_pos)
 	if spawner != null and spawner.has_method("spawn_type"):
 		for i in types.size():
 			var ang := TAU * float(i) / maxf(float(types.size()), 1.0)
 			var pos := start_pos + Vector3(cos(ang), 0.0, sin(ang)) * radius
 			var marker := Marker3D.new()
-			get_tree().root.add_child(marker)
+			parent.add_child(marker)
 			marker.global_position = pos
 			var enemy: Node = spawner.call("spawn_type", StringName(types[i]), marker)
 			marker.queue_free()
@@ -380,18 +436,19 @@ func _on_ambush_enemy_died(_killer: Node, id: StringName, enemy: Node) -> void:
 # --- Crowd riot (Act II) -----------------------------------------------------
 
 func _start_crowd_riot(a: ActivityData, start_pos: Vector3) -> void:
+	var parent := _activity_parent(start_pos)
 	var meter := CrowdMoodMeter.new()
 	# A riot in progress: no drift back to "neutral" here, it either gets
 	# soothed down for good or stays boiling until the time limit runs out.
 	meter.drift_per_sec = 0.0
-	get_tree().root.add_child(meter)
+	parent.add_child(meter)
 	meter.mood = float(a.params.get("start_mood", 80.0))
 	var nodes: Array = [meter]
 	var count := int(a.params.get("member_count", 5))
 	var radius := float(a.params.get("spawn_radius", 6.0))
 	for i in count:
 		var member := CrowdMember.new()
-		get_tree().root.add_child(member)
+		parent.add_child(member)
 		var ang := TAU * float(i) / maxf(float(count), 1.0)
 		member.global_position = start_pos + Vector3(cos(ang), 0.0, sin(ang)) * radius
 		nodes.append(member)

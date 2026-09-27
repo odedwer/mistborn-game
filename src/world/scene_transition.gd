@@ -118,6 +118,33 @@ func current_interior() -> Node:
 	return _interior_root if is_inside_interior() else null
 
 
+## Fast-travels the player to `world_pos` in the open world: fades to black,
+## streams the ground under `world_pos` in synchronously (so the player never
+## drops through unloaded geometry), teleports, then fades back in. No-op
+## while inside an interior or with no player/world present.
+func fast_travel_to(world_pos: Vector3) -> bool:
+	if is_inside_interior():
+		return false
+	var player := get_tree().get_first_node_in_group(&"player")
+	var world := get_tree().get_first_node_in_group(&"world")
+	if player == null or world == null:
+		return false
+	busy = true
+	await _fade_to(1.0)
+	if not is_instance_valid(player) or not is_instance_valid(world) or is_inside_interior():
+		busy = false
+		await _fade_to(0.0)
+		return false
+	if "streamer" in world and world.streamer != null:
+		world.streamer.load_now(world_pos, world.streamer.load_radius)
+	(player as Node3D).global_position = world_pos + Vector3(0.0, 1.0, 0.0)
+	if player.has_method("reset_velocity"):
+		player.call("reset_velocity")
+	busy = false
+	await _fade_to(0.0)
+	return true
+
+
 ## Removes the interior scene and restores the player to the outdoor world at
 ## the transform it had before `enter_interior` (its exact open-world spot).
 func exit_interior() -> void:

@@ -21,12 +21,17 @@ static func build(plan: CityPlan, seed_value: int, lm: CityPlan.Landmark) -> Chu
 			_kredik_shaw(data, lm, seed_value)
 		&"fountain_square":
 			_fountain_square(data, lm, seed_value)
-		&"shop", &"hideout":
+		&"shop", &"hideout", &"safehouse":
 			_house(data, lm, seed_value)
 		&"dock":
 			_dock(data, lm, plan)
 	if not lm.type in [&"keep"]:
 		data.add_marker(&"landmark", Vector3(lm.center.x, 0.05, lm.center.y), {"landmark_id": lm.id})
+	if lm.type == &"safehouse":
+		# Crew safehouse: walking in range unlocks fast travel here (see
+		# `FastTravelManager`). The trigger streams with this landmark unit.
+		data.add_marker(&"fast_travel_point", Vector3(lm.center.x, 0.05, lm.center.y),
+				{"safehouse_id": lm.id, "safehouse_name": lm.display_name})
 	return data
 
 

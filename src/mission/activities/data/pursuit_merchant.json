@@ -1,0 +1,14 @@
+{
+	"id": "pursuit_merchant",
+	"type": "rooftop_pursuit",
+	"title": "Rooftop Pursuit: Ledger Thief",
+	"start_marker": "pursuit_merchant",
+	"params": {
+		"path_offsets": [[0, 0, 0], [16, 1, 12], [32, 3, 24], [22, 5, 44], [4, 2, 58], [-14, 0, 68]],
+		"thief_speed": 5.8,
+		"catch_distance": 3.0,
+		"time_limit": 42.0,
+		"medals": {"gold": 17.0, "silver": 27.0, "bronze": 37.0}
+	},
+	"rewards": {"coins": 65, "vials": 1, "mastery_points": 1}
+}

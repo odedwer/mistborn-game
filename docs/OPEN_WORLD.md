@@ -18,7 +18,7 @@ lives in `src/world/`.
 | `canals` | Axis-aligned water rectangles with quay width and water/bed heights. |
 | `districts` | Polygons with a `type`. The first match wins; `default_district` covers the rest. Anything outside the wall is `outside`. |
 | `styles` | Generator parameters per district type: block/street sizes, floors, lot sizes, roof mix, wall materials, soot tint, lit-window/bar/lantern ratios, lamp spacing, prop density, plazas, chimneys and rooftop metal. |
-| `landmarks` | Hand-placed set pieces with a reserved `footprint`: Keep Venture, Kredik Shaw, Keeps Hasting, Lekal, Elariel, Tekiel and Erikeller, Fountain Square, Clubs' shop, the crew hideout, and the extraction dock. |
+| `landmarks` | Hand-placed set pieces with a reserved `footprint`: Keep Venture, Kredik Shaw, Keeps Hasting, Lekal, Elariel, Tekiel and Erikeller, Fountain Square, Clubs' shop, the crew hideout, the extraction dock, and four `type: "safehouse"` fast-travel points (merchant, noble, docks, skaa). |
 | `markers` | Mission anchors: `player_spawn`, objectives, checkpoints, enemy spawns, pickups. Each one has a `placement` of `rooftop`, `lamp`, `street` or `patrol`, and the generator resolves it against the real layout. |
 
 To add a district, add a polygon and a style. To add a set piece, add a
@@ -100,10 +100,49 @@ Buildings are projected obstructions, so there are no nav islands inside them. F
 
 The city spans about ±2.7 km. At 2.7 km, 32-bit float precision is about 0.25 mm, which is fine for physics and rendering. If the world ever grows past about 8–10 km, add origin shifting: re-centre the player and every loaded unit root on chunk boundaries. Chunk roots already sit at the world origin with world-space vertices, so a shift only has to offset the units root and the far-LOD node.
 
+## Side content and activity streaming
+
+Side activities (`src/mission/activities/`) live everywhere in the city now,
+not just the slice: `luthadel_plan.json`'s `markers` carry `activity_start`
+and `collectible_spawn` entries across the skaa slums, merchant, noble, docks
+and market districts (about 40 atium beads/crew notes city-wide, original
+lore text in `collectibles.json`), and every major district has at least one
+instance of each activity type it makes narrative sense for.
+
+`ActivityManager`'s beacons (and, while an activity is running, its
+rings/thief/ambush spawns/riot members) are parented to their own streamed
+chunk, exactly like the enemies and pickups spawned in `scenes/game.gd`: they
+exist only while that chunk is loaded, and are rebuilt from `markers_spawned`
+when it streams back in. A *running* activity additionally pins its start
+chunk (`WorldStreamer.pin`/`unpin`) so a race in progress can't have its own
+ground stream out from under it. Progress and results (`GameState`'s
+`activity_records`/`collectibles`) are keyed by id, not by node, so nothing is
+lost across an unload — see `tests/test_open_world_content.gd`.
+
+Ambient crowds (`src/world/crowd/crowd_system.gd`) scale per district:
+skaa/docks are mostly skaa pedestrians, noble is majority-obligator (a
+stand-in for "obligator patrols" — there's no day/night cycle to gate a
+literal night-only patrol on), and a couple of `enemy_spawn`/`patrol` guard
+markers reinforce the keep ring. See `CrowdSystem.DENSITY`.
+
+## Fast travel
+
+Four crew safehouses (`type: "safehouse"` landmarks: `safehouse_merchant`,
+`safehouse_noble`, `safehouse_docks`, `safehouse_skaa`) double as fast-travel
+points. `FastTravelManager` (`src/world/fast_travel_manager.gd`, added
+alongside the other per-game systems in `scenes/game.gd`) builds a streamed
+trigger at each safehouse's `fast_travel_point` marker; walking into range
+unlocks it via `GameState.discover_safehouse` (persisted in saves). The pause
+menu's Map tab lists unlocked safehouses next to the map; picking one calls
+`FastTravelManager.travel_to`, which hands off to
+`SceneTransition.fast_travel_to` — fades to black, streams the destination
+chunk in synchronously (`WorldStreamer.load_now`), teleports the player, then
+fades back in.
+
 ## Remaining work / ideas
 
 - Interiors beyond the gatehouse office, Kredik Shaw's interior and the other keeps' courtyards.
 - Persisting the state of loose props per chunk. They currently reset on reload.
-- Ambient patrols per district (the style hook exists; they are disabled so the slice's enemy count stays controlled).
-- Distinct generator styles for the merchant and noble districts: facade ornaments, gardens and wider avenues.
+- A real day/night cycle, so noble obligator patrols (and other time-gated content) can be literal rather than a density skew.
+- Facade ornaments and hero set-pieces (statues, guild signage) beyond the block/lot generator's material and roof-mix knobs.
 - HLOD for the mid-range. Chunks currently switch from full detail straight to far-LOD boxes.

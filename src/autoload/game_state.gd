@@ -49,6 +49,11 @@ var activity_records: Dictionary = {}
 var mastery_points: int = 0
 var mastery_levels: Dictionary = {}   # upgrade id (String) -> level (int)
 
+## Crew safehouses discovered so far (fast-travel destinations), safehouse id
+## (String) -> true. Discovered by walking into its "fast_travel_point" world
+## marker (`FastTravelManager`); used from the map to fast-travel.
+var discovered_safehouses: Dictionary = {}
+
 ## Act I story flags set by dialogue choices and mission actions (e.g. which
 ## nobles Valette has talked to). Key is the flag name (String); value is
 ## free-form, usually `true`. See `set_dialogue_flag`/`get_dialogue_flag`.
@@ -186,6 +191,7 @@ func reset_run() -> void:
 	mastery_levels.clear()
 	dialogue_flags.clear()
 	post_game = false
+	discovered_safehouses.clear()
 
 
 # --- Side activities ---------------------------------------------------------
@@ -223,6 +229,21 @@ func _grant_rewards(rewards: Dictionary) -> void:
 		player.call("add_pickup", &"coins", float(rewards["coins"]))
 	if rewards.has("vials") and player.has_method("add_pickup"):
 		player.call("add_pickup", &"vial", float(rewards["vials"]))
+
+
+## Marks safehouse `id` discovered (idempotent) and returns true the first
+## time it is found (so the caller can show a "fast travel unlocked" hint).
+func discover_safehouse(id: StringName) -> bool:
+	var key := String(id)
+	if discovered_safehouses.get(key, false):
+		return false
+	discovered_safehouses[key] = true
+	autosave()
+	return true
+
+
+func is_safehouse_unlocked(id: StringName) -> bool:
+	return discovered_safehouses.get(String(id), false)
 
 
 ## Marks `id` found (idempotent) and returns true the first time it is found.
@@ -315,6 +336,7 @@ func to_dict() -> Dictionary:
 		"mastery_levels": _stringname_keys_to_str(mastery_levels),
 		"dialogue_flags": dialogue_flags,
 		"post_game": post_game,
+		"discovered_safehouses": discovered_safehouses,
 	}
 
 
@@ -350,6 +372,7 @@ func from_dict(data: Dictionary) -> void:
 	mastery_levels = _str_keys_to_stringname(data.get("mastery_levels", {}))
 	dialogue_flags = data.get("dialogue_flags", {})
 	post_game = bool(data.get("post_game", false))
+	discovered_safehouses = data.get("discovered_safehouses", {})
 	if version != SAVE_VERSION:
 		push_warning("GameState: loaded save version %d, current is %d" % [version, SAVE_VERSION])
 

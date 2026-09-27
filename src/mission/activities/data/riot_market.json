@@ -1,0 +1,14 @@
+{
+	"id": "riot_market",
+	"type": "crowd_riot",
+	"title": "Market Unrest",
+	"start_marker": "riot_market",
+	"params": {
+		"start_mood": 75.0,
+		"calm_threshold": 25.0,
+		"member_count": 5,
+		"spawn_radius": 6.0,
+		"time_limit": 32.0
+	},
+	"rewards": {"coins": 45, "vials": 1, "mastery_points": 1}
+}
