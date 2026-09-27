@@ -48,50 +48,13 @@ func _build_background() -> void:
 	_build_horizon_glow(world)
 	_build_skyline(world)
 
-	# Drifting mist: a slow GPUParticles3D field of soft, depth-faded puffs
-	# (the soft_particle sprite + a shader that fades a puff out rather than
-	# cutting a hard quad edge into the skyline/ground).
-	var mist := GPUParticles3D.new()
-	mist.amount = 90
-	mist.lifetime = 14.0
-	mist.position = Vector3(0, -2, -20)
-	var pm := ParticleProcessMaterial.new()
-	pm.direction = Vector3(1, 0, 0)
-	pm.spread = 20.0
-	pm.initial_velocity_min = 0.25
-	pm.initial_velocity_max = 0.7
-	pm.gravity = Vector3.ZERO
-	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	pm.emission_box_extents = Vector3(24, 7, 24)
-	pm.scale_min = 5.0
-	pm.scale_max = 11.0
-	pm.color = Color(1.0, 1.0, 1.0, 1.0)
-	mist.process_material = pm
-	var quad := QuadMesh.new()
-	quad.size = Vector2(1, 1)
-	mist.draw_pass_1 = quad
-	var soft_tex: Texture2D = load("res://assets/textures/soft_particle.png") if ResourceLoader.exists("res://assets/textures/soft_particle.png") else _soft_circle_texture()
-	var soft_shader := "res://assets/shaders/soft_mist_particle.gdshader"
-	# The depth-fade shader needs a depth prepass, which only Forward+
-	# provides; on Compatibility (mobile/GL) fall back to a plain additive
-	# billboard material so the mist still renders instead of vanishing.
-	var is_compat := RenderingServer.get_current_rendering_method() == "gl_compatibility"
-	if not is_compat and ResourceLoader.exists(soft_shader):
-		var mist_mat := ShaderMaterial.new()
-		mist_mat.shader = load(soft_shader)
-		mist_mat.set_shader_parameter("albedo_tex", soft_tex)
-		mist_mat.set_shader_parameter("tint", Vector3(0.5, 0.51, 0.57))
-		quad.material = mist_mat
-	else:
-		var fallback_mat := StandardMaterial3D.new()
-		fallback_mat.albedo_color = Color(0.5, 0.51, 0.57, 0.16)
-		fallback_mat.albedo_texture = soft_tex
-		fallback_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		fallback_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		fallback_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		fallback_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-		quad.material = fallback_mat
-	world.add_child(mist)
+	# Drifting mist: kept low, in the foreground and pooling around the
+	# building bases, rather than a tall field that washes the whole
+	# skyline into grey. Two emitters share one soft-particle look: a denser
+	# one close to the camera, and a thinner one hugging the skyline's base
+	# line further back so the buildings/spires above it stay dark and crisp.
+	_build_mist(world, Vector3(0, -4.5, 4.0), Vector3(22.0, 1.6, 9.0), 40, 0.85)
+	_build_mist(world, Vector3(0, -4.5, -36.0), Vector3(46.0, 1.3, 20.0), 55, 0.55)
 
 	var cam := Camera3D.new()
 	cam.position = Vector3(0, 5, 14)
@@ -101,31 +64,32 @@ func _build_background() -> void:
 	_animate_camera(cam)
 
 
-## A faint red glow low on the horizon (the Ashmounts' distant fires, as in
-## the open world's night sky shader), behind the skyline silhouette.
+## A red-orange glow low on the horizon (the Ashmounts' distant fires, as in
+## the open world's night sky shader), behind the skyline silhouette. Bright
+## and saturated enough to read clearly through the gaps between buildings,
+## with both the top and bottom of the plane fading fully to nothing well
+## before its geometric edge -- so there's no seam anywhere on the plane,
+## regardless of how much of it a given camera angle happens to frame.
 func _build_horizon_glow(world: Node3D) -> void:
 	var glow := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(220.0, 60.0)
+	plane.size = Vector2(260.0, 70.0)
 	plane.orientation = PlaneMesh.FACE_Z
 	glow.mesh = plane
 	var tex := GradientTexture2D.new()
 	tex.width = 8
-	tex.height = 128
+	tex.height = 160
 	tex.fill = GradientTexture2D.FILL_LINEAR
 	tex.fill_from = Vector2(0.5, 0.0)
 	tex.fill_to = Vector2(0.5, 1.0)
-	# Both ends of the ramp are fully transparent, with the glow as a soft
-	# hump near the horizon (around the middle of the plane) -- rather than
-	# a ramp that peaks right at one edge of the mesh, which is what left a
-	# hard horizontal line where the plane's top edge met the sky.
 	var grad := Gradient.new()
 	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
-	grad.add_point(0.32, Color(0.35, 0.1, 0.04, 0.0))
-	grad.add_point(0.46, Color(0.5, 0.15, 0.06, 0.3))
-	grad.add_point(0.56, Color(0.65, 0.2, 0.07, 0.4))
-	grad.add_point(0.7, Color(0.4, 0.12, 0.05, 0.12))
-	grad.add_point(0.85, Color(0.2, 0.08, 0.04, 0.0))
+	grad.add_point(0.3, Color(0.55, 0.14, 0.04, 0.0))
+	grad.add_point(0.42, Color(0.85, 0.24, 0.06, 0.55))
+	grad.add_point(0.5, Color(1.0, 0.42, 0.1, 0.8))
+	grad.add_point(0.58, Color(0.85, 0.24, 0.06, 0.55))
+	grad.add_point(0.72, Color(0.5, 0.14, 0.05, 0.15))
+	grad.add_point(0.85, Color(0.25, 0.08, 0.03, 0.0))
 	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))
 	tex.gradient = grad
 	var mat := StandardMaterial3D.new()
@@ -223,6 +187,59 @@ func _spire(world: Node3D, mat: Material, base: Vector3, radius: float, height: 
 	spire.material_override = mat
 	spire.position = base + Vector3(0, height * 0.5, 0)
 	world.add_child(spire)
+
+
+## A low-lying field of soft, drifting mist puffs. `center`/`extents` define
+## the spawn volume; the shader (not the box) is what actually bounds where
+## the mist is visible, fading smoothly by world height so it never ends in
+## a hard edge wherever the emission volume happens to stop.
+func _build_mist(world: Node3D, center: Vector3, extents: Vector3, amount: int, alpha_scale: float) -> void:
+	var mist := GPUParticles3D.new()
+	mist.amount = amount
+	mist.lifetime = 14.0
+	mist.position = center
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3(1, 0, 0)
+	pm.spread = 20.0
+	pm.initial_velocity_min = 0.2
+	pm.initial_velocity_max = 0.55
+	pm.gravity = Vector3.ZERO
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = extents
+	pm.scale_min = 5.0
+	pm.scale_max = 10.0
+	pm.color = Color(1.0, 1.0, 1.0, 1.0)
+	mist.process_material = pm
+	var quad := QuadMesh.new()
+	quad.size = Vector2(1, 1)
+	mist.draw_pass_1 = quad
+
+	var soft_tex: Texture2D = load("res://assets/textures/soft_particle.png") if ResourceLoader.exists("res://assets/textures/soft_particle.png") else _soft_circle_texture()
+	var fade_min := center.y - extents.y * 1.4
+	var fade_max := center.y + extents.y * 1.4
+	var is_compat := RenderingServer.get_current_rendering_method() == "gl_compatibility"
+	var shader_path := "res://assets/shaders/soft_mist_particle.gdshader" if not is_compat else "res://assets/shaders/mist_particle_compat.gdshader"
+	if ResourceLoader.exists(shader_path):
+		var mist_mat := ShaderMaterial.new()
+		mist_mat.shader = load(shader_path)
+		mist_mat.set_shader_parameter("albedo_tex", soft_tex)
+		mist_mat.set_shader_parameter("tint", Vector3(0.5, 0.51, 0.57))
+		mist_mat.set_shader_parameter("alpha_scale", alpha_scale)
+		mist_mat.set_shader_parameter("fade_height_min", fade_min)
+		mist_mat.set_shader_parameter("fade_height_max", fade_max)
+		quad.material = mist_mat
+	else:
+		# Belt-and-braces fallback if even the compat shader failed to load:
+		# a plain additive billboard, no height fade, but still visible.
+		var fallback_mat := StandardMaterial3D.new()
+		fallback_mat.albedo_color = Color(0.5, 0.51, 0.57, alpha_scale)
+		fallback_mat.albedo_texture = soft_tex
+		fallback_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		fallback_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		fallback_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		fallback_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		quad.material = fallback_mat
+	world.add_child(mist)
 
 
 func _soft_circle_texture() -> GradientTexture2D:
