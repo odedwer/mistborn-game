@@ -17,7 +17,7 @@ func _run() -> void:
 	root.add_child(bot)
 	var rep: Dictionary = await bot.finished
 	var out := JSON.stringify(rep, "  ")
-	if args.size() > 1:
+	if args.size() > 1 and args[1] != "":
 		var f := FileAccess.open(args[1], FileAccess.WRITE)
 		f.store_string(out)
 		f.close()

@@ -17,6 +17,9 @@ var report := {}
 
 
 func _ready() -> void:
+	# Measure the open-world vertical slice (the story opens indoors).
+	GameState.reset_run()
+	preload("res://tests/story_jump.gd").jump_to(&"mistwalk_to_keep_venture")
 	game = (load(GAME_SCENE) as PackedScene).instantiate()
 	add_child(game)
 	world = game.get_node(^"World") as LuthadelWorld

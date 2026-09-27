@@ -1,0 +1,57 @@
+# Performance
+
+CPU frame time for the vertical slice (`scenes/game.tscn`, mission "Mistwalk
+to Keep Venture"), measured headless on the 4-core dev container. Headless
+has no rendering, so these numbers are game logic plus physics only. The
+target is **process + physics under 8 ms per frame**, with **no streaming
+hitch over 30 ms**.
+
+## How to measure
+
+| Tool | What it does |
+|---|---|
+| `godot --headless -s res://tools/perf.gd` | Settles at the start rooftop, cp_2 (mid-route), the keep courtyard and the canal extraction, with steel burning. It measures 600 frames at each spot, then flies the whole route at 30 m/s. The player moves every physics tick, so chunks stream in and out exactly as in play. Add `-- bisect` to disable subsystems one at a time, or `-- micro` for micro-benchmarks of MetalRegistry, lines, enemy AI and the streamer/instancer stages. |
+| `tools/soak.sh [frames] [report.json]` | Runs the scripted-bot soak (`tests/soak_bot.gd`). It reports errors, leaks and CPU per route stop. |
+| `tests/frame_timer.gd` | Per-frame timing from SceneTree signals. `physics` covers the first `physics_frame` of the iteration up to `process_frame`, and `process` is the rest. |
+
+Two things skew naive measurements:
+- Headless Godot sleeps `low_processor_usage_mode_sleep_usec` (about 7 ms) every frame, and that sleep gets counted as process time. `FrameTimer` sets it to 0.
+- `Performance.TIME_PROCESS` / `TIME_PHYSICS_PROCESS` report the *maximum over the last second*, not a per-frame average.
+
+## Results
+
+All values are in milliseconds. Each spot shows *process / physics tick*, with the maximum frame in brackets.
+
+| Where | Before | After |
+|---|---|---|
+| Start rooftop | 5.95 / 7.85 (max 78.7) | 1.05 / 2.40 (max 6.2) |
+| cp_2, mid-route | 3.69 / 8.25 (max 300.9) | 1.30 / 2.74 (max 13.8) |
+| Keep courtyard, 19 enemies awake | 2.32 / 10.66 (max 214.4) | 1.29 / 3.20 (max 18.0) |
+| Canal extraction | 3.86 / 9.43 (max 280.5) | 1.44 / 2.83 (max 29.9) |
+| Fly the route at 30 m/s: average CPU per frame | 10.0 | 3.6 |
+| Fly the route: max frame | 100.7 | 19.7 |
+| Fly the route: max physics tick | 21.8 | 9.4 |
+| Fly the route: frames over 30 ms | 19 | 0 |
+
+"Before" is `5ce939d`, measured with the same probe.
+
+In the soak (`tools/soak.sh 3000`), the bot flies around, throws 570 coins, keeps 256 of them live, and uses duralumin, atium, activities, saves and loads. It averages 3.8–6.8 ms CPU per route stop. The frames that still go over 30 ms are:
+- the first ~2 s after load (world startup: far LOD, navmesh bakes);
+- opening the pause menu (map/journal rebuild, 50–75 ms, UI only, while paused);
+- a teleport across the city (deliberately instant; excluded from the stops).
+
+## What was fixed
+
+| Area | Problem | Fix |
+|---|---|---|
+| Collision instancing (`chunk_instancer.gd`) | Collision shapes were added one by one to a StaticBody already in the tree. Jolt rebuilt the compound shape on every add, which cost 30 ms per chunk, with 12 ms single steps even under the 3 ms budget. | Shapes go into StaticBodies of 48 that are filled *before* they enter the tree. It now takes about 6 ms per chunk, and every step is under 1 ms. |
+| Navmesh bakes (`world_streamer.gd`) | Up to 4 navmesh bakes ran at once. They filled the WorkerThreadPool, and Jolt's physics jobs queued behind them, causing 30–70 ms physics ticks while streaming. | One bake runs at a time, nearest first. |
+| Unloading (`world_streamer.gd`) | A teleport freed a dozen chunk trees in one frame, taking 50 ms. | At most 2 unloads per update, farthest first. |
+| MetalRegistry | All ~5–6k metals were re-bucketed every physics frame, costing 3–4 ms. `unregister` was an O(n) `Array.erase` per metal on chunk unload. It also used a 3D 8 m hash: a 60 m query walked 4096 cells in 0.58 ms. | Only movable metals (about 500) are re-bucketed, taking about 0.3 ms. Removal is O(1) swap-remove. A 2D 16 m column hash brings the 60 m query down to about 0.07 ms. |
+| Enemy AI (`enemy_base.gd`) | Setting `NavigationAgent3D.target_position` every tick repaths every tick. That cost 0.7–0.8 ms per patrolling guard, and 3 ms in the courtyard. | Re-target only when the goal moved more than 4 m, or more than 0.5 m and 0.35 s have passed. Enemy AI in the courtyard now takes 0.39 ms. |
+
+## Remaining hotspots and ideas
+
+- **Pause-menu map/journal rebuild** (50–75 ms on open). Build it incrementally or cache it.
+- **Startup.** Far-LOD and navmesh work compete with gameplay for the first couple of seconds. The loading screen could wait for `navigation_ready`.
+- **Physics tick.** It is about 2.5–3 ms, mostly Jolt with the city's static geometry, and it has headroom. If mass battles (Act III) push it up, the next steps are to sleep far rigid props and to use lower-rate AI for distant enemies.
