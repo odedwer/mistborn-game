@@ -423,25 +423,27 @@ func apply_controls() -> void:
 ## directly each frame (camera shake, flare pulse, vignette, line targeting)
 ## need no push; this only handles the parts with no natural per-frame reader.
 func apply_accessibility() -> void:
-	var scale := clampf(ui_scale, 0.8, 1.5)
 	for n in get_tree().get_nodes_in_group("ui_scale_target"):
 		var layer := n as CanvasLayer
-		if layer == null:
-			continue
-		layer.scale = Vector2(scale, scale)
-		var size := Vector2(1920, 1080)
-		var vp := layer.get_viewport()
-		if vp != null:
-			size = vp.get_visible_rect().size
-		layer.offset = size * 0.5 * (1.0 - scale)
+		if layer != null:
+			_scale_ui_layer(layer)
+
+
+func _scale_ui_layer(layer: CanvasLayer) -> void:
+	var scale := clampf(ui_scale, 0.8, 1.5)
+	layer.scale = Vector2(scale, scale)
+	var size := Vector2(1920, 1080)
+	var vp := layer.get_viewport()
+	if vp != null:
+		size = vp.get_visible_rect().size
+	layer.offset = size * 0.5 * (1.0 - scale)
 
 
 ## Registers a menu/HUD CanvasLayer so `apply_accessibility` scales it for the
 ## UI Scale setting, and applies the current scale immediately.
 func register_ui_scale_target(layer: CanvasLayer) -> void:
 	layer.add_to_group("ui_scale_target")
-	var scale := clampf(ui_scale, 0.8, 1.5)
-	layer.scale = Vector2(scale, scale)
+	_scale_ui_layer(layer)
 
 
 ## Stores a rebind for `action` (see InputSetup for the binding-triple format).

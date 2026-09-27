@@ -94,6 +94,21 @@ func test_accessibility_settings_roundtrip() -> void:
 	GameSettings.save_settings()
 
 
+## Godot's built-in ui_accept/ui_cancel ship with no gamepad binding by
+## default, which would strand gamepad-only players in every menu.
+func test_ui_accept_and_cancel_have_gamepad_bindings() -> void:
+	var accept_has_joy := false
+	for e in InputMap.action_get_events(&"ui_accept"):
+		if e is InputEventJoypadButton:
+			accept_has_joy = true
+	var cancel_has_joy := false
+	for e in InputMap.action_get_events(&"ui_cancel"):
+		if e is InputEventJoypadButton:
+			cancel_has_joy = true
+	assert_true(accept_has_joy, "ui_accept needs a gamepad (A) binding")
+	assert_true(cancel_has_joy, "ui_cancel needs a gamepad (B) binding")
+
+
 func test_stick_deadzone_applies_to_input_map() -> void:
 	GameSettings.stick_deadzone = 0.4
 	GameSettings.apply_controls()

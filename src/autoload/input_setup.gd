@@ -67,6 +67,27 @@ const TOGGLE_TO_METAL := {
 
 func _ready() -> void:
 	apply_bindings({})
+	_add_gamepad_ui_bindings()
+
+
+## Godot's built-in `ui_accept`/`ui_cancel` actions ship with no gamepad
+## binding (only ui_up/down/left/right do), which would strand a gamepad-only
+## player in every menu (no way to confirm or back out). Adds A/B without
+## touching the existing keyboard bindings.
+func _add_gamepad_ui_bindings() -> void:
+	_add_joy_button_if_missing(&"ui_accept", JOY_BUTTON_A)
+	_add_joy_button_if_missing(&"ui_cancel", JOY_BUTTON_B)
+
+
+static func _add_joy_button_if_missing(action: StringName, button: JoyButton) -> void:
+	if not InputMap.has_action(action):
+		return
+	for e in InputMap.action_get_events(action):
+		if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == button:
+			return
+	var ev := InputEventJoypadButton.new()
+	ev.button_index = button
+	InputMap.action_add_event(action, ev)
 
 
 ## Rebuilds the InputMap. `overrides` maps action -> Array of binding triples
