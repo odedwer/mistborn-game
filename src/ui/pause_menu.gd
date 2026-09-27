@@ -10,6 +10,8 @@ var _skills_list: VBoxContainer
 var _settings_instance: CanvasLayer
 var _slot_popup: PopupPanel
 var _slot_mode := "save"  # or "load"
+var _resume_btn: Button
+var _controls_list: VBoxContainer
 
 const SETTINGS_SCENE := "res://src/ui/settings_menu.tscn"
 const MAIN_MENU_SCENE := "res://scenes/main_menu.tscn"
@@ -20,6 +22,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_build_ui()
+	GameSettings.register_ui_scale_target(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -28,6 +31,22 @@ func _unhandled_input(event: InputEvent) -> void:
 			and (visible or not get_tree().paused):
 		toggle()
 		get_viewport().set_input_as_handled()
+		return
+	if not visible or _settings_instance != null:
+		return
+	# The gamepad B/East button always backs out (closes the pause menu).
+	if event.is_action_pressed(&"ui_cancel"):
+		set_paused(false)
+		get_viewport().set_input_as_handled()
+		return
+	# LB/RB cycle tabs (Menu/Map/Journal/Skills/Controls) directly, since the
+	# D-pad/left-stick only move focus within a tab's own controls otherwise.
+	if event is InputEventJoypadButton and event.pressed:
+		var btn := (event as InputEventJoypadButton).button_index
+		if btn == JOY_BUTTON_LEFT_SHOULDER or btn == JOY_BUTTON_RIGHT_SHOULDER:
+			var step := -1 if btn == JOY_BUTTON_LEFT_SHOULDER else 1
+			_tabs.current_tab = posmod(_tabs.current_tab + step, _tabs.get_tab_count())
+			get_viewport().set_input_as_handled()
 
 
 func _exit_tree() -> void:
@@ -47,7 +66,9 @@ func set_paused(paused: bool) -> void:
 		_refresh_map()
 		_refresh_journal()
 		_refresh_skills()
+		_refresh_controls()
 		AudioManager.play_ui(&"ui_click")
+		_resume_btn.grab_focus.call_deferred()
 	else:
 		AudioManager.play_ui(&"ui_back")
 
@@ -89,6 +110,7 @@ func _build_ui() -> void:
 	_tabs.add_child(_map)
 	_tabs.add_child(_build_journal_tab())
 	_tabs.add_child(_build_skills_tab())
+	_tabs.add_child(_build_controls_tab())
 
 	_slot_popup = PopupPanel.new()
 	add_child(_slot_popup)
@@ -103,9 +125,9 @@ func _build_menu_tab() -> Control:
 	margin.add_theme_constant_override("margin_top", 24)
 	margin.add_child(box)
 
-	var resume_btn := UIHelpers.button("Resume")
-	resume_btn.pressed.connect(func(): set_paused(false))
-	box.add_child(resume_btn)
+	_resume_btn = UIHelpers.button("Resume")
+	_resume_btn.pressed.connect(func(): set_paused(false))
+	box.add_child(_resume_btn)
 
 	var save_btn := UIHelpers.button("Save Game")
 	save_btn.pressed.connect(func(): _open_slot_popup("save"))
@@ -152,6 +174,41 @@ func _build_skills_tab() -> Control:
 	_skills_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_skills_list)
 	return scroll
+
+
+func _build_controls_tab() -> Control:
+	var scroll := ScrollContainer.new()
+	scroll.name = "Controls"
+	_controls_list = VBoxContainer.new()
+	_controls_list.add_theme_constant_override("separation", 4)
+	_controls_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_controls_list)
+	return scroll
+
+
+## Every current binding (defaults + rebinds), keyboard/mouse and gamepad
+## glyphs side by side. Pulled live from InputSetup, so rebinds show up here
+## without any separate bookkeeping.
+func _refresh_controls() -> void:
+	for c in _controls_list.get_children():
+		c.queue_free()
+	_controls_list.add_child(UIHelpers.heading_label("Controls"))
+	for action: String in InputSetup.DEFAULT_BINDINGS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 16)
+		var lbl := Label.new()
+		lbl.text = action.capitalize()
+		lbl.custom_minimum_size = Vector2(260, 0)
+		row.add_child(lbl)
+		var kb := Label.new()
+		kb.text = InputSetup.glyph_for(action, false)
+		kb.custom_minimum_size = Vector2(140, 0)
+		row.add_child(kb)
+		var pad := Label.new()
+		pad.text = InputSetup.glyph_for(action, true)
+		pad.custom_minimum_size = Vector2(140, 0)
+		row.add_child(pad)
+		_controls_list.add_child(row)
 
 
 func _refresh_skills() -> void:
@@ -354,12 +411,17 @@ func _open_slot_popup(mode: String) -> void:
 	box.add_theme_constant_override("separation", 6)
 	_slot_popup.add_child(box)
 	box.add_child(UIHelpers.heading_label("Save" if mode == "save" else "Load"))
+	var first_btn: Button
 	for slot in range(1, 4):
 		var has := GameState.has_save(slot)
 		var b := UIHelpers.button("Slot %d %s" % [slot, "(occupied)" if has else "(empty)"])
 		b.pressed.connect(_on_slot_chosen.bind(slot))
 		box.add_child(b)
+		if first_btn == null:
+			first_btn = b
 	_slot_popup.popup_centered(Vector2i(300, 220))
+	if first_btn != null:
+		first_btn.grab_focus.call_deferred()
 
 
 func _on_slot_chosen(slot: int) -> void:

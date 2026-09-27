@@ -20,6 +20,11 @@ enum Preset { LOW, MEDIUM, HIGH, ULTRA, CUSTOM }
 enum WindowMode { WINDOWED, BORDERLESS, FULLSCREEN }
 enum Quality { OFF, LOW, MEDIUM, HIGH, ULTRA }
 enum Difficulty { STORY, NORMAL, HARD }
+enum SubtitleSize { S, M, L, XL }
+enum ColorBlindMode { OFF, DEUTERANOPIA, PROTANOPIA, TRITANOPIA }
+
+## Font sizes (px) for each SubtitleSize, used by the dialogue box and HUD hints.
+const SUBTITLE_FONT_SIZES := {SubtitleSize.S: 15, SubtitleSize.M: 19, SubtitleSize.L: 25, SubtitleSize.XL: 33}
 
 # --- Graphics ---------------------------------------------------------------
 var preset: Preset = Preset.MEDIUM
@@ -62,6 +67,35 @@ var difficulty: Difficulty = Difficulty.NORMAL
 var hints_enabled: bool = true
 var camera_shake_scale: float = 1.0
 var subtitles_enabled: bool = true
+## Overall game/time speed (0.8 / 0.9 / 1.0) baked into Engine.time_scale
+## wherever code resets it to "normal" (e.g. after atium wears off).
+var game_speed_percent: float = 1.0
+## Auto-burns steel/iron/pewter/tin whenever any reserve is available.
+var auto_burn_basic_metals: bool = false
+
+# --- Accessibility -----------------------------------------------------------
+var subtitle_size: SubtitleSize = SubtitleSize.M
+var subtitle_bg_opacity: float = 0.85
+## 0.8 .. 1.5. Scales menu/HUD CanvasLayers (see `register_ui_scale_target`).
+var ui_scale: float = 1.0
+var colorblind_mode: ColorBlindMode = ColorBlindMode.OFF
+## Thicker, brighter steel/iron lines and heavier UI outlines.
+var high_contrast_lines: bool = false
+var disable_fov_kick: bool = false
+var disable_speed_lines: bool = false
+## 0 = full flash effects, 1 = fully toned down (flare pulse ring, damage
+## vignette, atium screen effects).
+var flash_reduction: float = 0.0
+## True (default) = Push/Pull/Flare are held down; false = press once to
+## toggle them on/off (for players who can't comfortably hold a button/trigger).
+var hold_to_use_push_pull: bool = true
+var hold_to_use_flare: bool = true
+## 0 (off) .. 2 (very forgiving). Multiplies line-targeting's assist alignment
+## leniency and hysteresis.
+var aim_assist_strength: float = 1.0
+var vibration_enabled: bool = true
+## 0 .. 0.6, applied to both sticks.
+var stick_deadzone: float = 0.2
 
 
 func _ready() -> void:
@@ -187,6 +221,22 @@ func save_settings() -> void:
 	cfg.set_value("gameplay", "hints_enabled", hints_enabled)
 	cfg.set_value("gameplay", "camera_shake_scale", camera_shake_scale)
 	cfg.set_value("gameplay", "subtitles_enabled", subtitles_enabled)
+	cfg.set_value("gameplay", "game_speed_percent", game_speed_percent)
+	cfg.set_value("gameplay", "auto_burn_basic_metals", auto_burn_basic_metals)
+
+	cfg.set_value("accessibility", "subtitle_size", int(subtitle_size))
+	cfg.set_value("accessibility", "subtitle_bg_opacity", subtitle_bg_opacity)
+	cfg.set_value("accessibility", "ui_scale", ui_scale)
+	cfg.set_value("accessibility", "colorblind_mode", int(colorblind_mode))
+	cfg.set_value("accessibility", "high_contrast_lines", high_contrast_lines)
+	cfg.set_value("accessibility", "disable_fov_kick", disable_fov_kick)
+	cfg.set_value("accessibility", "disable_speed_lines", disable_speed_lines)
+	cfg.set_value("accessibility", "flash_reduction", flash_reduction)
+	cfg.set_value("accessibility", "hold_to_use_push_pull", hold_to_use_push_pull)
+	cfg.set_value("accessibility", "hold_to_use_flare", hold_to_use_flare)
+	cfg.set_value("accessibility", "aim_assist_strength", aim_assist_strength)
+	cfg.set_value("accessibility", "vibration_enabled", vibration_enabled)
+	cfg.set_value("accessibility", "stick_deadzone", stick_deadzone)
 
 	cfg.save(SETTINGS_PATH)
 
@@ -233,6 +283,22 @@ func load_settings() -> void:
 	hints_enabled = cfg.get_value("gameplay", "hints_enabled", true)
 	camera_shake_scale = cfg.get_value("gameplay", "camera_shake_scale", 1.0)
 	subtitles_enabled = cfg.get_value("gameplay", "subtitles_enabled", true)
+	game_speed_percent = cfg.get_value("gameplay", "game_speed_percent", 1.0)
+	auto_burn_basic_metals = cfg.get_value("gameplay", "auto_burn_basic_metals", false)
+
+	subtitle_size = int(cfg.get_value("accessibility", "subtitle_size", SubtitleSize.M)) as SubtitleSize
+	subtitle_bg_opacity = cfg.get_value("accessibility", "subtitle_bg_opacity", 0.85)
+	ui_scale = cfg.get_value("accessibility", "ui_scale", 1.0)
+	colorblind_mode = int(cfg.get_value("accessibility", "colorblind_mode", ColorBlindMode.OFF)) as ColorBlindMode
+	high_contrast_lines = cfg.get_value("accessibility", "high_contrast_lines", false)
+	disable_fov_kick = cfg.get_value("accessibility", "disable_fov_kick", false)
+	disable_speed_lines = cfg.get_value("accessibility", "disable_speed_lines", false)
+	flash_reduction = cfg.get_value("accessibility", "flash_reduction", 0.0)
+	hold_to_use_push_pull = cfg.get_value("accessibility", "hold_to_use_push_pull", true)
+	hold_to_use_flare = cfg.get_value("accessibility", "hold_to_use_flare", true)
+	aim_assist_strength = cfg.get_value("accessibility", "aim_assist_strength", 1.0)
+	vibration_enabled = cfg.get_value("accessibility", "vibration_enabled", true)
+	stick_deadzone = cfg.get_value("accessibility", "stick_deadzone", 0.2)
 
 
 # --- Apply --------------------------------------------------------------------
@@ -241,7 +307,15 @@ func apply_all() -> void:
 	apply_graphics()
 	apply_audio()
 	apply_controls()
+	apply_accessibility()
 	Events.settings_changed.emit()
+
+
+## Baseline Engine.time_scale for "normal" speed. Code that resets
+## Engine.time_scale after a temporary effect (atium, death, respawn) should
+## use this instead of a bare `1.0` so the Story-mode game-speed slider holds.
+func base_time_scale() -> float:
+	return game_speed_percent
 
 
 func apply_graphics() -> void:
@@ -336,6 +410,40 @@ func _set_bus_volume(bus_name: String, linear: float) -> void:
 
 func apply_controls() -> void:
 	InputSetup.apply_bindings(binding_overrides)
+	var dz := clampf(stick_deadzone, 0.0, 0.9)
+	for action in ["move_forward", "move_back", "move_left", "move_right",
+			"look_left", "look_right", "look_up", "look_down"]:
+		if InputMap.has_action(action):
+			InputMap.action_set_deadzone(action, dz)
+
+
+## Applies every accessibility setting: UI scale (to registered CanvasLayers),
+## and notifies listeners via `Events.settings_changed` (already done by the
+## caller in `apply_all`/individual setters). Systems that read these fields
+## directly each frame (camera shake, flare pulse, vignette, line targeting)
+## need no push; this only handles the parts with no natural per-frame reader.
+func apply_accessibility() -> void:
+	for n in get_tree().get_nodes_in_group("ui_scale_target"):
+		var layer := n as CanvasLayer
+		if layer != null:
+			_scale_ui_layer(layer)
+
+
+func _scale_ui_layer(layer: CanvasLayer) -> void:
+	var scale := clampf(ui_scale, 0.8, 1.5)
+	layer.scale = Vector2(scale, scale)
+	var size := Vector2(1920, 1080)
+	var vp := layer.get_viewport()
+	if vp != null:
+		size = vp.get_visible_rect().size
+	layer.offset = size * 0.5 * (1.0 - scale)
+
+
+## Registers a menu/HUD CanvasLayer so `apply_accessibility` scales it for the
+## UI Scale setting, and applies the current scale immediately.
+func register_ui_scale_target(layer: CanvasLayer) -> void:
+	layer.add_to_group("ui_scale_target")
+	_scale_ui_layer(layer)
 
 
 ## Stores a rebind for `action` (see InputSetup for the binding-triple format).

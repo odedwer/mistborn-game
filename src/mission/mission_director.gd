@@ -82,7 +82,7 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	_clear_triggers()
-	Engine.time_scale = 1.0
+	Engine.time_scale = GameSettings.base_time_scale()
 
 
 func _on_unit_loaded(_key: String) -> void:

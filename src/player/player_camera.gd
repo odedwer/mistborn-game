@@ -133,7 +133,7 @@ func add_look(dyaw: float, dpitch: float) -> void:
 
 
 func add_trauma(amount: float) -> void:
-	trauma = clampf(trauma + amount, 0.0, 1.0)
+	trauma = clampf(trauma + amount * GameSettings.camera_shake_scale, 0.0, 1.0)
 
 
 ## A downward camera kick (landing), in metres.
@@ -214,8 +214,9 @@ func _process(delta: float) -> void:
 	_arm.position = Vector3(shoulder, 0.0, 0.0)
 	_arm.spring_length = (distance + speed_pullback * speed_amount) * (1.0 - _fp_blend)
 
-	# FOV kick.
-	var fov_goal := _base_fov + fov_kick * speed_amount * speed_amount * (1.0 - 0.5 * _fp_blend)
+	# FOV kick (accessibility: can be disabled to reduce motion sickness).
+	var kick := 0.0 if GameSettings.disable_fov_kick else fov_kick
+	var fov_goal := _base_fov + kick * speed_amount * speed_amount * (1.0 - 0.5 * _fp_blend)
 	_camera.fov = lerpf(_camera.fov, fov_goal, 1.0 - exp(-6.0 * real_dt))
 
 	# Shake.
@@ -225,8 +226,10 @@ func _process(delta: float) -> void:
 	_camera.v_offset = max_shake_offset * s * sin(_time * 41.0 + 4.1) * cos(_time * 17.0)
 	_camera.rotation.z = deg_to_rad(max_shake_roll_deg) * s * sin(_time * 29.0 + 2.7)
 
-	if _speed_lines != null:
+	if _speed_lines != null and not GameSettings.disable_speed_lines:
 		var amt := speed_amount * speed_amount
 		_speed_lines.visible = amt > 0.02
 		if _speed_lines.visible:
 			_speed_mat.set_shader_parameter(&"amount", amt)
+	elif _speed_lines != null:
+		_speed_lines.visible = false

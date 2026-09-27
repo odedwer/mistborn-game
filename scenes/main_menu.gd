@@ -335,7 +335,9 @@ func _on_continue() -> void:
 
 func _on_new_game() -> void:
 	GameState.reset_run()
-	_go_to_game()
+	var overlay := OnboardingOverlay.new()
+	add_child(overlay)
+	overlay.finished.connect(_go_to_game)
 
 
 func _go_to_game() -> void:
@@ -353,6 +355,7 @@ func _on_load() -> void:
 	box.add_theme_constant_override("separation", 6)
 	_slot_popup.add_child(box)
 	box.add_child(UIHelpers.heading_label("Load"))
+	var first_btn: Button
 	for slot in range(1, 4):
 		var has := GameState.has_save(slot)
 		var b := UIHelpers.button("Slot %d %s" % [slot, "(occupied)" if has else "(empty)"])
@@ -363,7 +366,11 @@ func _on_load() -> void:
 			_go_to_game()
 		)
 		box.add_child(b)
+		if first_btn == null and not b.disabled:
+			first_btn = b
 	_slot_popup.popup_centered(Vector2i(300, 220))
+	if first_btn != null:
+		first_btn.grab_focus.call_deferred()
 
 
 func _on_settings() -> void:

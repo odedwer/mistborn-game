@@ -91,6 +91,8 @@ func _on_body_entered(other: Node) -> void:
 		h.take_damage(damage_for_speed(speed, min_damage_speed, damage_per_speed, max_damage), src, &"coin")
 		AudioManager.play_3d(&"coin_hit", global_position)
 		Events.noise_emitted.emit(global_position, 0.35, self)
+		if is_instance_valid(last_pusher) and last_pusher.is_in_group(&"player"):
+			Haptics.coin_hit()
 		linear_velocity *= 0.15
 	else:
 		AudioManager.play_3d(&"coin_clink", global_position, clampf(speed * 0.5 - 12.0, -12.0, 0.0))

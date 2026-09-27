@@ -36,6 +36,9 @@ func _ready() -> void:
 	layer = 10
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_ui()
+	GameSettings.register_ui_scale_target(self)
+	_apply_accessibility()
+	Events.settings_changed.connect(_apply_accessibility)
 	Events.player_health_changed.connect(_on_health_changed)
 	Events.metal_reserve_changed.connect(_on_reserve_changed)
 	Events.metal_burn_changed.connect(_on_burn_changed)
@@ -167,6 +170,9 @@ func _build_ui() -> void:
 	_hint_box.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_hint_box.position = Vector2(-260, -110)
 	_hint_box.custom_minimum_size = Vector2(520, 0)
+	# Larger subtitle text sizes (accessibility) grow the box taller; grow it
+	# upward from this anchor instead of clipping off the bottom of the screen.
+	_hint_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_hint_box.visible = false
 	_hint_label = Label.new()
 	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -191,6 +197,32 @@ func _build_ui() -> void:
 	_wheel = _make_wheel()
 	_wheel.visible = false
 	root.add_child(_wheel)
+
+
+## Re-tints the vial bars for the current colour-blind mode, resizes the
+## subtitle/hint text and its background opacity, and refreshes high-contrast
+## line settings. Called once at startup and on every `Events.settings_changed`.
+func _apply_accessibility() -> void:
+	var mode := int(GameSettings.colorblind_mode)
+	for metal: int in _vials:
+		var bar: ProgressBar = _vials[metal]
+		var style: StyleBoxFlat = bar.get_theme_stylebox("fill")
+		style.bg_color = Metal.display_color_of(metal, mode)
+		var glow: Panel = _vial_glow[metal]
+		var glow_style: StyleBoxFlat = glow.get_theme_stylebox("panel")
+		var a := glow_style.bg_color.a
+		glow_style.bg_color = Metal.display_color_of(metal, mode)
+		glow_style.bg_color.a = a
+
+	var size: int = GameSettings.SUBTITLE_FONT_SIZES.get(GameSettings.subtitle_size, 19)
+	_hint_label.add_theme_font_size_override("font_size", size)
+	var bg := _hint_box.get_theme_stylebox("panel")
+	if bg == null or not (bg is StyleBoxFlat):
+		bg = StyleBoxFlat.new()
+		bg.bg_color = Color(0.05, 0.05, 0.07)
+	var flat := bg as StyleBoxFlat
+	flat.bg_color.a = GameSettings.subtitle_bg_opacity
+	_hint_box.add_theme_stylebox_override("panel", flat)
 
 
 static func _flat_style(color: Color) -> StyleBoxFlat:
@@ -287,7 +319,7 @@ func _update_objective_marker() -> void:
 
 func _update_vignette(delta: float) -> void:
 	_vignette_alpha = maxf(_vignette_alpha - delta * 0.6, 0.0)
-	_vignette.color.a = _vignette_alpha * 0.5
+	_vignette.color.a = _vignette_alpha * 0.5 * (1.0 - GameSettings.flash_reduction * 0.85)
 
 
 func _update_hint(delta: float) -> void:
@@ -404,6 +436,7 @@ func _on_pulse(_source: Node, _metal: int, position: Vector3) -> void:
 	ring.add_theme_stylebox_override("panel", style)
 	var edge_pos := center + dir2 * (minf(center.x, center.y) - 40.0)
 	ring.position = edge_pos - ring.custom_minimum_size * 0.5
+	style.border_color.a *= (1.0 - GameSettings.flash_reduction * 0.7)
 	_pulse_layer.add_child(ring)
 	var tw := create_tween()
 	tw.tween_property(ring, "scale", Vector2(2.2, 2.2), 0.6)
@@ -439,6 +472,7 @@ func _on_hint_requested(text: String, duration: float) -> void:
 func _on_damage_dealt(target: Node, _amount: float, _source: Node, _kind: StringName) -> void:
 	if _player != null and target == _player:
 		_vignette_alpha = 1.0
+		Haptics.damage(_amount)
 
 
 func _on_pickup_collected(kind: StringName, amount: float) -> void:
