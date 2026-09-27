@@ -392,7 +392,12 @@ func _build_nobles() -> void:
 func _build_markers() -> void:
 	var spawn := Marker3D.new()
 	spawn.add_to_group(&"interior_spawn")
-	spawn.position = Vector3(0.0, 0.05, HALL_SIZE.z * 0.5 - 1.5)
+	# Further in from the south doorway than before: at a 1.5m inset the
+	# spawn point (and any camera framed just behind/above it, matching the
+	# player's forward view on entry) looked straight into the exit door's
+	# box, which sits right in the doorway only ~1.2m further on. This
+	# clears the door and opens onto the dance floor instead.
+	spawn.position = Vector3(0.0, 0.05, HALL_SIZE.z * 0.5 - 6.0)
 	add_child(spawn)
 
 	var eavesdrop := Marker3D.new()
