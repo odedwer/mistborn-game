@@ -45,6 +45,10 @@ func remove_modifier(c: Callable) -> void:
 func take_damage(amount: float, source: Node = null, kind: StringName = &"blunt") -> float:
 	if dead or invulnerable or amount <= 0.0:
 		return 0.0
+	# Story mode (accessibility: an invincible difficulty) only protects the
+	# player; enemies still take damage normally.
+	if GameSettings.difficulty == GameSettings.Difficulty.STORY and get_parent().is_in_group(&"player"):
+		return 0.0
 	for m in _modifiers:
 		amount = m.call(amount, kind, source)
 		if amount <= 0.0:

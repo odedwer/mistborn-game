@@ -12,14 +12,39 @@ var _choices_box: VBoxContainer
 var _continue_hint: Label
 
 
+var _panel_style: StyleBoxFlat
+
+
 func _ready() -> void:
 	layer = 20
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_ui()
 	visible = false
+	GameSettings.register_ui_scale_target(self)
+	_apply_accessibility()
+	_update_continue_hint()
+	Events.settings_changed.connect(_apply_accessibility)
+	InputDevice.device_changed.connect(func(_g: bool): _update_continue_hint())
 	Events.dialogue_line_shown.connect(_on_line_shown)
 	Events.dialogue_choices_shown.connect(_on_choices_shown)
 	Events.dialogue_finished.connect(_on_finished)
+
+
+func _update_continue_hint() -> void:
+	var glyph := InputSetup.glyph_for("interact", InputDevice.is_gamepad())
+	_continue_hint.text = "%s to continue" % glyph
+
+
+## Subtitle text size and background opacity (Accessibility settings).
+func _apply_accessibility() -> void:
+	var size: int = GameSettings.SUBTITLE_FONT_SIZES.get(GameSettings.subtitle_size, 18)
+	_text_label.add_theme_font_size_override("font_size", size)
+	_name_label.add_theme_font_size_override("font_size", size + 4)
+	if _panel_style != null:
+		_panel_style.bg_color.a = GameSettings.subtitle_bg_opacity
+	# Larger text needs a taller box; grow it upward so it never overlaps the
+	# hotbar/vials or runs off the bottom of the screen.
+	_panel.offset_top = -220.0 - maxf(float(size - 18) * 2.4, 0.0)
 
 
 func _build_ui() -> void:
@@ -44,6 +69,7 @@ func _build_ui() -> void:
 	style.content_margin_top = 14
 	style.content_margin_bottom = 14
 	_panel.add_theme_stylebox_override("panel", style)
+	_panel_style = style
 	root.add_child(_panel)
 
 	var vbox := VBoxContainer.new()
@@ -72,7 +98,6 @@ func _build_ui() -> void:
 	vbox.add_child(_choices_box)
 
 	_continue_hint = Label.new()
-	_continue_hint.text = "[Interact] to continue"
 	_continue_hint.add_theme_font_size_override("font_size", 12)
 	_continue_hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	_continue_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

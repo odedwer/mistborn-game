@@ -53,6 +53,19 @@ func _ready() -> void:
 	_mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_mmi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
 	add_child(_mmi)
+	_apply_accessibility()
+	Events.settings_changed.connect(_apply_accessibility)
+
+
+## Accessibility: a colour-blind-safe line tint and a "high contrast" mode
+## that brightens/thickens the lines for easier visibility.
+func _apply_accessibility() -> void:
+	var line_col := Metal.display_color_of(Metal.Type.STEEL, int(GameSettings.colorblind_mode))
+	var hl_col := Color(0.95, 0.95, 0.6) if GameSettings.high_contrast_lines else Color(0.75, 0.9, 1.0)
+	_material.set_shader_parameter(&"line_color", line_col)
+	_material.set_shader_parameter(&"highlight_color", hl_col)
+	_material.set_shader_parameter(&"intensity", 2.1 if GameSettings.high_contrast_lines else 1.4)
+	_material.set_shader_parameter(&"min_pixel_width", 2.4 if GameSettings.high_contrast_lines else 1.4)
 
 
 func _process(_delta: float) -> void:

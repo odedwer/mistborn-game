@@ -126,7 +126,47 @@ static func binding_label(b: Array) -> String:
 		MOUSE:
 			return ["", "LMB", "RMB", "MMB", "Wheel Up", "Wheel Down", "Wheel L", "Wheel R", "Mouse 4", "Mouse 5"][clampi(int(b[1]), 0, 9)]
 		JOY_BTN:
-			return "Pad %d" % int(b[1])
+			return _JOY_BTN_NAMES.get(int(b[1]), "Pad %d" % int(b[1]))
 		JOY_AXIS:
-			return "Axis %d%s" % [int(b[1]), "+" if float(b[2]) > 0 else "-"]
+			return _JOY_AXIS_NAMES.get(int(b[1]), "Axis %d%s" % [int(b[1]), "+" if float(b[2]) > 0 else "-"])
 	return "?"
+
+
+## Friendly Xbox-style gamepad button/axis names (no image assets: plain text
+## glyphs like "[RT]" are built from these by `glyph_label`).
+const _JOY_BTN_NAMES := {
+	JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
+	JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB",
+	JOY_BUTTON_LEFT_STICK: "LS Click", JOY_BUTTON_RIGHT_STICK: "RS Click",
+	JOY_BUTTON_START: "Start", JOY_BUTTON_BACK: "Back",
+	JOY_BUTTON_DPAD_UP: "D-Up", JOY_BUTTON_DPAD_DOWN: "D-Down",
+	JOY_BUTTON_DPAD_LEFT: "D-Left", JOY_BUTTON_DPAD_RIGHT: "D-Right",
+}
+const _JOY_AXIS_NAMES := {
+	JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT",
+	JOY_AXIS_LEFT_X: "Left Stick", JOY_AXIS_LEFT_Y: "Left Stick",
+	JOY_AXIS_RIGHT_X: "Right Stick", JOY_AXIS_RIGHT_Y: "Right Stick",
+}
+
+
+## Bracketed glyph text for a binding, e.g. "[LMB]", "[RT]", "[E]". Used by
+## on-screen prompts so they read correctly for the last-used input device.
+static func glyph_label(b: Array) -> String:
+	return "[%s]" % binding_label(b)
+
+
+## The first binding of `kind` for `action` (keyboard/mouse if `gamepad` is
+## false, else gamepad), falling back to whatever binding exists.
+static func binding_for(action: String, gamepad: bool) -> Array:
+	var binds: Array = GameSettings.binding_overrides.get(action, DEFAULT_BINDINGS.get(action, []))
+	for b: Array in binds:
+		var k := int(b[0])
+		if gamepad == (k == JOY_BTN or k == JOY_AXIS):
+			return b
+	return binds[0] if not binds.is_empty() else []
+
+
+## Bracketed glyph for `action`'s current binding on the given device kind.
+static func glyph_for(action: String, gamepad: bool) -> String:
+	var b := binding_for(action, gamepad)
+	return glyph_label(b) if not b.is_empty() else "?"

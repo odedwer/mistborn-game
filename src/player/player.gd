@@ -157,6 +157,11 @@ var _stride := 0.0
 var _sprint_locked := false
 var _aim_timer := 0.0
 var _duralumin_armed := false
+## Accessibility: toggle-mode state for Push/Pull/Flare (see
+## GameSettings.hold_to_use_push_pull / hold_to_use_flare).
+var _push_toggled := false
+var _pull_toggled := false
+var _flare_toggled := false
 var _tether_len := -1.0
 var _coin_jump_metal: Metallic
 var _volley: Array[Coin] = []
@@ -278,7 +283,7 @@ func respawn(xform: Transform3D) -> void:
 	camera_rig.snap()
 	var fwd := -camera_rig.yaw_basis().z
 	_visual.rotation.y = atan2(fwd.x, fwd.z) + deg_to_rad(model_yaw_offset_deg)
-	Engine.time_scale = 1.0
+	Engine.time_scale = GameSettings.base_time_scale()
 	if model != null and model.has_method(&"revive"):
 		model.call(&"revive")
 	Events.player_health_changed.emit(health.current, health.max_health)
@@ -349,8 +354,12 @@ func _handle_metal_input() -> void:
 	for action: String in InputSetup.TOGGLE_TO_METAL:
 		if Input.is_action_just_pressed(action):
 			allomancer.toggle_burn(InputSetup.TOGGLE_TO_METAL[action])
+	var basics: Array[int] = [Metal.Type.STEEL, Metal.Type.IRON, Metal.Type.PEWTER, Metal.Type.TIN]
+	if GameSettings.auto_burn_basic_metals:
+		for m in basics:
+			if not allomancer.is_burning(m) and allomancer.get_reserve(m) > 0.0:
+				allomancer.set_burning(m, true)
 	if Input.is_action_just_pressed(&"burn_all_basic"):
-		var basics: Array[int] = [Metal.Type.STEEL, Metal.Type.IRON, Metal.Type.PEWTER, Metal.Type.TIN]
 		var all_on := true
 		for m in basics:
 			if not allomancer.is_burning(m) and allomancer.get_reserve(m) > 0.0:
@@ -362,18 +371,47 @@ func _handle_metal_input() -> void:
 			_duralumin_armed = true
 			if allomancer.is_using_line(Metal.Type.STEEL) or allomancer.is_using_line(Metal.Type.IRON):
 				_duralumin_armed = not allomancer.burn_duralumin()
-	allomancer.set_flaring(Input.is_action_pressed(&"flare"))
+	# Accessibility: Push/Pull/Flare can be held (default) or toggled on/off.
+	if GameSettings.hold_to_use_push_pull:
+		_push_toggled = false
+		_pull_toggled = false
+	else:
+		if Input.is_action_just_pressed(&"push"):
+			_push_toggled = not _push_toggled
+		if Input.is_action_just_pressed(&"pull"):
+			_pull_toggled = not _pull_toggled
+	if GameSettings.hold_to_use_flare:
+		_flare_toggled = false
+	else:
+		if Input.is_action_just_pressed(&"flare"):
+			_flare_toggled = not _flare_toggled
+	allomancer.set_flaring(_flare_active())
+
+
+## True while Push should be considered "held" this frame, honouring the
+## hold-vs-toggle accessibility setting.
+func _push_active() -> bool:
+	return Input.is_action_pressed(&"push") if GameSettings.hold_to_use_push_pull else _push_toggled
+
+
+func _pull_active() -> bool:
+	return Input.is_action_pressed(&"pull") if GameSettings.hold_to_use_push_pull else _pull_toggled
+
+
+func _flare_active() -> bool:
+	return Input.is_action_pressed(&"flare") if GameSettings.hold_to_use_flare else _flare_toggled
 
 
 # --- Allomancy ----------------------------------------------------------------
 
 func _handle_allomancy(delta: float) -> void:
+	_apply_aim_assist_setting()
 	var lines := allomancer.lines_in_range()
 	var aim_o := camera_rig.aim_origin()
 	var aim_d := camera_rig.aim_direction()
 	targeting.update(lines, aim_o, aim_d, maxf(camera_rig.distance_to_pivot() - 0.5, 0.0))
-	var push_held := Input.is_action_pressed(&"push") and allomancer.is_burning(Metal.Type.STEEL)
-	var pull_held := Input.is_action_pressed(&"pull") and allomancer.is_burning(Metal.Type.IRON)
+	var push_held := _push_active() and allomancer.is_burning(Metal.Type.STEEL)
+	var pull_held := _pull_active() and allomancer.is_burning(Metal.Type.IRON)
 	var push_start := push_held and Input.is_action_just_pressed(&"push")
 	var pull_start := pull_held and Input.is_action_just_pressed(&"pull")
 
@@ -395,6 +433,7 @@ func _handle_allomancy(delta: float) -> void:
 			allomancer.push(t, 1.0, delta)
 			_push_volley(t, delta)
 			_play_model_action_once(&"push", push_start)
+			Haptics.push_pull(allomancer.effect_strength(Metal.Type.STEEL))
 	elif pull_held:
 		_aim_timer = 0.3
 		if pull_start or not targeting.locked:
@@ -408,6 +447,7 @@ func _handle_allomancy(delta: float) -> void:
 			_play_model_action_once(&"pull", pull_start)
 			_apply_tether(t)
 			_try_collect_coin(t, delta)
+			Haptics.push_pull(allomancer.effect_strength(Metal.Type.IRON))
 	elif targeting.locked:
 		targeting.release()
 		_tether_len = -1.0
@@ -417,6 +457,15 @@ func _handle_allomancy(delta: float) -> void:
 		_last_target = targeting.target
 		Events.line_target_changed.emit(allomancer, _last_target)
 	_update_emotional_target(delta)
+
+
+## Accessibility: widens the crosshair cone and how readily traversal assist
+## sticks to an anchor as GameSettings.aim_assist_strength goes 0 (off) .. 2.
+func _apply_aim_assist_setting() -> void:
+	var s := clampf(GameSettings.aim_assist_strength, 0.0, 2.0)
+	targeting.max_angle_deg = 14.0 * clampf(0.5 + 0.5 * s, 0.25, 1.75)
+	targeting.assist_min_alignment = clampf(0.25 - 0.1 * s, 0.02, 0.6)
+	targeting.assist_hysteresis = 1.0 + 0.3 * s
 
 
 func _select_push_target(lines: Array[Metallic]) -> void:
@@ -814,6 +863,7 @@ func _on_landed(impact: float, rolled: bool) -> void:
 	if impact > hard_landing_speed:
 		camera_rig.add_trauma(clampf((impact - hard_landing_speed) / 25.0, 0.1, 0.7))
 		AudioManager.play_3d(&"land_hard", global_position)
+		Haptics.landing(impact - hard_landing_speed)
 	Events.noise_emitted.emit(global_position, clampf(impact / 25.0, 0.1, 1.0), self)
 
 
@@ -939,7 +989,7 @@ func _on_died(_killer: Node) -> void:
 	dead = true
 	allomancer.stop_all()
 	targeting.release()
-	Engine.time_scale = 1.0
+	Engine.time_scale = GameSettings.base_time_scale()
 	_model_action(&"die")
 	Events.player_died.emit()
 

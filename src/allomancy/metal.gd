@@ -73,6 +73,48 @@ const FLARE_EFFECT_MULT := 1.6
 ## Metals an allomancer can target at external objects (Push/Pull lines).
 const LINE_METALS := [Type.STEEL, Type.IRON]
 
+## Colour-blind-safe palettes, keyed the same as `COLORS`. Chosen to keep
+## hue/lightness separation for each deficiency rather than relying on hue
+## alone (accessibility settings: GameSettings.colorblind_mode).
+const COLORS_DEUTERANOPIA := {
+	Type.STEEL: Color(0.35, 0.55, 0.95),
+	Type.IRON: Color(0.85, 0.55, 0.15),
+	Type.PEWTER: Color(0.7, 0.7, 0.74),
+	Type.TIN: Color(0.92, 0.92, 0.96),
+	Type.ZINC: Color(0.25, 0.45, 0.85),
+	Type.BRASS: Color(0.95, 0.80, 0.20),
+	Type.COPPER: Color(0.90, 0.45, 0.10),
+	Type.BRONZE: Color(0.55, 0.40, 0.20),
+	Type.ATIUM: Color(1.0, 1.0, 0.85),
+	Type.DURALUMIN: Color(0.80, 0.85, 0.95),
+}
+const COLORS_PROTANOPIA := {
+	Type.STEEL: Color(0.30, 0.55, 0.95),
+	Type.IRON: Color(0.85, 0.70, 0.15),
+	Type.PEWTER: Color(0.7, 0.7, 0.74),
+	Type.TIN: Color(0.92, 0.92, 0.96),
+	Type.ZINC: Color(0.20, 0.50, 0.85),
+	Type.BRASS: Color(0.95, 0.85, 0.25),
+	Type.COPPER: Color(0.85, 0.60, 0.15),
+	Type.BRONZE: Color(0.55, 0.45, 0.25),
+	Type.ATIUM: Color(1.0, 1.0, 0.85),
+	Type.DURALUMIN: Color(0.80, 0.85, 0.95),
+}
+const COLORS_TRITANOPIA := {
+	Type.STEEL: Color(0.30, 0.65, 0.65),
+	Type.IRON: Color(0.85, 0.30, 0.35),
+	Type.PEWTER: Color(0.7, 0.7, 0.74),
+	Type.TIN: Color(0.92, 0.92, 0.96),
+	Type.ZINC: Color(0.15, 0.70, 0.55),
+	Type.BRASS: Color(0.95, 0.45, 0.35),
+	Type.COPPER: Color(0.85, 0.35, 0.30),
+	Type.BRONZE: Color(0.60, 0.35, 0.35),
+	Type.ATIUM: Color(1.0, 0.95, 0.90),
+	Type.DURALUMIN: Color(0.85, 0.85, 0.95),
+}
+## GameSettings.ColorBlindMode index -> palette (0 = off/default COLORS).
+const COLORBLIND_PALETTES := [null, COLORS_DEUTERANOPIA, COLORS_PROTANOPIA, COLORS_TRITANOPIA]
+
 
 static func name_of(t: Type) -> String:
 	return NAMES.get(t, "?")
@@ -80,3 +122,12 @@ static func name_of(t: Type) -> String:
 
 static func color_of(t: Type) -> Color:
 	return COLORS.get(t, Color.WHITE)
+
+
+## Display colour honouring an accessibility colour-blind mode (see
+## GameSettings.ColorBlindMode). `mode` 0 is the default palette.
+static func display_color_of(t: Type, mode: int) -> Color:
+	var palette: Variant = COLORBLIND_PALETTES[mode] if mode >= 0 and mode < COLORBLIND_PALETTES.size() else null
+	if palette == null:
+		return color_of(t)
+	return (palette as Dictionary).get(t, color_of(t))

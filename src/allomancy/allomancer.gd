@@ -169,7 +169,7 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	if _atium_active and controls_local_view:
-		Engine.time_scale = 1.0
+		Engine.time_scale = GameSettings.base_time_scale()
 		_atium_active = false
 
 
@@ -656,7 +656,7 @@ func _update_atium() -> void:
 		return
 	_atium_active = on
 	if controls_local_view:
-		Engine.time_scale = atium_time_scale if on else 1.0
+		Engine.time_scale = atium_time_scale if on else GameSettings.base_time_scale()
 	atium_changed.emit(on)
 	Events.atium_vision_changed.emit(self, on)
 
