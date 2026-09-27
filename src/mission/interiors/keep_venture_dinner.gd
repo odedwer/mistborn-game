@@ -102,6 +102,51 @@ func _build_table() -> void:
 	table.position = Vector3(0, 0.4, -1.5)
 	add_child(table)
 
+	# A cloth runner and a pair of lit candlesticks down the table, so it
+	# reads as a dressed dinner table rather than a bare wooden box.
+	var cloth := MeshInstance3D.new()
+	cloth.mesh = BoxMesh.new()
+	(cloth.mesh as BoxMesh).size = Vector3(5.7, 0.05, 1.4)
+	var cloth_mat := StandardMaterial3D.new()
+	cloth_mat.albedo_color = Color(0.75, 0.7, 0.6)
+	cloth_mat.roughness = 0.8
+	cloth.material_override = cloth_mat
+	cloth.position = Vector3(0, 0.43, -1.5)
+	add_child(cloth)
+
+	var brass_mat := StandardMaterial3D.new()
+	brass_mat.albedo_color = Color(0.75, 0.62, 0.3)
+	brass_mat.metallic = 0.85
+	brass_mat.roughness = 0.35
+	var flame_mat := StandardMaterial3D.new()
+	flame_mat.albedo_color = Color(1.0, 0.8, 0.4)
+	flame_mat.emission_enabled = true
+	flame_mat.emission = Color(1.0, 0.6, 0.2)
+	flame_mat.emission_energy_multiplier = 1.3
+	flame_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for cx: float in [-1.8, 1.8]:
+		var stick := MeshInstance3D.new()
+		stick.mesh = CylinderMesh.new()
+		(stick.mesh as CylinderMesh).top_radius = 0.03
+		(stick.mesh as CylinderMesh).bottom_radius = 0.09
+		(stick.mesh as CylinderMesh).height = 0.24
+		stick.material_override = brass_mat
+		stick.position = Vector3(cx, 0.58, -1.5)
+		add_child(stick)
+		var flame := MeshInstance3D.new()
+		flame.mesh = SphereMesh.new()
+		(flame.mesh as SphereMesh).radius = 0.03
+		(flame.mesh as SphereMesh).height = 0.07
+		flame.material_override = flame_mat
+		flame.position = Vector3(cx, 0.74, -1.5)
+		add_child(flame)
+		var candle_light := OmniLight3D.new()
+		candle_light.light_color = Color(1.0, 0.65, 0.3)
+		candle_light.light_energy = 0.3
+		candle_light.omni_range = 1.8
+		candle_light.position = Vector3(cx, 0.74, -1.5)
+		add_child(candle_light)
+
 	# The steward's coin-purse: a small, light `Metallic` prop on a side
 	# table, subtle enough for a Pull that doesn't ring the suspicion meter
 	# the way a chandelier Push would.
@@ -155,10 +200,22 @@ func _build_lighting() -> void:
 	e.background_mode = Environment.BG_COLOR
 	e.background_color = Color(0.04, 0.03, 0.04)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.22, 0.19, 0.17)
-	e.ambient_light_energy = 1.2
+	# Warmer and a touch brighter than the old flat ambient, so Elend and the
+	# gossiping nobles read clearly by hearthlight without flattening the
+	# room's mood. No glow here (see the ballroom for why).
+	e.ambient_light_color = Color(0.28, 0.23, 0.19)
+	e.ambient_light_energy = 1.35
+	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+	e.tonemap_exposure = 1.1
 	env.environment = e
 	add_child(env)
+
+	var fill := DirectionalLight3D.new()
+	fill.light_color = Color(1.0, 0.8, 0.58)
+	fill.light_energy = 0.3
+	fill.shadow_enabled = false
+	fill.rotation_degrees = Vector3(-60.0, 40.0, 0.0)
+	add_child(fill)
 
 
 func _build_people() -> void:

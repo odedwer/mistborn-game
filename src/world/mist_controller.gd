@@ -27,6 +27,9 @@ const QUALITY := [
 @export var base_exposure := 1.15
 @export var base_depth_fog := 0.0045
 @export var low_quality_depth_fog := 0.011
+## Matches `EnvironmentBuilder`'s ambient so tin vision brightens *from*
+## a readable baseline instead of overriding it back down to a dim one.
+@export var base_ambient := 1.8
 ## Size of the mist volume that follows the focus.
 @export var mist_volume_size := Vector3(360.0, 70.0, 360.0)
 
@@ -147,7 +150,7 @@ func _apply() -> void:
 	var depth := base_depth_fog if volumetric else low_quality_depth_fog
 	environment.fog_density = depth * thin
 	environment.tonemap_exposure = base_exposure * (1.0 + 0.9 * tin)
-	environment.ambient_light_energy = 1.0 + 0.8 * tin
+	environment.ambient_light_energy = base_ambient + 0.8 * tin
 	for m: ShaderMaterial in [mist_material, canal_material]:
 		if m != null:
 			m.set_shader_parameter("density_scale", thin)

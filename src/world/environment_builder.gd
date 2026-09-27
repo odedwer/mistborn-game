@@ -37,7 +37,11 @@ static func build(parent: Node3D) -> Dictionary:
 
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.36, 0.39, 0.5)
-	env.ambient_light_energy = 1.6
+	# A touch brighter than before: the old value let unlit foreground
+	# geometry (a wall or the player's own shadow side) read as near-black.
+	# This keeps the cold-moonlight cast but lifts the floor enough that nothing
+	# goes fully dark up close.
+	env.ambient_light_energy = 1.8
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
@@ -46,8 +50,10 @@ static func build(parent: Node3D) -> Dictionary:
 
 	env.ssao_enabled = true
 	env.ssao_radius = 1.6
-	env.ssao_intensity = 2.2
-	env.ssao_power = 1.6
+	# Slightly lighter contact shadowing than before -- 2.2 was crushing
+	# corners and doorways to near-black at close range.
+	env.ssao_intensity = 1.7
+	env.ssao_power = 1.5
 	env.ssil_enabled = false
 	env.sdfgi_enabled = false
 
@@ -58,10 +64,12 @@ static func build(parent: Node3D) -> Dictionary:
 	env.glow_hdr_threshold = 0.9
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
 
-	# Depth fog: distance haze (and the only mist on the Low preset).
+	# Depth fog: distance haze (and the only mist on the Low preset). Ash
+	# from the constant fall gives the haze a warm-grey cast rather than a
+	# cold blue one -- it reads as airborne ash, not just atmospheric blue.
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
-	env.fog_light_color = Color(0.2, 0.21, 0.24)
+	env.fog_light_color = Color(0.24, 0.225, 0.205)
 	env.fog_light_energy = 1.0
 	env.fog_density = 0.0045
 	env.fog_sky_affect = 0.35
@@ -70,10 +78,13 @@ static func build(parent: Node3D) -> Dictionary:
 	env.fog_aerial_perspective = 0.2
 
 	# Volumetric fog: base haze. Local swirling mist comes from FogVolumes.
+	# Off-white ash mist (per the design doc) rather than a blue-tinted one,
+	# with a faint warm emission so lantern light glows visibly as it
+	# scatters through it (the "warm lantern pools" half of the look).
 	env.volumetric_fog_enabled = RenderingServer.get_current_rendering_method() != "gl_compatibility"
 	env.volumetric_fog_density = 0.012
-	env.volumetric_fog_albedo = Color(0.84, 0.86, 0.9)
-	env.volumetric_fog_emission = Color(0.03, 0.032, 0.036)
+	env.volumetric_fog_albedo = Color(0.85, 0.83, 0.78)
+	env.volumetric_fog_emission = Color(0.05, 0.044, 0.034)
 	env.volumetric_fog_emission_energy = 1.0
 	env.volumetric_fog_anisotropy = 0.45
 	env.volumetric_fog_length = 96.0
