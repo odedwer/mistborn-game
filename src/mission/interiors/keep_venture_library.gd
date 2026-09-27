@@ -54,9 +54,32 @@ func _build_hall() -> void:
 	InteriorKit.box(self, Vector3(hx - gap, HALL.y, 0.5), Vector3(-(hx + gap) * 0.5, HALL.y * 0.5, hz), stone)
 	InteriorKit.box(self, Vector3(hx - gap, HALL.y, 0.5), Vector3((hx + gap) * 0.5, HALL.y * 0.5, hz), stone)
 	InteriorKit.box(self, Vector3(gap * 2.0, HALL.y - 3.2, 0.5), Vector3(0, 3.2 + (HALL.y - 3.2) * 0.5, hz), stone)
-	# Tall stained windows on the north wall, lit faintly from outside.
-	for x: float in [-8.0, 0.0, 8.0]:
-		InteriorKit.box(self, Vector3(2.2, 5.0, 0.1), Vector3(x, 6.5, -hz + 0.3), InteriorKit.mat(Color(0.3, 0.35, 0.55), 0.0, 0.3, Color(0.25, 0.3, 0.5), 0.8), 0.0, false)
+	# Tall stained windows on the north wall: the same leaded-glass shader
+	# the ballroom uses (irregular panes, a rose-window arch, muted colour),
+	# each with its own palette rotation for variety.
+	var glass_shader := load("res://assets/shaders/stained_glass.gdshader") as Shader
+	var palettes := [
+		[Color(0.55, 0.12, 0.14), Color(0.14, 0.28, 0.55), Color(0.55, 0.42, 0.10), Color(0.16, 0.4, 0.24)],
+		[Color(0.14, 0.28, 0.55), Color(0.16, 0.4, 0.24), Color(0.55, 0.12, 0.14), Color(0.55, 0.42, 0.10)],
+		[Color(0.55, 0.42, 0.10), Color(0.55, 0.12, 0.14), Color(0.16, 0.4, 0.24), Color(0.14, 0.28, 0.55)],
+	]
+	var xs: Array[float] = [-8.0, 0.0, 8.0]
+	for i in xs.size():
+		var panel := MeshInstance3D.new()
+		panel.mesh = PlaneMesh.new()
+		(panel.mesh as PlaneMesh).size = Vector2(2.2, 5.0)
+		(panel.mesh as PlaneMesh).orientation = PlaneMesh.FACE_Z
+		var mat := ShaderMaterial.new()
+		mat.shader = glass_shader
+		var pal: Array = palettes[i]
+		mat.set_shader_parameter("color_a", pal[0])
+		mat.set_shader_parameter("color_b", pal[1])
+		mat.set_shader_parameter("color_c", pal[2])
+		mat.set_shader_parameter("color_d", pal[3])
+		mat.set_shader_parameter("emission_strength", 1.1)
+		panel.material_override = mat
+		panel.position = Vector3(xs[i], 6.5, -hz + 0.32)
+		add_child(panel)
 	# The study door on the east wall (closed; the eavesdrop spot).
 	InteriorKit.box(self, Vector3(0.2, 2.8, 1.6), Vector3(hx - 0.3, 1.4, 10), InteriorKit.mat(Color(0.3, 0.2, 0.12)))
 

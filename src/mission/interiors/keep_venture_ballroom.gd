@@ -144,7 +144,7 @@ func _build_stained_glass() -> void:
 		# of light where the glass would let moon/lantern light through.
 		var shaft := SpotLight3D.new()
 		shaft.light_color = tint.lightened(0.2)
-		shaft.light_energy = 1.1
+		shaft.light_energy = 1.6
 		shaft.spot_range = 9.0
 		shaft.spot_angle = 18.0
 		shaft.spot_angle_attenuation = 1.6
@@ -192,7 +192,7 @@ func _build_chandeliers() -> void:
 			chandelier.add_child(bulb)
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.85, 0.6)
-		light.light_energy = 1.3
+		light.light_energy = 1.9
 		light.omni_range = 8.0
 		# The centre chandelier is close over the dance floor where nobles
 		# gather -- give it the one shadowed light in the room so figures
@@ -308,14 +308,14 @@ func _build_lighting() -> void:
 	e.background_mode = Environment.BG_COLOR
 	e.background_color = Color(0.04, 0.035, 0.05)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	# A warm-leaning ambient (rather than the old flat grey) so the hall
-	# reads opulent under the chandeliers and candlelight, while staying
-	# moody -- the corners fall off into shadow instead of everything being
-	# lit flat.
-	e.ambient_light_color = Color(0.3, 0.24, 0.19)
-	e.ambient_light_energy = 1.1
+	# Kept low and warm: the chandeliers, their candle bulbs and the
+	# stained-glass shafts are meant to carry the room's light, not a flat
+	# ambient wash. The pass-1 value (1.1) blew walls near the door out to
+	# white; this is low enough that unlit corners actually go dim.
+	e.ambient_light_color = Color(0.22, 0.17, 0.13)
+	e.ambient_light_energy = 0.4
 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
-	e.tonemap_exposure = 1.15
+	e.tonemap_exposure = 0.95
 	# No glow here: at interior scale even a modest bloom threshold blows
 	# out lit character skin/hair under the fill + ambient + chandeliers, so
 	# rely on the emissive materials themselves (candle flames, chandelier
@@ -324,12 +324,12 @@ func _build_lighting() -> void:
 	env.environment = e
 	add_child(env)
 
-	# A soft warm fill light angled down over the dance floor, standing in
-	# for bounced candle/chandelier light so nobles aren't lit from one
-	# harsh point only -- keeps faces readable without extra shadow cost.
+	# A faint warm fill, just enough to keep faces off pure black between
+	# the chandeliers and window shafts -- most of the room's light should
+	# visibly come from those, not from this.
 	var fill := DirectionalLight3D.new()
 	fill.light_color = Color(1.0, 0.82, 0.6)
-	fill.light_energy = 0.35
+	fill.light_energy = 0.12
 	fill.shadow_enabled = false
 	fill.rotation_degrees = Vector3(-65.0, 25.0, 0.0)
 	add_child(fill)
@@ -391,7 +391,10 @@ func _build_exit_door() -> void:
 	mesh.mesh = BoxMesh.new()
 	(mesh.mesh as BoxMesh).size = box.size
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.55, 0.45, 0.3)
+	# Darker, less reflective wood than the old pale value -- at close range,
+	# facing the spawn point dead-on, the bright version blew out to white.
+	mat.albedo_color = Color(0.24, 0.19, 0.13)
+	mat.roughness = 0.85
 	mesh.material_override = mat
 	door.add_child(mesh)
 	door.position = Vector3(0.0, 1.5, HALL_SIZE.z * 0.5 - 0.3)

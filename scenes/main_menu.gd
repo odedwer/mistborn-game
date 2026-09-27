@@ -45,6 +45,7 @@ func _build_background() -> void:
 	moon.light_energy = 0.6
 	world.add_child(moon)
 
+	_build_horizon_glow(world)
 	_build_skyline(world)
 
 	# Drifting mist: a slow GPUParticles3D field of soft, depth-faded puffs
@@ -69,17 +70,27 @@ func _build_background() -> void:
 	var quad := QuadMesh.new()
 	quad.size = Vector2(1, 1)
 	mist.draw_pass_1 = quad
-	var mist_mat := ShaderMaterial.new()
+	var soft_tex: Texture2D = load("res://assets/textures/soft_particle.png") if ResourceLoader.exists("res://assets/textures/soft_particle.png") else _soft_circle_texture()
 	var soft_shader := "res://assets/shaders/soft_mist_particle.gdshader"
-	var soft_tex := "res://assets/textures/soft_particle.png"
-	if ResourceLoader.exists(soft_shader):
+	# The depth-fade shader needs a depth prepass, which only Forward+
+	# provides; on Compatibility (mobile/GL) fall back to a plain additive
+	# billboard material so the mist still renders instead of vanishing.
+	var is_compat := RenderingServer.get_current_rendering_method() == "gl_compatibility"
+	if not is_compat and ResourceLoader.exists(soft_shader):
+		var mist_mat := ShaderMaterial.new()
 		mist_mat.shader = load(soft_shader)
-		if ResourceLoader.exists(soft_tex):
-			mist_mat.set_shader_parameter("albedo_tex", load(soft_tex))
-		else:
-			mist_mat.set_shader_parameter("albedo_tex", _soft_circle_texture())
+		mist_mat.set_shader_parameter("albedo_tex", soft_tex)
 		mist_mat.set_shader_parameter("tint", Vector3(0.5, 0.51, 0.57))
-	quad.material = mist_mat
+		quad.material = mist_mat
+	else:
+		var fallback_mat := StandardMaterial3D.new()
+		fallback_mat.albedo_color = Color(0.5, 0.51, 0.57, 0.16)
+		fallback_mat.albedo_texture = soft_tex
+		fallback_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		fallback_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		fallback_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		fallback_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		quad.material = fallback_mat
 	world.add_child(mist)
 
 	var cam := Camera3D.new()
@@ -90,28 +101,58 @@ func _build_background() -> void:
 	_animate_camera(cam)
 
 
-## Luthadel silhouette: a jagged skyline of dark building blocks with Kredik
-## Shaw's cluster of black obsidian spires rising above them, slowly
-## revealed by the drifting mist.
+## A faint red glow low on the horizon (the Ashmounts' distant fires, as in
+## the open world's night sky shader), behind the skyline silhouette.
+func _build_horizon_glow(world: Node3D) -> void:
+	var glow := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(220.0, 34.0)
+	plane.orientation = PlaneMesh.FACE_Z
+	glow.mesh = plane
+	var tex := GradientTexture2D.new()
+	tex.width = 8
+	tex.height = 64
+	tex.fill = GradientTexture2D.FILL_LINEAR
+	tex.fill_from = Vector2(0.5, 1.0)
+	tex.fill_to = Vector2(0.5, 0.0)
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
+	grad.add_point(0.55, Color(0.5, 0.14, 0.05, 0.35))
+	grad.set_color(1, Color(0.7, 0.2, 0.07, 0.55))
+	tex.gradient = grad
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = tex
+	mat.albedo_color = Color(1, 1, 1, 1)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.material_override = mat
+	glow.position = Vector3(0, -1.0, -62.0)
+	world.add_child(glow)
+
+
+## Luthadel silhouette: a jagged skyline of soot-stained buildings with
+## pitched slate roofs and chimneys (the same shapes the world generator
+## uses), with Kredik Shaw's cluster of black obsidian spires rising above
+## them against the horizon glow, slowly revealed by the drifting mist.
 func _build_skyline(world: Node3D) -> void:
 	var dark_mat := StandardMaterial3D.new()
 	dark_mat.albedo_color = Color(0.012, 0.011, 0.014)
 	dark_mat.roughness = 1.0
+	var roof_mat := StandardMaterial3D.new()
+	roof_mat.albedo_color = Color(0.02, 0.017, 0.017)
+	roof_mat.roughness = 0.85
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260925
 	for i in 16:
-		var b := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		var w := rng.randf_range(2.0, 5.0)
-		var h := rng.randf_range(4.0, 16.0)
-		bm.size = Vector3(w, h, w)
-		b.mesh = bm
-		b.material_override = dark_mat
+		var w := rng.randf_range(2.5, 5.0)
+		var depth := rng.randf_range(2.5, 5.0)
+		var h := rng.randf_range(4.0, 15.0)
 		var x := rng.randf_range(-40.0, 40.0)
 		var z := rng.randf_range(-55.0, -25.0)
-		b.position = Vector3(x, h * 0.5 - 3.0, z)
-		world.add_child(b)
+		var base := Vector3(x, -3.0, z)
+		_pitched_building(world, dark_mat, roof_mat, base, Vector2(w, depth), h, rng)
 
 	# Kredik Shaw: one tall central spire plus a ring of shorter needle
 	# spires, echoing the real landmark's "forest of black spires" shape.
@@ -124,6 +165,43 @@ func _build_skyline(world: Node3D) -> void:
 		var hgt := rng.randf_range(0.35, 0.7) * 34.0
 		var pos := spire_center + Vector3(sin(a) * rad, 0.0, cos(a) * rad * 0.6)
 		_spire(world, dark_mat, pos, rng.randf_range(0.9, 1.6), hgt)
+
+
+## A pitched-roof building silhouette: a box body, a gable roof (two sloped
+## PrismMesh halves, ridge along X), and a small chimney stack -- reusing the
+## same overall shape the world generator's `_gable_roof` builds, simplified
+## to a silhouette since this is only ever seen backlit from far away.
+func _pitched_building(world: Node3D, wall_mat: Material, roof_mat: Material, base: Vector3, size: Vector2, height: float, rng: RandomNumberGenerator) -> void:
+	var body := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(size.x, height, size.y)
+	body.mesh = bm
+	body.material_override = wall_mat
+	body.position = base + Vector3(0, height * 0.5, 0)
+	world.add_child(body)
+
+	var rise := size.y * 0.4
+	var roof := MeshInstance3D.new()
+	var pm := PrismMesh.new()
+	# PrismMesh's triangular cross-section is in XY and it extrudes along Z,
+	# so this sits directly on the box body with its ridge running along Z
+	# (depth) -- a plain gable roof, no extra rotation needed.
+	pm.size = Vector3(size.x, rise, size.y)
+	pm.left_to_right = 0.5
+	roof.mesh = pm
+	roof.material_override = roof_mat
+	roof.position = base + Vector3(0, height + rise * 0.5, 0)
+	world.add_child(roof)
+
+	if rng.randf() < 0.6:
+		var chimney := MeshInstance3D.new()
+		var cm := BoxMesh.new()
+		var cx := rng.randf_range(-size.x * 0.3, size.x * 0.3)
+		cm.size = Vector3(0.35, rise * 0.9, 0.35)
+		chimney.mesh = cm
+		chimney.material_override = wall_mat
+		chimney.position = base + Vector3(cx, height + rise * 0.55, 0)
+		world.add_child(chimney)
 
 
 func _spire(world: Node3D, mat: Material, base: Vector3, radius: float, height: float) -> void:

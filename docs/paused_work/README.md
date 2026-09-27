@@ -17,14 +17,6 @@ Still to do:
 - Finish and verify PERFORMANCE.md.
 - The remaining items from the QA brief: traversal validation, the soak run, the freed-object error in SceneTransition, and saving the interior vs. open-world position.
 
-## `art_polish_pass2_wip.patch` (art polish, pass 2)
-This is the unfinished second pass on the review items in `docs/POLISH_BACKLOG.md` ("Review of polish pass 1"):
-- A reworked stained-glass shader.
-- Ballroom lighting that's less overexposed.
-- Library windows that use the stained-glass shader.
-
-It hasn't been screenshot-verified yet. The main-menu skyline rework hadn't started.
-
 ## Resuming
 ```bash
 git apply docs/paused_work/<name>.patch   # then run tools/run_tests.sh
