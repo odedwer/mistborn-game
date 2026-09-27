@@ -180,16 +180,28 @@ class Body:
         def shape(i, th):
             k = 1.0
             z = centers[i][2]
+            # Eye sockets: recessed deeper than before so the brow ridge above
+            # them (and the cheekbone below) actually reads as a ridge/socket
+            # pair instead of a smooth cylindrical face.
             for ex_ in (62.0, 118.0):
-                dth = (th - ex_) / 13.0
-                dz = (z - eye_z) / (0.016 * s)
-                k -= 0.075 * math.exp(-(dth * dth + dz * dz))
-            # brow ridge
-            if 55 < th < 125:
-                k += 0.03 * math.exp(-((z - brow_z) / (0.01 * s)) ** 2)
-            # cheekbones
-            for cx in (48.0, 132.0):
-                k += 0.03 * math.exp(-(((th - cx) / 18) ** 2 + ((z - (eye_z - 0.022 * s)) / (0.015 * s)) ** 2))
+                dth = (th - ex_) / 12.0
+                dz = (z - eye_z) / (0.015 * s)
+                k -= 0.095 * math.exp(-(dth * dth + dz * dz))
+            # Brow ridge: stronger and a touch narrower, so it overhangs the
+            # (now deeper) socket rather than blending into it.
+            if 52 < th < 128:
+                k += 0.045 * math.exp(-((z - brow_z) / (0.009 * s)) ** 2)
+            # Cheekbones: sharper falloff (tighter sigma) and more prominent,
+            # sitting just below and outside the eye sockets.
+            for cx in (46.0, 134.0):
+                k += 0.05 * math.exp(-(((th - cx) / 14) ** 2 + ((z - (eye_z - 0.02 * s)) / (0.013 * s)) ** 2))
+            # Jaw angle: a subtle corner where the jawline turns up toward the
+            # ear, instead of a uniform taper from chin to cheek.
+            for cx in (38.0, 142.0):
+                k += 0.022 * math.exp(-(((th - cx) / 16) ** 2 + ((z - (chin_z + 0.05 * s)) / (0.02 * s)) ** 2))
+            # Nose bridge: a faint ridge running up from the nose wedge toward
+            # the brow, giving the profile more than a flat cylindrical front.
+            k += 0.018 * math.exp(-(((th - 90) / 10) ** 2)) * smoothstep(mouth_z, brow_z, z)
             # lips and chin
             k += 0.03 * math.exp(-(((th - 90) / 16) ** 2 + ((z - mouth_z) / (0.008 * s)) ** 2))
             k += 0.03 * math.exp(-(((th - 90) / 22) ** 2 + ((z - (chin_z + 0.012 * s)) / (0.01 * s)) ** 2))
@@ -275,15 +287,30 @@ class Body:
         self.head_lm = lm
         return lm
 
-    def hair_shell(self, color, *, fringe_z=None, back_z=None, puff=1.12, jag=0.012, n=20, spikes=7):
-        """Hair cap built from the head profile, hidden in front below the fringe."""
+    def hair_shell(self, color, *, fringe_z=None, back_z=None, puff=1.12, jag=0.012, n=20, spikes=7,
+                   style="short", bald_amount=0.55):
+        """Hair cap built from the head profile, hidden in front below the fringe.
+
+        `style`:
+          - "short" (default): the original close-cropped cap, unchanged.
+          - "long": a short cap plus a tied tail hanging down the back.
+          - "bun": a short cap plus a rounded knot pinned at the back/crown.
+          - "bald": a thin fringe of hair low on the sides/back only, leaving
+            the crown bare (pair with `bald_top=` on `head()` for the scalp
+            tone to show through).
+        """
         lm = self.head_lm
         s = lm["s"]
         fz = fringe_z if fringe_z is not None else lm["brow_z"] + 0.012 * s
         bz = back_z if back_z is not None else lm["chin_z"] + 0.03 * s
         cs, rs = lm["centers"], lm["radii"]
         zs = [c[2] for c in cs]
-        rings_z = list(np.linspace(bz, lm["top"] - 0.008 * s, 12))
+        top_z = lm["top"] - 0.008 * s
+        if style == "bald":
+            # Only the lower band (above the ears, below the crown) keeps hair.
+            bz = max(bz, lm["eye_z"] - 0.01 * s)
+            top_z = min(top_z, lm["brow_z"] + 0.03 * s)
+        rings_z = list(np.linspace(bz, top_z, 12))
         centers, radii = [], []
         for z in rings_z:
             yc = np.interp(z, zs, [c[1] for c in cs])
@@ -300,12 +327,49 @@ class Body:
                 # hide inside the face below the fringe line (front), keep sides/back
                 k -= 0.35 * front * smoothstep(fz, fz - 0.03 * s, z)
                 k -= 0.12 * side_ * smoothstep(lm["eye_z"], lm["eye_z"] - 0.04 * s, z)
+            if style == "bald":
+                # Thin the crown band away entirely, front and back alike, so
+                # the scalp (bald_top on head()) shows through on top.
+                k -= bald_amount * smoothstep(rings_z[0], rings_z[-1], z)
             if i == 0 or (z < fz + 0.01 * s and front > 0.3):
                 k += jag / 0.1 * 0.25 * math.sin(math.radians(th) * spikes)
             return k
 
         tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape,
              weights={"Head": 1.0}, cap1=0.022 * s)
+
+        if style == "long":
+            self._hair_tail(color, bz, s)
+        elif style == "bun":
+            self._hair_bun(color, top_z, s)
+
+    def _back_point(self, z, s, push=1.0):
+        """A point on the back surface of the head profile at height `z`."""
+        lm = self.head_lm
+        cs, rs = lm["centers"], lm["radii"]
+        zs = [c[2] for c in cs]
+        yc = np.interp(z, zs, [c[1] for c in cs])
+        rb = np.interp(z, zs, [rr[3] for rr in rs])
+        return v3(0, yc - rb * push, z)
+
+    def _hair_tail(self, color, bz, s):
+        """A tied tail of hair hanging down the back of the head/neck."""
+        anchor = self._back_point(bz + 0.015 * s, s, push=0.95)
+        pts = [anchor, anchor + v3(0, -0.01 * s, -0.05 * s), anchor + v3(0, -0.03 * s, -0.13 * s),
+               anchor + v3(0, -0.05 * s, -0.22 * s), anchor + v3(0.005 * s, -0.06 * s, -0.3 * s)]
+        radii = [(0.024 * s, 0.03 * s), (0.022 * s, 0.026 * s), (0.018 * s, 0.02 * s),
+                 (0.013 * s, 0.014 * s), (0.006 * s, 0.006 * s)]
+        tube(self.m, pts, radii, n=10, hint=(1, 0, 0), color=color,
+             weights=self.W(["Head", "Neck"], {"Neck": 0.5}), cap1=0.004 * s)
+
+    def _hair_bun(self, color, top_z, s):
+        """A rounded knot of hair pinned at the back of the crown."""
+        anchor = self._back_point(top_z - 0.02 * s, s, push=0.85)
+        pts = [anchor + v3(0, -0.01 * s, 0.01 * s), anchor + v3(0, -0.025 * s, -0.005 * s),
+               anchor + v3(0, -0.012 * s, -0.022 * s)]
+        radii = [(0.014 * s, 0.018 * s), (0.026 * s, 0.026 * s), (0.014 * s, 0.016 * s)]
+        tube(self.m, pts, radii, n=10, hint=(1, 0, 0), color=color,
+             weights={"Head": 1.0}, cap0=0.012 * s, cap1=0.01 * s)
 
     def arm(self, side, radii_scale=1.0, color=None, sleeve=None, bare_from=None, n=12,
             cuff=None, flare=0.0, skin=None):

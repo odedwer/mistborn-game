@@ -466,7 +466,8 @@ def build_ham():
     b.torso(t, tcol, n=18)
     b.neck(skin, r=0.064)
     b.head(skin, brow=hexcol("2a1e16"), lips=hexcol("8a5a4c"), jaw=1.12)
-    b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.01 * s, fringe_z=b.head_lm["top"] - 0.02 * s)
+    b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.01 * s, fringe_z=b.head_lm["top"] - 0.02 * s,
+                 style="long")
     for side in (1, -1):
         b.arm(side, color=skin, radii_scale=1.12)
         b.hand(side, skin, scale=1.06)
@@ -631,8 +632,9 @@ def build_marsh():
 
     b.torso(t, tcol)
     b.neck(skin, r=0.047)
-    b.head(skin, brow=hexcol("2a241e"), lips=hexcol("7a5a52"), jaw=1.0, gaunt=1.0)
-    b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.005 * s, fringe_z=b.head_lm["brow_z"] + 0.05 * s)
+    b.head(skin, brow=hexcol("2a241e"), lips=hexcol("7a5a52"), jaw=1.0, gaunt=1.0, bald_top=hexcol("caa88e"))
+    b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.005 * s, fringe_z=b.head_lm["brow_z"] + 0.05 * s,
+                 style="bald")
     for side in (1, -1):
         b.arm(side, color=robe, flare=0.02)
         b.hand(side, skin)
@@ -693,12 +695,14 @@ def build_elend():
             lambda p, i, th: coat_d if i == 4 else coat, rows=5, arc=(112, 428), leg_share=0.6)
     collar(b, coat, h=0.05, r=(0.08, 0.075, 0.08), arc=(115, 300))
     collar(b, coat_d, h=0.07, r=(0.085, 0.08, 0.085), arc=(300, 425))
-    # stack of books pinned against the left hip by the left hand
+    # stack of books held against the left hip, out in front of the open
+    # coat skirt rather than tucked against it -- the old offset sat close
+    # enough to the body that the coat's flare clipped through the stack.
     o, M = b.hand_frame(-1)
     W = {"LeftHand": 1.0}
     cols = [hexcol("6a2a22"), hexcol("2a4a3a"), hexcol("8a6a3a")]
     for k, (w, h, d) in enumerate([(0.17, 0.035, 0.24), (0.15, 0.03, 0.22), (0.16, 0.04, 0.2)]):
-        c = o + M[:, 0] * (-0.02 - 0.037 * k) * s + M[:, 1] * 0.02 * s
+        c = o + M[:, 0] * (-0.07 - 0.037 * k) * s + M[:, 1] * 0.02 * s + M[:, 2] * 0.06 * s
         box(b.m, c, (h * s, w * s, d * s), frame=M, color=cols[k], weights=W)
     return b, dict(mats={CLOTH: "Cloth"}, style="elend")
 
@@ -724,11 +728,13 @@ def build_vin_gown():
     b.torso(t, tcol)
     b.neck(skin, r=0.046)
     b.head(skin, brow=hexcol("3a2a22"), lips=hexcol("b86a66"), jaw=0.9)
+    # Lady Valette's hair is put up for the ball, not worn loose like Vin's
+    # usual cropped cut.
     b.hair_shell(hair, puff=1.05, jag=0.012, back_z=b.head_lm["chin_z"] + 0.03 * b.s, spikes=9,
-                 fringe_z=b.head_lm["brow_z"] + 0.02 * s)
-    # hair ornament: a small silk flower
+                 fringe_z=b.head_lm["brow_z"] + 0.02 * s, style="bun")
+    # hair ornament: a small silk flower, pinned near the bun
     lm = b.head_lm
-    f = v3(-0.07 * s, 0.02 * s, lm["brow_z"] + 0.04 * s)
+    f = v3(-0.05 * s, -0.03 * s, lm["top"] - 0.03 * s)
     tube(b.m, [f - v3(0.012 * s, 0, 0), f + v3(0.012 * s, 0, 0)], [0.022 * s, 0.018 * s], n=8, color=trim,
          weights={"Head": 1.0}, cap0=0.006 * s, cap1=0.008 * s)
 
@@ -794,7 +800,7 @@ def build_noble_man():
     b.neck(shirt, r=0.054)
     b.head(skin, brow=hexcol("3a2a20"), lips=hexcol("a87062"))
     b.hair_shell(hair, puff=1.03, jag=0.006, back_z=b.head_lm["chin_z"] + 0.05 * s, spikes=4,
-                 fringe_z=b.head_lm["brow_z"] + 0.035 * s)
+                 fringe_z=b.head_lm["brow_z"] + 0.035 * s, style="long")
     for side in (1, -1):
         b.arm(side, color=lambda p, i, th, side=side: coat_d if arm_t(b, side, p) > 1.85 else coat, flare=0.008)
         b.hand(side, hexcol("f0ece4"))  # white gloves

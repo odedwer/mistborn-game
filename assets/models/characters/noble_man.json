@@ -1,7 +1,7 @@
 {
  "name": "noble_man",
  "style": "noble_m",
- "tris": 3406,
+ "tris": 3496,
  "height": 1.8123020508708658,
  "garments": {
   "tails": 96,
@@ -10,7 +10,7 @@
   "hat_bowler": 208,
   "cape": 160
  },
- "tris_max": 4270,
+ "tris_max": 4360,
  "materials": [
   "Cloak",
   "Cloth"
