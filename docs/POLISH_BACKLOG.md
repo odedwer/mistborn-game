@@ -44,3 +44,10 @@ Found by screenshot review after the first polish pass.
 ## Review of polish pass 4
 - **Main menu:** good now, with a crisp skyline, a red horizon glow and low mist. One faint lighter band edge remains at the bottom third (around y=610 at 720p), probably the ground or foreground mist plane. Minor.
 - **Characters:** Marsh is bald and Ham has long hair, as intended. Faces are too small in the lineup to judge; take a `--zoom=head` close-up next pass.
+
+## Open-world expansion follow-ups
+- **Screenshot coverage:** only the merchant district's "after" shot was reviewed. It looks great: dense lit windows under the mist, with the Ashmounts and Kredik Shaw on the horizon. One tilted flat roof slab sticks out oddly in the foreground; check `building_builder` for a bad roof rotation.
+- **District silhouettes:** the merchant and noble districts only got material and density tuning. They still need distinct architecture: facade ornaments, gardens, wider avenues.
+- **Activity coverage:** each major district has at least one instance of each relevant activity, not the target of 3 per type per district. Author more ring and pursuit paths, validated against geometry.
+- **Time of day:** there is no day/night cycle, so "night-time obligator patrols" are approximated by higher obligator density in the noble districts.
+- **Crowd fall-through:** one crowd pedestrian fell out of the world during the extended soak run (`fallen_detail`). Investigate.
