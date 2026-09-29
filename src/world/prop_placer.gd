@@ -20,6 +20,7 @@ static func place(data: ChunkBuildData, plan: CityPlan, L: ChunkLayout, seed_val
 	_lamps(data, L, rng)
 	_loose(data, plan, L, rng)
 	_plazas(data, L, rng)
+	_avenue_planting(data, plan, L, rng)
 
 
 static func _lamps(data: ChunkBuildData, L: ChunkLayout, rng: RandomNumberGenerator) -> void:
@@ -150,3 +151,55 @@ static func _plazas(data: ChunkBuildData, L: ChunkLayout, rng: RandomNumberGener
 			if p2.distance_to(c) < 2.5:
 				continue
 			data.add_rigid(&"barrel" if rng.randf() < 0.5 else &"crate", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), Vector3(p2.x, 0.5, p2.y)))
+
+
+## Merchant/noble avenues (boundary streets widened by `avenue_every`): a row
+## of bare, ash-dead street trees and stone planters down both kerbs, just
+## inside the lamp line. Style key `avenue_planting` is the tree share (the
+## rest are planters); absent means no planting (skaa, docks, market).
+static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayout, rng: RandomNumberGenerator) -> void:
+	if not L.style.has("avenue_planting") or L.empty:
+		return
+	var tree_share := float(L.style["avenue_planting"])
+	var min_w := float((L.style.get("arterial", [8.0, 11.0]) as Array)[1]) + 0.5
+	for st in L.streets:
+		if not st.boundary or st.width < min_w or st.length() < 30.0:
+			continue
+		var dir := st.direction()
+		var perp := Vector2(-dir.y, dir.x)
+		var off := st.width * 0.5 - 1.7
+		var n := int(floor((st.length() - 10.0) / 12.0))
+		for i in n:
+			for side: float in [1.0, -1.0]:
+				var t := 5.0 + 12.0 * float(i) + (6.0 if side < 0.0 else 0.0)
+				var p := st.a + dir * t + perp * side * off
+				if not _street_spot_free(plan, L, p, 1.0):
+					continue
+				var yaw := rng.randf() * TAU
+				if rng.randf() < tree_share:
+					data.add_instance(&"street_tree", Transform3D(Basis(Vector3.UP, yaw), Vector3(p.x, 0.0, p.y)))
+					data.add_box_shape(Vector3(p.x, 1.1, p.y), Vector3(0.4, 2.2, 0.4))
+				else:
+					data.add_instance(&"ash_planter", Transform3D(Basis(Vector3.UP, yaw), Vector3(p.x, 0.0, p.y)))
+					data.add_box_shape(Vector3(p.x, 0.3, p.y), Vector3(0.9, 0.6, 0.9))
+
+
+## Like `_free_spot`, but for points on a boundary street, which may lie just
+## across the chunk border (that street area is lot-free by construction).
+static func _street_spot_free(plan: CityPlan, L: ChunkLayout, p: Vector2, radius: float) -> bool:
+	if not plan.inside_city(p) or plan.distance_to_wall(p) < plan.wall_thickness + 4.0:
+		return false
+	if L.point_in_lot(p, radius):
+		return false
+	for c in plan.canals:
+		if c.rect.grow(1.0 + radius).has_point(p):
+			return false
+	if plan.landmark_overlapping(Rect2(p - Vector2.ONE * radius, Vector2.ONE * radius * 2.0)) != null:
+		return false
+	for b in L.bridges:
+		if (b["rect"] as Rect2).grow(1.5).has_point(p):
+			return false
+	for lp in L.lamps:
+		if Vector2(lp.x, lp.z).distance_to(p) < radius + 0.6:
+			return false
+	return true

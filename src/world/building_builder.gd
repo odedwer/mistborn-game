@@ -58,6 +58,11 @@ static func build_lot(data: ChunkBuildData, lot: ChunkLayout.Lot) -> void:
 	data.add_nav_box(lo, hi, lot.roof == ChunkLayout.Roof.FLAT)
 	data.add_nav_obstruction(r, -1.0, h - 0.5)
 	_windows(data, lot, rng, cols)
+	if bool(lot.style.get("facade_ornament", false)):
+		# Own RNG: must not shift the draws the roof furniture below makes.
+		var orng := RandomNumberGenerator.new()
+		orng.seed = lot.lot_seed ^ 0x0A4E
+		_facade_ornament(data, lot, orng, dark)
 	if lot.roof == ChunkLayout.Roof.FLAT:
 		_flat_roof(data, lot, rng, cols)
 	else:
@@ -136,6 +141,43 @@ static func _windows(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumb
 			data.add_instance(&"wall_lantern", Transform3D(Basis.looking_at(-n), lp2))
 			data.add_metal(lp2 + Vector3.UP * 0.35, 4.0)
 			data.add_light(lp2, Color(1.0, 0.6, 0.28), 7.0, 1.6)
+
+
+## Merchant/noble facade dressing: vertical pilaster strips between windows,
+## and a balcony with an iron railing (itself a Push/Pull anchor) on an upper
+## floor of the front face. Gated by the district style's `facade_ornament`
+## flag so the skaa quarter and docks keep their plainer look.
+static func _facade_ornament(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumberGenerator, dark: Color) -> void:
+	var trim := data.mb(M.TRIM)
+	for bit: int in [ChunkLayout.FACE_S, ChunkLayout.FACE_N, ChunkLayout.FACE_E, ChunkLayout.FACE_W]:
+		if lot.shared & bit:
+			continue
+		var fr := _face_frame(lot.rect, bit)
+		var o: Vector3 = fr[0]
+		var rv: Vector3 = fr[1]
+		var n: Vector3 = fr[2]
+		var length: float = fr[3]
+		# Pilasters: slim raised piers at roughly one-window intervals.
+		var count := int(floor(length / WIN_SPACING))
+		if count < 2:
+			continue
+		var spacing := length / float(count)
+		# Pier half-extents in world space (rv/n are axis-aligned ±X/±Z unit
+		# vectors, so abs() turns them into a proper symmetric AABB regardless
+		# of which cardinal face this is).
+		var half_rv := Vector3(absf(rv.x), 0.0, absf(rv.z)) * 0.09
+		var half_n := Vector3(absf(n.x), 0.0, absf(n.z)) * 0.06
+		for i in range(1, count):
+			var p := o + rv * (spacing * float(i)) + n * 0.05
+			trim.add_box(p - half_rv - half_n, p + half_rv + half_n + Vector3.UP * (lot.height - 0.2),
+					dark * 0.75, dark * 0.85, dark * 0.7)
+		# One balcony, front face only, second floor if there is one.
+		if bit == lot.front and lot.floors >= 2 and rng.randf() < 0.7:
+			var y := ChunkLayout.GROUND_FLOOR_H + 0.05
+			var bp := o + rv * (length * 0.5) + n * 0.02 + Vector3.UP * y
+			var bx := Basis(rv, Vector3.UP, n)
+			data.add_instance(&"balcony", Transform3D(bx, bp))
+			data.add_metal(bp + n * 0.76 + Vector3.UP * 0.45, 10.0)
 
 
 static func _chimney(data: ChunkBuildData, rng: RandomNumberGenerator, x: float, z: float,
