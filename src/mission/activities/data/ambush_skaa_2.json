@@ -1,20 +1,20 @@
 {
-	"id": "ambush_market",
+	"id": "ambush_skaa_2",
 	"params": {
 		"enemy_types": [
-			"guard",
-			"guard",
-			"hazekiller"
+			"thug",
+			"coinshot",
+			"thug"
 		],
-		"spawn_radius": 2.5
+		"spawn_radius": 4.0
 	},
 	"rewards": {
 		"coins": 80.0,
 		"mastery_points": 2.0,
 		"vials": 1.0
 	},
-	"start_marker": "ambush_market",
-	"title": "Obligator Ambush: Market Square",
+	"start_marker": "ambush_skaa_2",
+	"title": "Obligator Ambush: Soup Line",
 	"type": "obligator_ambush",
 	"validated": true
 }

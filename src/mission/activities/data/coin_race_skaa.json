@@ -1,12 +1,46 @@
 {
 	"id": "coin_race_skaa",
-	"type": "coin_race",
-	"title": "Coin Race: Skaa Rooftops",
-	"start_marker": "coin_race_skaa",
 	"params": {
-		"ring_offsets": [[10, 4, 0], [20, 2, 10], [15, 6, 25], [0, 8, 35], [-10, 5, 45]],
-		"time_limit": 26.0,
-		"medals": {"gold": 14.0, "silver": 19.0, "bronze": 24.0}
+		"medals": {
+			"bronze": 24.0,
+			"gold": 14.0,
+			"silver": 19.0
+		},
+		"ring_offsets": [
+			[
+				-10.9486389160156,
+				5.94999980926514,
+				16.1372261047363
+			],
+			[
+				-24.9486389160156,
+				8.44999980926514,
+				22.6372261047363
+			],
+			[
+				-36.9486389160156,
+				8.94999980926514,
+				35.6372261047363
+			],
+			[
+				-42.9486389160156,
+				8.94999980926514,
+				53.1372261047363
+			],
+			[
+				-55.9486389160156,
+				8.94999980926514,
+				66.1372261047363
+			]
+		],
+		"time_limit": 26.0
 	},
-	"rewards": {"coins": 40, "mastery_points": 1}
+	"rewards": {
+		"coins": 40.0,
+		"mastery_points": 1.0
+	},
+	"start_marker": "coin_race_skaa",
+	"title": "Coin Race: Skaa Rooftops",
+	"type": "coin_race",
+	"validated": true
 }

@@ -1,20 +1,20 @@
 {
-	"id": "ambush_noble",
+	"id": "ambush_noble_2",
 	"params": {
 		"enemy_types": [
 			"guard",
 			"guard",
-			"coinshot"
+			"guard"
 		],
-		"spawn_radius": 5.0
+		"spawn_radius": 4.0
 	},
 	"rewards": {
-		"coins": 85.0,
+		"coins": 104.0,
 		"mastery_points": 2.0,
 		"vials": 1.0
 	},
-	"start_marker": "ambush_noble",
-	"title": "Obligator Ambush: Keep Ring",
+	"start_marker": "ambush_noble_2",
+	"title": "Obligator Ambush: Carriage Road",
 	"type": "obligator_ambush",
 	"validated": true
 }

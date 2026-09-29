@@ -1,19 +1,19 @@
 {
-	"id": "riot_market",
+	"id": "riot_noble_1",
 	"params": {
 		"calm_threshold": 25.0,
 		"member_count": 5.0,
 		"spawn_radius": 6.0,
-		"start_mood": 75.0,
-		"time_limit": 32.0
+		"start_mood": 78.0,
+		"time_limit": 33.0
 	},
 	"rewards": {
-		"coins": 45.0,
+		"coins": 58.0,
 		"mastery_points": 1.0,
 		"vials": 1.0
 	},
-	"start_marker": "riot_market",
-	"title": "Market Unrest",
+	"start_marker": "riot_noble_1",
+	"title": "Servants' Quarter Unrest",
 	"type": "crowd_riot",
 	"validated": true
 }

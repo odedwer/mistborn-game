@@ -1,14 +1,49 @@
 {
 	"id": "noble_carriage_heist",
-	"type": "rooftop_pursuit",
-	"title": "Noble Carriage Coin-Heist",
-	"start_marker": "noble_carriage_heist",
 	"params": {
-		"path_offsets": [[0, 0, 0], [-20, 0, 10], [-38, 2, 22], [-30, 4, 42], [-12, 1, 58]],
-		"thief_speed": 5.0,
 		"catch_distance": 4.0,
-		"time_limit": 35.0,
-		"medals": {"gold": 14.0, "silver": 22.0, "bronze": 30.0}
+		"medals": {
+			"bronze": 30.0,
+			"gold": 14.0,
+			"silver": 22.0
+		},
+		"path_offsets": [
+			[
+				0.0,
+				0.0,
+				0.0
+			],
+			[
+				13.7826309204102,
+				2.08509540557861,
+				-2.73299026489258
+			],
+			[
+				20.2826309204102,
+				2.08509540557861,
+				3.26700973510742
+			],
+			[
+				18.2826309204102,
+				2.78278255462646,
+				18.2670097351074
+			],
+			[
+				16.7826309204102,
+				2.34956359863281,
+				29.2670097351074
+			]
+		],
+		"thief_speed": 5.0,
+		"time_limit": 35.0
 	},
-	"rewards": {"coins": 90, "vials": 0, "mastery_points": 1}
+	"rewards": {
+		"coins": 90.0,
+		"mastery_points": 1.0,
+		"vials": 0.0
+	},
+	"start_marker": "noble_carriage_heist",
+	"title": "Noble Carriage Coin-Heist",
+	"type": "rooftop_pursuit",
+	"validated": true
 }

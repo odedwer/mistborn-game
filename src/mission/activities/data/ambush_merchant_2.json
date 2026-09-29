@@ -1,20 +1,20 @@
 {
-	"id": "ambush_noble",
+	"id": "ambush_merchant_2",
 	"params": {
 		"enemy_types": [
-			"guard",
+			"thug",
 			"guard",
 			"coinshot"
 		],
-		"spawn_radius": 5.0
+		"spawn_radius": 9.0
 	},
 	"rewards": {
-		"coins": 85.0,
+		"coins": 92.0,
 		"mastery_points": 2.0,
 		"vials": 1.0
 	},
-	"start_marker": "ambush_noble",
-	"title": "Obligator Ambush: Keep Ring",
+	"start_marker": "ambush_merchant_2",
+	"title": "Obligator Ambush: Silk Row",
 	"type": "obligator_ambush",
 	"validated": true
 }

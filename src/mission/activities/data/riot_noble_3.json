@@ -1,19 +1,19 @@
 {
-	"id": "riot_docks",
+	"id": "riot_noble_3",
 	"params": {
 		"calm_threshold": 25.0,
-		"member_count": 6.0,
+		"member_count": 5.0,
 		"spawn_radius": 3.0,
 		"start_mood": 78.0,
-		"time_limit": 34.0
+		"time_limit": 33.0
 	},
 	"rewards": {
-		"coins": 50.0,
+		"coins": 58.0,
 		"mastery_points": 1.0,
 		"vials": 1.0
 	},
-	"start_marker": "riot_docks",
-	"title": "Dockworkers' Unrest",
+	"start_marker": "riot_noble_3",
+	"title": "Stable Yard Unrest",
 	"type": "crowd_riot",
 	"validated": true
 }

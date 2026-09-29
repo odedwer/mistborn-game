@@ -1,12 +1,46 @@
 {
 	"id": "coin_race_merchant",
-	"type": "coin_race",
-	"title": "Coin Race: Merchant Row",
-	"start_marker": "coin_race_merchant",
 	"params": {
-		"ring_offsets": [[12, 5, 0], [24, 3, 14], [16, 7, 30], [-2, 9, 42], [-16, 6, 52]],
-		"time_limit": 28.0,
-		"medals": {"gold": 15.0, "silver": 20.0, "bronze": 26.0}
+		"medals": {
+			"bronze": 26.0,
+			"gold": 15.0,
+			"silver": 20.0
+		},
+		"ring_offsets": [
+			[
+				10.923095703125,
+				5.44999980926514,
+				-8.662841796875
+			],
+			[
+				25.923095703125,
+				8.94999980926514,
+				-16.662841796875
+			],
+			[
+				34.923095703125,
+				8.94999980926514,
+				-31.162841796875
+			],
+			[
+				40.423095703125,
+				7.94999980926514,
+				-47.662841796875
+			],
+			[
+				47.923095703125,
+				8.94999980926514,
+				-63.162841796875
+			]
+		],
+		"time_limit": 28.0
 	},
-	"rewards": {"coins": 45, "mastery_points": 1}
+	"rewards": {
+		"coins": 45.0,
+		"mastery_points": 1.0
+	},
+	"start_marker": "coin_race_merchant",
+	"title": "Coin Race: Merchant Row",
+	"type": "coin_race",
+	"validated": true
 }
