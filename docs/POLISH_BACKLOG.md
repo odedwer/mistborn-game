@@ -51,3 +51,17 @@ Found by screenshot review after the first polish pass.
 - **Done: merchant/noble architecture.** Pilasters and iron-railed balcony anchors, 13-15 m ash-tree/planter avenues (outside the slice only), and hedged, walled keep gardens. A real cornice and statue/signage set-pieces are still open.
 - **Done: activities validated.** `ActivityValidator` checks every ring, chase path and spawn ring against the generated collision boxes; `tools/gen_activities.gd` authored/repaired 54 activities so skaa, merchant, noble and docks each hold at least 3 of every type (`tests/test_activity_validation.gd`). Clearance uses AABBs (convex roofs by their bounding box), so it is conservative. Legacy content was mostly clipping buildings; `coin_race_keep` never had a start marker at all (relocated).
 - **Open:** validation does not check reachability (Push anchors along a ring path), only clearance. No day/night cycle, so obligator patrols stay a density skew.
+
+## Review of open-world pass 2
+
+Merged pass 2: ridge axis follows lot long axis outside the slums, crowd ground-snap retries until ground streams in, merchant/noble pilasters + iron balconies (anchors) + avenues + walled keep gardens, and 54 geometry-validated activities (>=3 per type in skaa/merchant/noble/docks). 281 tests green. Reviewed opengl3 shots (merchant overview, merchant + noble avenues).
+
+Follow-ups:
+- Roof slab is gone in the merchant overview; roofs read cleanly.
+- Noble facade stone texture is scaled far too large (cobbles ~1 m across on the right-hand building in the noble avenue shot); cut the triplanar scale for ashlar walls.
+- Avenue trees read as thin sticks at this distance; give the ash-dead trees more branch mass or larger planters.
+- Iron balconies aren't readable in any shot; need a close eye-level shot and maybe a thicker rail.
+- Cornices were not built (pass 2 item 3 partial).
+- Walled keep gardens only test-covered; take a higher, wider top-down shot.
+- Market district is below 3 activities per type; ring-path reachability not validated.
+- Noble chunk gen went 8.9 -> 16.6 ms on the worker thread; watch it against the streaming budget.
