@@ -290,11 +290,26 @@ func _fill_block(brng: RandomNumberGenerator, block: Rect2, btype: StringName, b
 			if prev != null:
 				prev.shared |= FACE_E if long_x else FACE_S
 				lot.shared |= FACE_W if long_x else FACE_N
-			# Pitched roof ridge: usually parallel to the street.
+			# Pitched roof ridge: usually parallel to the street. Still rolled
+			# once per lot (keeps every other draw in this stream at the same
+			# position, so this fix doesn't reshuffle unrelated generation
+			# downstream — see the mission route's hand-placed anchors), but a
+			# lot that shares a wall with the previous one always matches its
+			# ridge direction: a roof running perpendicular to its touching
+			# neighbour's would wedge a short, cross-wise gable between two
+			# much longer ones, poking up out of the roofline where the walls
+			# meet, instead of reading as one continuous run of roofs.
 			if lot.roof != Roof.FLAT:
 				var ridge_along_row := brng.randf() < 0.75
-				var along_x := long_x == ridge_along_row
-				lot.roof = Roof.GABLE_X if along_x else Roof.GABLE_Z
+				# Scoped to everywhere but the default (skaa_slums) district:
+				# the vertical slice's mission route has hand-tuned rooftop
+				# Push/Pull anchors, so its generation is left byte-for-byte
+				# unchanged; this fix only touches districts outside it.
+				if btype != &"skaa_slums" and prev != null and prev.roof != Roof.FLAT:
+					lot.roof = prev.roof
+				else:
+					var along_x := long_x == ridge_along_row
+					lot.roof = Roof.GABLE_X if along_x else Roof.GABLE_Z
 			lots.append(lot)
 			prev = lot
 			pos = b
