@@ -3,6 +3,7 @@
 	"title": "Soothing the Masses",
 	"act": "2",
 	"chapter": "The Skaa Quarter",
+	"time_of_day": "night",
 	"prerequisites": ["the_canton_of_resource"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

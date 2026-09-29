@@ -3,6 +3,7 @@
 	"title": "The Lord Ruler",
 	"act": "3",
 	"chapter": "The Final Empire",
+	"time_of_day": "night",
 	"prerequisites": [
 		"the_pits_beneath_the_palace"
 	],

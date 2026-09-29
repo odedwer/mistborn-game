@@ -82,6 +82,7 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	_clear_triggers()
+	TimeOfDay.release(&"mission")
 	Engine.time_scale = GameSettings.base_time_scale()
 
 
@@ -163,6 +164,7 @@ func _start_or_resume() -> void:
 	# mission runs; the open world and every side activity stay available.
 	if GameState.post_game:
 		mission = null
+		_apply_time_of_day()
 		return
 	mission = story.get_mission(GameState.mission_id)
 	# A save made on the mission-complete screen still names the mission
@@ -174,6 +176,7 @@ func _start_or_resume() -> void:
 		GameState.last_checkpoint_id = &""
 		if mission == null:
 			GameState.post_game = true
+			_apply_time_of_day()
 			return
 	if mission == null:
 		mission = story.next_story_mission(GameState.completed_missions)
@@ -183,8 +186,22 @@ func _start_or_resume() -> void:
 		push_warning("MissionDirector: no mission data found under res://src/mission/missions/")
 		return
 	GameState.mission_id = mission.id
+	_apply_time_of_day()
 	stage_index = clampi(GameState.mission_stage, 0, maxi(mission.stages.size() - 1, 0))
 	_activate_stage(stage_index)
+
+
+## Pins the world clock to the active mission's authored phase (a night
+## mission always plays at night), or releases it (no mission / any time).
+func _apply_time_of_day() -> void:
+	var want := TimeOfDay.parse_phase(mission.time_of_day) if mission != null else -1
+	if want < 0:
+		TimeOfDay.release(&"mission")
+		return
+	if (TimeOfDay.night_factor_at(TimeOfDay.hour) >= 0.5) != (want == TimeOfDay.Phase.NIGHT):
+		# Move the clock too, so the world is still in that phase afterwards.
+		TimeOfDay.set_hour(TimeOfDay.NIGHT_HOUR if want == TimeOfDay.Phase.NIGHT else TimeOfDay.DAY_HOUR)
+	TimeOfDay.force_phase(&"mission", want)
 
 
 ## Starts the next story mission in place (the mission-complete screen's
@@ -569,6 +586,7 @@ func _on_credits_finished(final_id: StringName) -> void:
 	if SceneTransition.is_inside_interior():
 		SceneTransition.exit_interior()
 	mission = null
+	_apply_time_of_day()
 	_active_objectives.clear()
 	_pending_objectives.clear()
 	_clear_triggers()
@@ -617,6 +635,8 @@ func _set_allowed_metals(metals: Array) -> void:
 
 
 func _finish_mission() -> void:
+	# The mission is over: the clock runs freely until the next one starts.
+	TimeOfDay.release(&"mission")
 	Events.mission_completed.emit(mission.id)
 	AudioManager.play_ui(&"mission_complete")
 	mission_finished.emit(mission.id)

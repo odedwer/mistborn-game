@@ -3,6 +3,7 @@
 	"title": "The Survivor's Legacy",
 	"act": "3",
 	"chapter": "What He Left Behind",
+	"time_of_day": "night",
 	"prerequisites": [
 		"fountain_square"
 	],

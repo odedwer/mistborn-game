@@ -160,8 +160,11 @@
 		{"group": "activity_start", "activity_id": "riot_market", "placement": "street", "pos": [-200, -450]},
 		{"group": "activity_start", "activity_id": "riot_docks", "placement": "street", "pos": [1200, 500]},
 
-		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "pos": [50, -1450]},
-		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "pos": [-400, -1050]},
+		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "phase": "night", "pos": [50, -1450]},
+		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "phase": "night", "pos": [-400, -1050]},
+		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "phase": "night", "pos": [300, -420]},
+		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "phase": "night", "pos": [-720, -900]},
+		{"group": "enemy_spawn", "enemy_type": "guard", "placement": "patrol", "phase": "night", "pos": [620, -1120]},
 
 		{"group": "collectible_spawn", "collectible_id": "crew_note_7", "collectible_kind": "crew_note", "placement": "street", "pos": [-1800, -2200]},
 		{"group": "collectible_spawn", "collectible_id": "atium_bead_7", "collectible_kind": "atium_bead", "placement": "rooftop", "pos": [-1500, -1800], "floors": 4, "flat": true},

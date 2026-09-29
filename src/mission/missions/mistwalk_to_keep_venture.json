@@ -3,6 +3,7 @@
 	"title": "Mistwalk to Keep Venture",
 	"act": "1",
 	"chapter": "Ashes of Luthadel",
+	"time_of_day": "night",
 	"prerequisites": ["the_crew"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

@@ -24,6 +24,9 @@ var _alive_keys: Dictionary = {}
 ## Marker keys whose enemy was killed: never respawned when the chunk reloads.
 var _killed_keys: Dictionary = {}
 var _pending_inquisitor_markers: Array[Marker3D] = []
+## Loaded markers with a `phase` meta ("night"/"day"): marker key -> marker.
+## Their enemy only exists during that phase (night-only obligator patrols).
+var _phase_markers: Dictionary = {}
 var _objective_unlocked: bool = false
 
 
@@ -32,6 +35,25 @@ func _ready() -> void:
 	GameState.load_completed.connect(_on_game_loaded)
 	# Resuming a save made after the unlocking objective.
 	_objective_unlocked = GameState.completed_objectives.has(defer_objective_id)
+	TimeOfDay.phase_changed.connect(_on_phase_changed)
+
+
+## Phase-gated patrols: spawn the ones whose phase began, and send home the
+## ones whose phase ended (unless they are already fighting).
+func _on_phase_changed(_phase: int) -> void:
+	for key: Vector3i in _phase_markers.keys():
+		var m: Marker3D = _phase_markers[key]
+		if not is_instance_valid(m) or not m.is_inside_tree():
+			_phase_markers.erase(key)
+			continue
+		var allowed := TimeOfDay.allows(str(m.get_meta("phase", "")))
+		var e: Node = _alive_keys.get(key)
+		if allowed and not is_instance_valid(e):
+			spawn_for_marker(m)
+		elif not allowed and is_instance_valid(e):
+			if e is EnemyBase and (e as EnemyBase).state == EnemyBase.State.COMBAT:
+				continue
+			e.queue_free()
 
 
 func _on_game_loaded(_slot: int) -> void:
@@ -85,6 +107,11 @@ func spawn_for_marker(marker: Marker3D) -> Node:
 	if _alive_keys.has(key) or _killed_keys.has(key):
 		return null
 	var etype: StringName = marker.get_meta("enemy_type", &"guard")
+	var phase := str(marker.get_meta("phase", ""))
+	if phase != "":
+		_phase_markers[key] = marker
+		if not TimeOfDay.allows(phase):
+			return null
 	if etype == &"inquisitor" and defer_inquisitor and not _objective_unlocked:
 		if not _pending_inquisitor_markers.has(marker):
 			_pending_inquisitor_markers.append(marker)

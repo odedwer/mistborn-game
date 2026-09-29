@@ -17,6 +17,10 @@ var title: String
 var start_marker: StringName
 var params: Dictionary = {}
 var rewards: Dictionary = {}
+## "night"/"day": only startable (and its beacon only shown) in that
+## `TimeOfDay` phase, e.g. the noble district's night-only obligator patrols.
+## "" = any time.
+var phase: String = ""
 
 
 static func from_dict(d: Dictionary) -> ActivityData:
@@ -27,6 +31,7 @@ static func from_dict(d: Dictionary) -> ActivityData:
 	a.start_marker = StringName(d.get("start_marker", a.id))
 	a.params = d.get("params", {})
 	a.rewards = d.get("rewards", {})
+	a.phase = str(d.get("phase", ""))
 	return a
 
 

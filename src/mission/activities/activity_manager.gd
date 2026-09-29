@@ -65,6 +65,27 @@ func _ready() -> void:
 	var world := _find_world_node()
 	if world != null and world.has_signal(&"markers_spawned"):
 		world.connect(&"markers_spawned", _on_markers_spawned)
+	TimeOfDay.phase_changed.connect(_on_phase_changed)
+
+
+## True if `id`'s required phase (`ActivityData.phase`) matches the clock.
+func is_available_now(id: StringName) -> bool:
+	var a: ActivityData = activities.get(id)
+	return a != null and TimeOfDay.allows(a.phase)
+
+
+func _on_phase_changed(_phase: int) -> void:
+	for area in _start_triggers:
+		if is_instance_valid(area):
+			_refresh_beacon(area)
+
+
+## Phase-gated activities hide their beacon outside their phase.
+func _refresh_beacon(area: Area3D) -> void:
+	var aid: StringName = area.get_meta(&"activity_id", &"")
+	for c in area.get_children():
+		if c is ActivityBeacon:
+			(c as Node3D).visible = is_available_now(aid)
 
 
 func _exit_tree() -> void:
@@ -195,10 +216,12 @@ func _add_trigger_for_marker(marker: Node) -> void:
 	parent.add_child(area)
 	area.global_position = pos
 	area.body_entered.connect(_on_trigger_entered.bind(aid))
+	area.set_meta(&"activity_id", aid)
 	_start_triggers.append(area)
 	var beacon := ActivityBeacon.new()
 	area.add_child(beacon)
 	beacon.position = Vector3.ZERO
+	_refresh_beacon(area)
 
 
 func _on_trigger_entered(body: Node, id: StringName) -> void:
@@ -219,6 +242,10 @@ func start_activity(id: StringName, override_pos: Vector3 = Vector3.INF) -> bool
 	if not activities.has(id) or is_running(id) or float(_cooldowns.get(id, 0.0)) > 0.0:
 		return false
 	var a: ActivityData = activities[id]
+	if not TimeOfDay.allows(a.phase):
+		_cooldowns[id] = START_COOLDOWN
+		Events.hint_requested.emit("%s — only after nightfall." % a.title if a.phase == "night" else "%s — only by day." % a.title, 3.0)
+		return false
 	var pos := override_pos if override_pos != Vector3.INF else _marker_position(&"activity_start", id)
 	if pos == Vector3.INF:
 		return false

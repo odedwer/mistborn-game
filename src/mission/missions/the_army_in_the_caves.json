@@ -3,6 +3,7 @@
 	"title": "The Army in the Caves",
 	"act": "3",
 	"chapter": "Yeden's Folly",
+	"time_of_day": "night",
 	"prerequisites": [
 		"the_inquisitors_shadow"
 	],

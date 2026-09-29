@@ -1,6 +1,6 @@
 class_name LuthadelWorld
 extends Node3D
-## Procedural, streamed Luthadel at night.
+## Procedural, streamed Luthadel (lit by `TimeOfDay` via `DayNightDriver`).
 ##
 ## On `_ready` it loads the city plan, indexes every mission marker (as data,
 ## even in chunks that are not loaded), builds the environment and the
@@ -34,6 +34,8 @@ var marker_index: MarkerIndex
 var streamer: WorldStreamer
 var mist: MistController
 var far_lod: FarLod
+## Applies TimeOfDay to the sky, light, mists and emissives (null without an environment).
+var day_night: DayNightDriver
 var environment: Environment
 var moon: DirectionalLight3D
 var units_root: Node3D
@@ -89,6 +91,11 @@ func _ready() -> void:
 		far_lod.name = "FarLod"
 		add_child(far_lod)
 		far_lod.setup(plan, seed)
+
+	if environment != null:
+		day_night = DayNightDriver.new()
+		add_child(day_night)
+		day_night.setup(environment, moon, mist, far_lod)
 
 	_initial_phase = true
 	streamer.load_now(spawn_position(), initial_radius)

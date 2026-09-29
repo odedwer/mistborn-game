@@ -2,6 +2,9 @@ shader_type sky;
 // Luthadel night sky: dark ash overcast, faint red glow on the horizon from
 // the Ashmounts, a hazy moon behind the clouds (from the first directional
 // light) and volcano silhouettes with glowing craters along the horizon.
+// `day_amount` (0 = night, 1 = day; set by DayNightDriver) blends to the
+// ash-grey hazy day: a pale overcast, a dull red sun (LIGHT0 is then the sun)
+// and hazier Ashmounts. At day_amount = 0 the output is the night sky exactly.
 
 uniform vec3 zenith_color : source_color = vec3(0.010, 0.012, 0.018);
 uniform vec3 horizon_color : source_color = vec3(0.060, 0.050, 0.052);
@@ -17,6 +20,12 @@ uniform float cloud_speed = 0.004;
 uniform vec3 mountain_color : source_color = vec3(0.012, 0.010, 0.011);
 uniform vec3 crater_glow : source_color = vec3(1.0, 0.28, 0.06);
 uniform float crater_strength = 1.4;
+uniform float day_amount : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 day_zenith : source_color = vec3(0.50, 0.48, 0.46);
+uniform vec3 day_horizon : source_color = vec3(0.66, 0.60, 0.53);
+uniform vec3 day_cloud : source_color = vec3(0.40, 0.38, 0.36);
+uniform vec3 sun_color : source_color = vec3(1.0, 0.52, 0.30);
+uniform vec3 day_mountain : source_color = vec3(0.30, 0.27, 0.25);
 
 float mountain_profile(float az) {
 	// A few Ashmount cones around the horizon (azimuth in radians).
@@ -48,14 +57,12 @@ float crater_light(float az, float y) {
 	return g;
 }
 
-void sky() {
-	vec3 d = normalize(EYEDIR);
-	float h = d.y;
+vec3 night_sky(vec3 d, float h, float az, float prof, out float cloud) {
 	vec3 col = mix(horizon_color, zenith_color, smoothstep(-0.02, 0.55, h));
 	col += horizon_glow * horizon_glow_strength * exp(-max(h, 0.0) * 10.0);
 
 	// Overcast ash clouds projected on a dome.
-	float cloud = 0.0;
+	cloud = 0.0;
 	if (h > 0.0) {
 		vec2 uv = d.xz / (h + 0.12) * 0.22 + vec2(TIME * cloud_speed, TIME * cloud_speed * 0.4);
 		float n = texture(cloud_noise, uv).r * 0.65 + texture(cloud_noise, uv * 2.7 + 0.3).r * 0.35;
@@ -75,8 +82,6 @@ void sky() {
 	}
 
 	// Ashmounts on the horizon.
-	float az = atan(d.x, d.z);
-	float prof = mountain_profile(az);
 	if (h < prof && h > -0.2) {
 		col = mountain_color;
 	}
@@ -84,6 +89,41 @@ void sky() {
 
 	if (h < 0.0) {
 		col = mix(col, vec3(0.008, 0.007, 0.008), smoothstep(0.0, -0.25, h));
+	}
+	return col;
+}
+
+vec3 day_sky(vec3 d, float h, float az, float prof, float cloud) {
+	// Flat, bright ash overcast: little gradient, heavy haze at the horizon.
+	vec3 col = mix(day_horizon, day_zenith, smoothstep(-0.05, 0.7, h));
+	col = mix(col, day_cloud, cloud * 0.55);
+	if (LIGHT0_ENABLED) {
+		// A dull red sun seen through the ash: a soft disc and a wide glow.
+		float c = dot(d, normalize(LIGHT0_DIRECTION));
+		float disc = smoothstep(cos(moon_size * 1.3), cos(moon_size * 1.05), c);
+		float glow = pow(max(c, 0.0), 24.0) * 0.35 + pow(max(c, 0.0), 4.0) * 0.08;
+		col += sun_color * (disc * mix(1.6, 0.8, cloud) + glow);
+	}
+	// Ashmounts as hazy, soot-brown shapes; the craters still smoulder faintly.
+	if (h < prof && h > -0.2) {
+		col = mix(day_mountain, day_horizon, 0.35);
+	}
+	col += crater_glow * crater_strength * crater_light(az, h) * 0.06;
+	if (h < 0.0) {
+		col = mix(col, day_horizon * 0.45, smoothstep(0.0, -0.25, h));
+	}
+	return col;
+}
+
+void sky() {
+	vec3 d = normalize(EYEDIR);
+	float h = d.y;
+	float az = atan(d.x, d.z);
+	float prof = mountain_profile(az);
+	float cloud;
+	vec3 col = night_sky(d, h, az, prof, cloud);
+	if (day_amount > 0.0) {
+		col = mix(col, day_sky(d, h, az, prof, cloud), day_amount);
 	}
 	COLOR = col;
 }

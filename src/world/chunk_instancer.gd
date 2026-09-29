@@ -287,6 +287,10 @@ func _add_light(i: int) -> void:
 	o.distance_fade_shadow = 30.0
 	if l["shadow"]:
 		o.add_to_group(&"world_shadow_light")
+	# DayNightDriver dims these by day (base energy kept in meta).
+	o.add_to_group(&"street_light")
+	o.set_meta(&"base_energy", o.light_energy)
+	DayNightDriver.apply_to_light(o, TimeOfDay.night_factor())
 	root.add_child(o)
 
 

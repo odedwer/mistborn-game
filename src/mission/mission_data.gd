@@ -79,6 +79,9 @@ extends RefCounted
 ## director switches there on activation if the player isn't already inside
 ## it, so a save resumed mid-mission lands in the right place.
 ##
+## `time_of_day` (optional): "night"/"day" pins the world clock's phase
+## while this is the active mission (see `TimeOfDay`); omitted = any time.
+##
 ## `journal` (Act III on, optional): a first-person summary shown in the pause
 ## menu's journal once the mission is complete.
 ##
@@ -102,6 +105,10 @@ var stages: Array = []          # Array[Dictionary]
 var fail_conditions: Array = [] # Array[Dictionary]
 var rewards: Dictionary = {}
 var journal: String = ""
+## "night" or "day": the phase the mission was authored for. While it is the
+## active mission the director forces that phase (`TimeOfDay.force_phase`),
+## so its lighting and patrols stay deterministic. "" = any time of day.
+var time_of_day: String = ""
 
 
 static func from_dict(d: Dictionary) -> MissionData:
@@ -116,6 +123,7 @@ static func from_dict(d: Dictionary) -> MissionData:
 	m.fail_conditions = d.get("fail_conditions", [])
 	m.rewards = d.get("rewards", {})
 	m.journal = d.get("journal", "")
+	m.time_of_day = str(d.get("time_of_day", ""))
 	return m
 
 

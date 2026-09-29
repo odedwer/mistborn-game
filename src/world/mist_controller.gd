@@ -30,6 +30,12 @@ const QUALITY := [
 ## Matches `EnvironmentBuilder`'s ambient so tin vision brightens *from*
 ## a readable baseline instead of overriding it back down to a dim one.
 @export var base_ambient := 1.8
+## Daytime (see `set_daylight`): the mist burns off to a thin ash haze.
+@export var day_mist_scale := 0.06
+@export var day_base_fog_scale := 0.4
+@export var day_depth_fog := 0.0042
+@export var day_exposure := 0.78
+@export var day_ambient := 1.1
 ## Size of the mist volume that follows the focus.
 @export var mist_volume_size := Vector3(360.0, 70.0, 360.0)
 
@@ -39,6 +45,8 @@ var canal_material: ShaderMaterial
 var tendril_material: ShaderMaterial
 var quality := 2
 var tin := 0.0
+## 0 = night (full mists), 1 = day (thin ash haze). Driven by DayNightDriver.
+var daylight := 0.0
 var _mist_volume: FogVolume
 var _tendrils: MistTendrils
 var _ash: AshFall
@@ -118,6 +126,12 @@ func set_tin_vision(v: float) -> void:
 	_apply()
 
 
+## 0 = night .. 1 = day. The mists are thick only at night.
+func set_daylight(d: float) -> void:
+	daylight = clampf(d, 0.0, 1.0)
+	_apply()
+
+
 ## 0 = low (no volumetric fog, depth fog instead), 1 = medium, 2 = high, 3 = ultra.
 func set_quality(level: int) -> void:
 	quality = clampi(level, 0, QUALITY.size() - 1)
@@ -143,17 +157,18 @@ func _apply() -> void:
 	var q: Array = QUALITY[quality]
 	var volumetric: bool = q[0] and not _compat
 	var thin := 1.0 - 0.7 * tin
+	var d := daylight
 	if not _compat:
 		environment.volumetric_fog_enabled = volumetric
-	environment.volumetric_fog_density = base_fog_density * thin
+	environment.volumetric_fog_density = base_fog_density * thin * lerpf(1.0, day_base_fog_scale, d)
 	environment.volumetric_fog_length = float(q[3]) * (1.0 + tin)
 	var depth := base_depth_fog if volumetric else low_quality_depth_fog
-	environment.fog_density = depth * thin
-	environment.tonemap_exposure = base_exposure * (1.0 + 0.9 * tin)
-	environment.ambient_light_energy = base_ambient + 0.8 * tin
+	environment.fog_density = lerpf(depth, day_depth_fog, d) * thin
+	environment.tonemap_exposure = lerpf(base_exposure, day_exposure, d) * (1.0 + 0.9 * tin)
+	environment.ambient_light_energy = lerpf(base_ambient, day_ambient, d) + 0.8 * tin
 	for m: ShaderMaterial in [mist_material, canal_material]:
 		if m != null:
-			m.set_shader_parameter("density_scale", thin)
+			m.set_shader_parameter("density_scale", thin * lerpf(1.0, day_mist_scale, d))
 	if _mist_volume != null:
 		_mist_volume.visible = volumetric
 	if is_inside_tree():
@@ -192,7 +207,7 @@ func _process(delta: float) -> void:
 		_mist_volume.global_position = snapped
 	if _ash != null and cam != null:
 		_ash.global_position = cam.global_position + Vector3(0, 6.0, 0)
-	var target := 1.0 if not _burning.is_empty() else 0.35
+	var target := (1.0 if not _burning.is_empty() else 0.35) * (1.0 - 0.85 * daylight)
 	_tendril_strength = move_toward(_tendril_strength, target, delta * 0.6)
 	if _tendrils != null:
 		_tendrils.follow(player, _tendril_strength)

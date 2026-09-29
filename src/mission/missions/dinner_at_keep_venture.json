@@ -3,6 +3,7 @@
 	"title": "Dinner at Keep Venture",
 	"act": "2",
 	"chapter": "The Venture Table",
+	"time_of_day": "night",
 	"prerequisites": ["lady_valette"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

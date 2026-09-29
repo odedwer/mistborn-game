@@ -3,6 +3,7 @@
 	"title": "Fountain Square",
 	"act": "3",
 	"chapter": "The Executions",
+	"time_of_day": "night",
 	"prerequisites": [
 		"the_army_in_the_caves"
 	],

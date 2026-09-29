@@ -3,6 +3,7 @@
 	"title": "Lady Valette",
 	"act": "1",
 	"chapter": "The Venture Ball",
+	"time_of_day": "night",
 	"prerequisites": ["lessons_in_the_mists"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

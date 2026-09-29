@@ -3,6 +3,7 @@
 	"title": "Into Kredik Shaw",
 	"act": "3",
 	"chapter": "The Palace of Spires",
+	"time_of_day": "night",
 	"prerequisites": [
 		"the_survivors_legacy"
 	],

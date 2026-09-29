@@ -1,5 +1,6 @@
 {
 	"id": "ambush_noble",
+	"phase": "night",
 	"params": {
 		"enemy_types": [
 			"guard",

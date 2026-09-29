@@ -477,7 +477,7 @@ func _place_marker(m: Dictionary, p: Vector2, used: Array[Lot], seed_value: int)
 	# "activity_id"/"collectible_id"/"collectible_kind" back the open-world
 	# side-activity and collectible systems (src/mission/activities/); added
 	# here, minimally, alongside the existing marker meta keys.
-	for key: String in ["objective_id", "enemy_type", "pickup_kind", "activity_id", "collectible_id", "collectible_kind"]:
+	for key: String in ["objective_id", "enemy_type", "pickup_kind", "activity_id", "collectible_id", "collectible_kind", "phase"]:
 		if m.has(key):
 			meta[key] = StringName(str(m[key]))
 	if m.has("checkpoint"):
