@@ -1,0 +1,19 @@
+{
+	"id": "riot_docks_3",
+	"params": {
+		"calm_threshold": 25.0,
+		"member_count": 5.0,
+		"spawn_radius": 4.0,
+		"start_mood": 78.0,
+		"time_limit": 33.0
+	},
+	"rewards": {
+		"coins": 65.0,
+		"mastery_points": 1.0,
+		"vials": 1.0
+	},
+	"start_marker": "riot_docks_3",
+	"title": "Ferrymen's Unrest",
+	"type": "crowd_riot",
+	"validated": true
+}

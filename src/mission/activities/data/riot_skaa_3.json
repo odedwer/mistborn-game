@@ -1,0 +1,19 @@
+{
+	"id": "riot_skaa_3",
+	"params": {
+		"calm_threshold": 25.0,
+		"member_count": 5.0,
+		"spawn_radius": 3.0,
+		"start_mood": 78.0,
+		"time_limit": 33.0
+	},
+	"rewards": {
+		"coins": 45.0,
+		"mastery_points": 1.0,
+		"vials": 1.0
+	},
+	"start_marker": "riot_skaa_3",
+	"title": "Ashfall Unrest",
+	"type": "crowd_riot",
+	"validated": true
+}

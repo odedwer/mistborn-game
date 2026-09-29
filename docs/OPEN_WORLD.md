@@ -125,6 +125,13 @@ stand-in for "obligator patrols" — there's no day/night cycle to gate a
 literal night-only patrol on), and a couple of `enemy_spawn`/`patrol` guard
 markers reinforce the keep ring. See `CrowdSystem.DENSITY`.
 
+Activity geometry is validated, not hand-eyeballed: `ActivityValidator`
+(`src/mission/activities/activity_validator.gd`) regenerates the chunks around
+an activity and checks every ring sphere, chase-path leg and spawn ring against
+their collision boxes; `tools/gen_activities.gd` uses the same checks to author
+and repair activity data, and `tests/test_activity_validation.gd` enforces it
+(at least 3 valid activities of each type per major district).
+
 ## Fast travel
 
 Four crew safehouses (`type: "safehouse"` landmarks: `safehouse_merchant`,
@@ -144,5 +151,5 @@ fades back in.
 - Interiors beyond the gatehouse office, Kredik Shaw's interior and the other keeps' courtyards.
 - Persisting the state of loose props per chunk. They currently reset on reload.
 - A real day/night cycle, so noble obligator patrols (and other time-gated content) can be literal rather than a density skew.
-- Facade ornaments and hero set-pieces (statues, guild signage) beyond the block/lot generator's material and roof-mix knobs.
+- Cornices, statues and guild signage beyond the new pilasters/balconies.
 - HLOD for the mid-range. Chunks currently switch from full detail straight to far-LOD boxes.

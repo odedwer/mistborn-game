@@ -88,3 +88,21 @@ district type is now also covered by a dedicated test
 - **Pause-menu map/journal rebuild** (50–75 ms on open). Build it incrementally or cache it.
 - **Startup.** Far-LOD and navmesh work compete with gameplay for the first couple of seconds. The loading screen could wait for `navigation_ready`.
 - **Physics tick.** It is about 2.5–3 ms, mostly Jolt with the city's static geometry, and it has headroom. If mass battles (Act III) push it up, the next steps are to sleep far rigid props and to use lower-rate AI for distant enemies.
+
+## Pass 2: district architecture cost
+
+`ChunkGenerator.generate_chunk` on a worker thread (headless, one core), per chunk:
+
+| Chunk | Before | After |
+|---|---|---|
+| skaa | 8.1 ms | 8.8 ms (noise; unchanged code path) |
+| merchant | 7.5 ms | 10.0 ms |
+| merchant, avenue | 8.9 ms | 13.5 ms |
+| noble | 8.9 ms | 16.6 ms |
+| docks | 5.6 ms | 8.3 ms |
+| keep_hasting (garden) | 4.8 ms | 4.9 ms |
+
+The extra cost is the pilaster boxes and balcony/planter/tree instances.
+Generation runs off the main thread and instancing stays under the per-frame
+budget; avenue trees/planters are MultiMesh instances, so draw calls barely
+move. Activity validation adds no runtime cost (tool and test only).

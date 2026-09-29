@@ -1,14 +1,54 @@
 {
 	"id": "obligator_courier_intercept",
-	"type": "rooftop_pursuit",
-	"title": "Obligator Courier Interception",
-	"start_marker": "obligator_courier_intercept",
 	"params": {
-		"path_offsets": [[0, 0, 0], [18, 1, 12], [35, 3, 20], [25, 5, 40], [8, 2, 55], [-10, 0, 65]],
-		"thief_speed": 6.5,
 		"catch_distance": 3.0,
-		"time_limit": 40.0,
-		"medals": {"gold": 16.0, "silver": 25.0, "bronze": 35.0}
+		"medals": {
+			"bronze": 35.0,
+			"gold": 16.0,
+			"silver": 25.0
+		},
+		"path_offsets": [
+			[
+				0.0,
+				0.0,
+				0.0
+			],
+			[
+				7.25846862792969,
+				1.71625232696533,
+				5.72653961181641
+			],
+			[
+				17.2584686279297,
+				0.92631721496582,
+				15.7265396118164
+			],
+			[
+				19.2584686279297,
+				3.2777624130249,
+				25.2265396118164
+			],
+			[
+				25.7584686279297,
+				3.2777624130249,
+				33.2265396118164
+			],
+			[
+				32.2584686279297,
+				3.58589839935303,
+				45.2265396118164
+			]
+		],
+		"thief_speed": 6.5,
+		"time_limit": 40.0
 	},
-	"rewards": {"coins": 70, "vials": 1, "mastery_points": 1}
+	"rewards": {
+		"coins": 70.0,
+		"mastery_points": 1.0,
+		"vials": 1.0
+	},
+	"start_marker": "obligator_courier_intercept",
+	"title": "Obligator Courier Interception",
+	"type": "rooftop_pursuit",
+	"validated": true
 }

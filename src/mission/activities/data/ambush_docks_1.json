@@ -1,0 +1,20 @@
+{
+	"id": "ambush_docks_1",
+	"params": {
+		"enemy_types": [
+			"guard",
+			"guard",
+			"hazekiller"
+		],
+		"spawn_radius": 4.0
+	},
+	"rewards": {
+		"coins": 116.0,
+		"mastery_points": 2.0,
+		"vials": 1.0
+	},
+	"start_marker": "ambush_docks_1",
+	"title": "Obligator Ambush: Cargo Quay",
+	"type": "obligator_ambush",
+	"validated": true
+}

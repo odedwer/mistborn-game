@@ -45,9 +45,9 @@ Found by screenshot review after the first polish pass.
 - **Main menu:** good now, with a crisp skyline, a red horizon glow and low mist. One faint lighter band edge remains at the bottom third (around y=610 at 720p), probably the ground or foreground mist plane. Minor.
 - **Characters:** Marsh is bald and Ham has long hair, as intended. Faces are too small in the lineup to judge; take a `--zoom=head` close-up next pass.
 
-## Open-world expansion follow-ups
-- **Screenshot coverage:** only the merchant district's "after" shot was reviewed. It looks great: dense lit windows under the mist, with the Ashmounts and Kredik Shaw on the horizon. One tilted flat roof slab sticks out oddly in the foreground; check `building_builder` for a bad roof rotation.
-- **District silhouettes:** the merchant and noble districts only got material and density tuning. They still need distinct architecture: facade ornaments, gardens, wider avenues.
-- **Activity coverage:** each major district has at least one instance of each relevant activity, not the target of 3 per type per district. Author more ring and pursuit paths, validated against geometry.
-- **Time of day:** there is no day/night cycle, so "night-time obligator patrols" are approximated by higher obligator density in the noble districts.
-- **Crowd fall-through:** one crowd pedestrian fell out of the world during the extended soak run (`fallen_detail`). Investigate.
+## Open-world expansion follow-ups (pass 2)
+- **Fixed: tilted roof slab.** It was a gable slope: outside skaa_slums the ridge ran parallel to the street even on lots wider than they are long, so each slope became a steep, near-square tilted plane. The ridge now runs along the lot's long axis, and touching near-square lots keep their neighbour's ridge. A top-down render confirmed every roof is axis-aligned; nothing was actually rotated. skaa_slums is untouched, so the mission route is identical.
+- **Fixed: crowd fall-through.** `CrowdMember._snap_home_to_ground` gave up after one failed raycast (collision not yet synced in a freshly streamed chunk) and then fell. It now retries and holds still until ground is confirmed.
+- **Done: merchant/noble architecture.** Pilasters and iron-railed balcony anchors, 13-15 m ash-tree/planter avenues (outside the slice only), and hedged, walled keep gardens. A real cornice and statue/signage set-pieces are still open.
+- **Done: activities validated.** `ActivityValidator` checks every ring, chase path and spawn ring against the generated collision boxes; `tools/gen_activities.gd` authored/repaired 54 activities so skaa, merchant, noble and docks each hold at least 3 of every type (`tests/test_activity_validation.gd`). Clearance uses AABBs (convex roofs by their bounding box), so it is conservative. Legacy content was mostly clipping buildings; `coin_race_keep` never had a start marker at all (relocated).
+- **Open:** validation does not check reachability (Push anchors along a ring path), only clearance. No day/night cycle, so obligator patrols stay a density skew.

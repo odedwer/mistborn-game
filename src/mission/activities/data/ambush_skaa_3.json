@@ -1,0 +1,20 @@
+{
+	"id": "ambush_skaa_3",
+	"params": {
+		"enemy_types": [
+			"coinshot",
+			"thug",
+			"coinshot"
+		],
+		"spawn_radius": 4.0
+	},
+	"rewards": {
+		"coins": 80.0,
+		"mastery_points": 2.0,
+		"vials": 1.0
+	},
+	"start_marker": "ambush_skaa_3",
+	"title": "Obligator Ambush: Tenement Row",
+	"type": "obligator_ambush",
+	"validated": true
+}

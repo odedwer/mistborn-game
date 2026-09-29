@@ -1,0 +1,20 @@
+{
+	"id": "ambush_noble_2",
+	"params": {
+		"enemy_types": [
+			"guard",
+			"guard",
+			"guard"
+		],
+		"spawn_radius": 4.0
+	},
+	"rewards": {
+		"coins": 104.0,
+		"mastery_points": 2.0,
+		"vials": 1.0
+	},
+	"start_marker": "ambush_noble_2",
+	"title": "Obligator Ambush: Carriage Road",
+	"type": "obligator_ambush",
+	"validated": true
+}

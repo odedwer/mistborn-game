@@ -24,18 +24,35 @@ var model: CharacterModel
 var _grounded_home := false
 var _stream_timer := 0.0
 var _stream_ok := true
+## Physics frames spent trying to find ground before giving up and accepting
+## the spawn point as-is (avoids a permanent freeze if truly spawned over a
+## gap, e.g. a badly-tuned activity spawn radius).
+var _snap_attempts := 0
+const MAX_SNAP_ATTEMPTS := 90  # ~1.5 s at 60 Hz
 
 
 ## Crowds are placed around a point that may be mid-air (a roof edge, a
-## player position): drop the home point onto the ground below once.
+## player position, or — right after spawning into a chunk that is still
+## being instanced — ground whose collision hasn't synced with the physics
+## server yet). Retries every physics frame until a hit lands, instead of
+## committing to an ungrounded `_home` on the first (possibly too-early) try;
+## a member with no confirmed ground stays frozen (see `_physics_process`)
+## rather than falling through geometry that simply hasn't appeared yet.
 func _snap_home_to_ground() -> void:
-	_grounded_home = true
 	var q := PhysicsRayQueryParameters3D.create(_home + Vector3.UP * 2.0, _home + Vector3.DOWN * 80.0, 1)
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if not hit.is_empty():
+		_grounded_home = true
 		_home = hit["position"]
 		global_position = _home
 		_target = _home
+		return
+	_snap_attempts += 1
+	if _snap_attempts >= MAX_SNAP_ATTEMPTS:
+		# Genuinely nothing below (e.g. an activity spawned it over open
+		# water/a gap): stop retrying and accept the spawn point so the
+		# member doesn't freeze forever, but never fall through the map.
+		_grounded_home = true
 
 
 ## False while the streamed chunk under us isn't loaded (hold, don't fall).
@@ -93,6 +110,11 @@ func _build_capsule() -> void:
 func _physics_process(delta: float) -> void:
 	if not _grounded_home:
 		_snap_home_to_ground()
+		if not _grounded_home:
+			# No confirmed ground yet: hold still instead of falling through
+			# geometry that hasn't finished streaming in.
+			velocity = Vector3.ZERO
+			return
 	if global_position.y < _home.y - 40.0:
 		# Fell out of the world (spawned over a gap or unloaded ground): go home.
 		global_position = _home

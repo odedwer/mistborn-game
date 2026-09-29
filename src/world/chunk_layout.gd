@@ -101,6 +101,13 @@ static func boundary_width(plan: CityPlan, seed_value: int, vertical: bool, line
 	var st := plan.style_at(mid)
 	var r: Array = st.get("arterial", [7.0, 9.0])
 	var t := CityPlan.hash01(seed_value, 1 if vertical else 2, line, seg)
+	# Every `avenue_every`-th boundary line in merchant/noble ground is a broad,
+	# tree-lined avenue (`avenue` width range). Both chunks sharing the border
+	# derive the same answer from the same midpoint, and the vertical slice is
+	# excluded so its tuned rooftop route keeps its exact layout.
+	if st.has("avenue_every") and st.has("avenue") and not plan.slice_bounds.has_point(mid) \
+			and posmod(line, int(st["avenue_every"])) == 0:
+		r = st["avenue"]
 	return lerpf(float(r[0]), float(r[1]), t)
 
 
@@ -290,11 +297,34 @@ func _fill_block(brng: RandomNumberGenerator, block: Rect2, btype: StringName, b
 			if prev != null:
 				prev.shared |= FACE_E if long_x else FACE_S
 				lot.shared |= FACE_W if long_x else FACE_N
-			# Pitched roof ridge: usually parallel to the street.
+			# Pitched roof ridge: usually parallel to the street. Still rolled
+			# once per lot (keeps every other draw in this stream at the same
+			# position, so this fix doesn't reshuffle unrelated generation
+			# downstream — see the mission route's hand-placed anchors), but a
+			# lot that shares a wall with the previous one always matches its
+			# ridge direction: a roof running perpendicular to its touching
+			# neighbour's would wedge a short, cross-wise gable between two
+			# much longer ones, poking up out of the roofline where the walls
+			# meet, instead of reading as one continuous run of roofs.
 			if lot.roof != Roof.FLAT:
 				var ridge_along_row := brng.randf() < 0.75
-				var along_x := long_x == ridge_along_row
-				lot.roof = Roof.GABLE_X if along_x else Roof.GABLE_Z
+				# Scoped to everywhere but the default (skaa_slums) district:
+				# the vertical slice's mission route has hand-tuned rooftop
+				# Push/Pull anchors, so its generation is left byte-for-byte
+				# unchanged; this fix only touches districts outside it.
+				var lr := lot.rect.size
+				if btype != &"skaa_slums" and lr.x > lr.y * 1.15:
+					# Ridge along the lot's own long axis. A ridge along the short
+					# one (e.g. parallel to the street on a lot wider than it is
+					# long) turns each slope into a steep, near-square tilted slab.
+					lot.roof = Roof.GABLE_X
+				elif btype != &"skaa_slums" and lr.y > lr.x * 1.15:
+					lot.roof = Roof.GABLE_Z
+				elif btype != &"skaa_slums" and prev != null and prev.roof != Roof.FLAT:
+					lot.roof = prev.roof
+				else:
+					var along_x := long_x == ridge_along_row
+					lot.roof = Roof.GABLE_X if along_x else Roof.GABLE_Z
 			lots.append(lot)
 			prev = lot
 			pos = b

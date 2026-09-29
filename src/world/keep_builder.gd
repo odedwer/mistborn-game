@@ -391,6 +391,7 @@ static func build_generic(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	data.add_metal(Vector3(cx, 3.0, cz + half - 1), 200.0)
 	_lamp(data, Vector3(cx - 7, 0, cz + half + 2), Vector2(1, 0), true)
 	_lamp(data, Vector3(cx + 7, 0, cz + half + 2), Vector2(-1, 0), true)
+	_garden(data, cx, cz, half)
 	# Main hall.
 	var hw := half * 0.9
 	var hd := half * 0.7
@@ -411,3 +412,42 @@ static func build_generic(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	if lm.height > 80.0:
 		tower(data, hall.get_center(), 6.0, lm.height * 0.8, lm.height * 0.2, 0.35, seed_value + 30, 50.0)
 	data.add_marker(&"landmark", Vector3(cx, 0.05, cz + half + 4), {"landmark_id": lm.id})
+
+
+## Walled garden inside a generic keep's perimeter: trimmed, soot-dulled hedges
+## lining the inner faces of the wall (one collision/nav box per run), ash-dead
+## planters at intervals and flanking the gate. Pure geometry, no RNG, so it
+## can't shift the keep's other generation.
+static func _garden(data: ChunkBuildData, cx: float, cz: float, half: float) -> void:
+	var inner := half - 2.0 - 0.7
+	var step := 1.8
+	var runs: Array = [
+		# [axis_is_x, fixed coordinate, from, to]
+		[false, cx - inner, cz - inner + 1.5, cz + inner - 1.5],
+		[false, cx + inner, cz - inner + 1.5, cz + inner - 1.5],
+		[true, cz - inner, cx - inner + 1.5, cx + inner - 1.5],
+		[true, cz + inner, cx - inner + 1.5, cx - 6.5],
+		[true, cz + inner, cx + 6.5, cx + inner - 1.5],
+	]
+	for run: Array in runs:
+		var along_x: bool = run[0]
+		var fixed: float = run[1]
+		var a: float = run[2]
+		var b: float = run[3]
+		var n := int(floor((b - a) / step))
+		if n < 1:
+			continue
+		for i in n:
+			var t := a + step * (float(i) + 0.5)
+			var pos := Vector3(t, 0.0, fixed) if along_x else Vector3(fixed, 0.0, t)
+			var kind := &"ash_planter" if i % 7 == 6 else &"hedge"
+			var yaw := 0.0 if along_x else PI * 0.5
+			data.add_instance(kind, Transform3D(Basis(Vector3.UP, yaw), pos + Vector3(0.0, 0.35 if kind == &"hedge" else 0.0, 0.0)))
+		var lo := Vector3(a, 0.0, fixed - 0.3) if along_x else Vector3(fixed - 0.3, 0.0, a)
+		var hi := Vector3(a + step * n, 0.9, fixed + 0.3) if along_x else Vector3(fixed + 0.3, 0.9, a + step * n)
+		data.add_box_shape_lohi(lo, hi)
+	# Ash-dead planters flanking the gate on the street side.
+	for sx: float in [-8.5, 8.5]:
+		var p := Vector3(cx + sx, 0.0, cz + half + 2.5)
+		data.add_instance(&"ash_planter", Transform3D(Basis(), p))
+		data.add_box_shape(p + Vector3(0.0, 0.3, 0.0), Vector3(0.9, 0.6, 0.9))

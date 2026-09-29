@@ -1,11 +1,20 @@
 {
 	"id": "ambush_noble",
-	"type": "obligator_ambush",
-	"title": "Obligator Ambush: Keep Ring",
-	"start_marker": "ambush_noble",
 	"params": {
-		"enemy_types": ["guard", "guard", "coinshot"],
-		"spawn_radius": 10.0
+		"enemy_types": [
+			"guard",
+			"guard",
+			"coinshot"
+		],
+		"spawn_radius": 5.0
 	},
-	"rewards": {"coins": 85, "vials": 1, "mastery_points": 2}
+	"rewards": {
+		"coins": 85.0,
+		"mastery_points": 2.0,
+		"vials": 1.0
+	},
+	"start_marker": "ambush_noble",
+	"title": "Obligator Ambush: Keep Ring",
+	"type": "obligator_ambush",
+	"validated": true
 }

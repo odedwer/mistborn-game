@@ -1,11 +1,20 @@
 {
 	"id": "ambush_market",
-	"type": "obligator_ambush",
-	"title": "Obligator Ambush: Market Square",
-	"start_marker": "ambush_market",
 	"params": {
-		"enemy_types": ["guard", "guard", "hazekiller"],
-		"spawn_radius": 9.0
+		"enemy_types": [
+			"guard",
+			"guard",
+			"hazekiller"
+		],
+		"spawn_radius": 2.5
 	},
-	"rewards": {"coins": 80, "vials": 1, "mastery_points": 2}
+	"rewards": {
+		"coins": 80.0,
+		"mastery_points": 2.0,
+		"vials": 1.0
+	},
+	"start_marker": "ambush_market",
+	"title": "Obligator Ambush: Market Square",
+	"type": "obligator_ambush",
+	"validated": true
 }
