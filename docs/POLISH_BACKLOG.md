@@ -90,3 +90,14 @@ Follow-ups:
 - There's no on-screen clock or time-of-day indicator (add one to the HUD or the map tab).
 - `test_save::test_latest_slot_picks_most_recent` failed twice while another worktree's test run was writing to the same `user://saves` folder. Isolate the test save dir (e.g. a per-run subfolder) so parallel runs can't collide.
 - Activity ring-path reachability is still not validated.
+
+## Review of art pass 6
+
+Merged: 32-column torsos with a V shirt (the glare came from vertex colour bleeding across a single column), Spook's cap about 35% smaller with a real brim, tufted blended fringe for Clubs, swept hair clumps for Dockson/Breeze/Ham, deeper brow and nose, clean Hazekiller hood opening. 293 tests green. Reviewed p6_after_faces_crew_34 and enemies_34.
+
+Follow-ups:
+- Spook's cap, the Hazekiller hood and Dockson's hair are clearly better.
+- Breeze's shirt V still reads as a glowing gold-white streak under studio light; drop the albedo (the pale shirt is about 0.9) or add fabric shading.
+- Skin has fine white speckle/grain across every face (a noise texture or sparkle at close range); make it subtler or tint it to the skin tone.
+- Vin, the coinshot and Breeze share the same black helmet-like hair silhouette; Vin needs her own short, choppier style.
+- Lips vanish in profile; pale shirts and skin are too bright under studio light (check against the in-game night lighting before changing).
