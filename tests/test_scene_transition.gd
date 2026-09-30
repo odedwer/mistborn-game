@@ -46,3 +46,30 @@ func test_exit_without_enter_is_a_no_op() -> void:
 	assert_false(SceneTransition.is_inside_interior())
 	await SceneTransition.exit_interior()
 	assert_false(SceneTransition.is_inside_interior())
+
+
+func test_interior_freed_mid_fade_is_handled() -> void:
+	# The game scene (and the interior with it) can be freed while a fade is
+	# running; exit/switch must just clear their state (this used to print
+	# "Trying to cast a freed object").
+	var player := CharacterBody3D.new()
+	player.add_to_group(&"player")
+	add_child(player)
+	await SceneTransition.enter_interior("res://src/mission/interiors/canton_office.tscn")
+	assert_true(SceneTransition.is_inside_interior())
+	# Start the transition without awaiting it, free the interior mid-fade.
+	SceneTransition.call("switch_interior", "res://src/mission/interiors/clubs_shop_hub.tscn")
+	SceneTransition._interior_root.queue_free()  # freed during the fade
+	await get_tree().create_timer(SceneTransition.FADE_TIME * 3.0).timeout
+	assert_false(SceneTransition.is_inside_interior(), "freed interior: nothing to switch from")
+	# The player went down with the interior; bring a new one.
+	player = CharacterBody3D.new()
+	player.add_to_group(&"player")
+	add_child(player)
+	await SceneTransition.enter_interior("res://src/mission/interiors/canton_office.tscn")
+	SceneTransition.call("exit_interior")
+	SceneTransition._interior_root.queue_free()  # freed during the fade
+	await get_tree().create_timer(SceneTransition.FADE_TIME * 3.0).timeout
+	assert_false(SceneTransition.is_inside_interior())
+	if is_instance_valid(player):
+		player.queue_free()
