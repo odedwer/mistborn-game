@@ -120,13 +120,19 @@ def flat_cap(b: Body, col, *, size=1.0, brim=0.07, droop=0.0):
     rr = [0.088, 0.094, 0.1, 0.098, 0.084, 0.05]
     rr = [r * size for r in rr]
     tube(b.m, c, [(r * s, r * 1.15 * s) for r in rr], n=16, color=col, weights={"Head": 1.0}, cap1=0.01 * s)
-    # peak: a flattened half-disc out front, angled slightly down
-    yb = 0.088 * size * 1.15 * s - 0.01 * s
-    pts = [v3(x * s * size, yb + brim * s * math.cos(x / 0.09 * 1.4), z0 + 0.004 * s - 0.012 * s * abs(x) / 0.09)
-           for x in (-0.085, -0.05, 0.0, 0.05, 0.085)]
-    tube(b.m, pts, [(0.006 * s, 0.012 * s), (0.006 * s, brim * 0.9 * s), (0.006 * s, brim * s), (0.006 * s, brim * 0.9 * s),
-                    (0.006 * s, 0.012 * s)], n=6, hint=(0, 0, 1), color=tuple(np.array(col) * np.array([0.8, 0.8, 0.8, 1])),
-         weights={"Head": 1.0}, cap0=0.004 * s, cap1=0.004 * s)
+    # Peak (brim): a thin half-disc jutting forward from the front of the band,
+    # tipped slightly down. (It used to be lofted with its thickness and depth
+    # swapped, which made a tall flat wall rather than a brim.)
+    yb = 0.088 * size * 1.15 * s - 0.012 * s
+    half_w = 0.082 * size
+    xs = np.linspace(-half_w, half_w, 7)
+    pts, radii = [], []
+    for x in xs:
+        reach = brim * math.sqrt(max(1.0 - (x / (half_w * 1.02)) ** 2, 0.0)) + 0.008
+        pts.append(v3(x * s, yb + reach * 0.5 * s, z0 + 0.008 * s - 0.25 * reach * s * 0.5))
+        radii.append((reach * 0.5 * s, 0.004 * s))
+    tube(b.m, pts, radii, n=8, hint=(0, -0.25, 1), color=tuple(np.array(col) * np.array([0.8, 0.8, 0.8, 1])),
+         weights={"Head": 1.0}, cap0=0.003 * s, cap1=0.003 * s)
 
 
 def wide_hat(b: Body, col, ribbon, *, brim=0.24, tilt=0.03):
@@ -588,7 +594,7 @@ def build_spook():
     tube(b.m, [v3(0.04 * s, 0.06 * s, 0.83 * H), v3(0.05 * s, 0.1 * s, 0.76 * H), v3(0.045 * s, 0.11 * s, 0.68 * H)],
          [(0.022 * s, 0.006 * s)] * 3, n=4, hint=(0, 1, 0), color=hexcol("7a3a2a"), weights=b.W(["UpperChest", "Chest"]))
     # the oversized cap
-    flat_cap(b, cap, size=1.42, brim=0.1, droop=0.035)
+    flat_cap(b, cap, size=1.1, brim=0.05, droop=0.02)
     return b, dict(mats={CLOTH: "Cloth"}, style="spook")
 
 
