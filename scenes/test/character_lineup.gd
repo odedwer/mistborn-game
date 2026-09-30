@@ -5,6 +5,8 @@ extends Node3D
 ##   --only=<id>            show a single character (any id in GROUPS, e.g. vin, kelsier, noble_woman_2)
 ##   --group=<name>         enemies (default), crew, gentry, folk (crowd variants), all
 ##   --variants=<n>         with --only: n randomize_variant() copies of a base model (crowd check)
+##   --pose=<name>          freeze a named pose for review: idle, walk, run, jump (apex), push, pull
+##                          (with --group=poses: Vin, Kelsier, a guard and an Inquisitor)
 ##   --anim=<name>          play this animation on everyone (AnimationPlayer, tree disabled)
 ##   --t=<seconds>          freeze the animation at this time (with --anim)
 ##   --action=<name>        call play_action(name) through the CharacterModel API after 0.5 s
@@ -22,8 +24,19 @@ const GROUPS := {
 	"crew": [&"kelsier", &"dockson", &"breeze", &"ham", &"clubs", &"spook", &"sazed", &"marsh"],
 	"gentry": [&"vin_gown", &"noble_man_1", &"noble_woman_1", &"noble_man_2", &"noble_woman_2",
 		&"noble_man_3", &"noble_woman_3"],
+	"poses": [&"vin", &"kelsier", &"guard", &"inquisitor"],
 	"folk": [&"obligator", &"obligator_2", &"skaa_man", &"skaa_woman", &"skaa_man", &"skaa_woman",
 		&"skaa_man", &"skaa_woman"],
+}
+
+## Named review poses: [animation, time (s)] -- a readable key frame of each.
+const POSES := {
+	"idle": ["idle", 0.75],
+	"walk": ["walk", 0.26],  # passing/contact: legs apart
+	"run": ["run", 0.18],
+	"jump": ["jump", 0.45],  # take-off peak (apex of the authored clip)
+	"push": ["push", 0.3],
+	"pull": ["pull", 0.3],
 }
 
 var opts := {}
@@ -40,6 +53,9 @@ func _ready() -> void:
 		var kv := a.trim_prefix("--").split("=", true, 1)
 		opts[kv[0]] = kv[1] if kv.size() > 1 else "1"
 	_moving = opts.has("moving")
+	if opts.has("pose") and POSES.has(opts["pose"]):
+		opts["anim"] = POSES[opts["pose"]][0]
+		opts["t"] = str(POSES[opts["pose"]][1])
 	_build_environment(opts.get("light", "night"))
 	var ids: Array[StringName] = IDS
 	var group: String = opts.get("group", "enemies")
@@ -54,7 +70,7 @@ func _ready() -> void:
 		ids = [StringName(opts["only"])]
 		for i in int(opts.get("variants", "1")) - 1:
 			ids.append(StringName(opts["only"]))
-	var spacing := 1.25
+	var spacing := 1.7 if group == "poses" else 1.25
 	for i in ids.size():
 		var ps: PackedScene = load("res://assets/models/characters/%s.tscn" % ids[i])
 		var m: CharacterModel = ps.instantiate()
