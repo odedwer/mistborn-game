@@ -485,6 +485,16 @@ class Body:
                 hide = 1.0 if abs(th - 90) < (100 if style == "bald" else 60) else 0.0
                 k -= 0.35 * hide * smoothstep(fz, fz - 0.015 * s, z)
                 k -= 0.12 * side_ * smoothstep(lm["eye_z"], lm["eye_z"] - 0.04 * s, z)
+            if style == "choppy":
+                # Uneven volume: fuller at the back and in two or three soft
+                # lobes round the sides, so the profile isn't a smooth dome.
+                u = (z - rings_z[0]) / max(rings_z[-1] - rings_z[0], 1e-6)
+                a = math.radians(th)
+                back = math.exp(-((th - 270.0) / 55.0) ** 2)
+                k += math.sin(math.pi * min(u * 1.15, 1.0)) * (
+                    0.07 * back + 0.05 * (0.5 + 0.5 * math.sin(3 * a + seed * 2.0)) * (1 - 0.6 * front))
+                # tousled, rounder top instead of the head's peaked crown
+                k += 0.16 * smoothstep(0.7, 1.0, u)
             if ears_out:
                 # Cut the shell around each ear (a hard step between columns,
                 # so there's no band where hair and skin z-fight): the hair
@@ -513,7 +523,7 @@ class Body:
         # where skin poked through at the front of the crown.
         level = [(v3(1, 0, 0), v3(0, 1, 0))] * len(centers)
         tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, frames=level,
-             weights={"Head": 1.0}, cap1=0.026 * s)
+             weights={"Head": 1.0}, cap1=(0.012 if style == "choppy" else 0.026) * s)
 
         if style == "long":
             self._hair_tail(base_color, bz, s)
@@ -566,6 +576,12 @@ class Body:
         for th in np.linspace(150, 390, 13):
             ln = 0.014 + 0.018 * rng.random()
             lock(rings_z[1], th, 1.0, ln, 0.017, sweep=0.2 * (rng.random() - 0.5), flare=0.25)
+        # flyaways: thin, longer strands curling off the nape and sides
+        for th in list(np.linspace(215, 325, 6)) + [165.0, 185.0, 5.0, 355.0]:
+            th = th + 12 * (rng.random() - 0.5)
+            z = rings_z[1] + (rings_z[3] - rings_z[1]) * rng.random()
+            lock(z, th, 1.0, 0.02 + 0.012 * rng.random(), 0.0055, sweep=0.6 * (rng.random() - 0.5),
+                 flare=0.35 + 0.3 * rng.random(), lift=0.006)
         # crown tufts: short, broad and lying back along the head (upright
         # ones read as horns)
         for th in (215.0, 260.0, 305.0):
