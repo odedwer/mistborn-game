@@ -995,7 +995,10 @@ def build_noble_woman():
         b.skirt(0.6 * H, 0.2 * H, (0.13 * s, 0.09 * s, 0.13 * s), (0.3 * s, 0.26 * s, 0.4 * s),
                 lambda p, i, th: trim if i == 4 else gown_d, arc=(210, 330), rows=5, n=10, leg_share=0.2, curve=0.7)
     with b.garment("hat_wide"):
-        wide_hat(b, dyed(GREY_L, 2), dyed(GREY_D, 1))
+        # Authored at mid grey, so the dye shows at its own value. GREY_L
+        # multiplied the dye by ~1.8, and a pale dye went past white: an
+        # overbright hat that glowed at night.
+        wide_hat(b, dyed(GREY, 2), dyed(GREY_D, 1))
     with b.garment("hat_small"):
         small_hat(b, dyed(GREY_D, 1), hexcol("f0ece4"))
     with b.garment("shawl"):
@@ -1229,7 +1232,7 @@ PRESETS = {
     "noble_man_1": ("noble_man", ["hat_top", "tails"], ["5e1a28", "a8883a", "2a2420"], 1.0),
     "noble_man_2": ("noble_man", ["hat_bowler", "longcoat"], ["1c2a4e", "9c9ca4", "6a4a2a"], 1.03),
     "noble_man_3": ("noble_man", ["tails", "cape"], ["1c3a2a", "c8bca0", "8a8278"], 0.97),
-    "noble_woman_1": ("noble_woman", ["hat_wide"], ["8a1a2a", "ece4d4", "3a2a1e"], 1.0),
+    "noble_woman_1": ("noble_woman", ["hat_wide"], ["8a1a2a", "d4c8b0", "3a2a1e"], 1.0),  # ivory straw
     "noble_woman_2": ("noble_woman", ["shawl", "bustle"], ["1e3a7a", "c8a650", "9a7040"], 1.03),
     "noble_woman_3": ("noble_woman", ["hat_small", "bustle"], ["1e5a3a", "f4f0e8", "1c1410"], 0.97),
 }

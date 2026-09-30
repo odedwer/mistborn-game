@@ -14,7 +14,7 @@ sockets = {
 }
 lantern_light = false
 garments = PackedStringArray("hat_wide")
-dye_colors = Array[Color]([Color(0.5412, 0.1020, 0.1647, 1), Color(0.9255, 0.8941, 0.8314, 1), Color(0.2275, 0.1647, 0.1176, 1)])
+dye_colors = Array[Color]([Color(0.5412, 0.1020, 0.1647, 1), Color(0.8314, 0.7843, 0.6902, 1), Color(0.2275, 0.1647, 0.1176, 1)])
 body_scale = 1.0
 variant_pool = {
 "garment_groups": [["hat_wide", "hat_small", "", ""], ["shawl", "", ""], ["bustle", ""]],
