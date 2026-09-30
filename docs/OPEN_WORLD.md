@@ -162,7 +162,10 @@ Coin races are also checked for reachability: every leg is sampled along a
 steel-jump arc and must stay within 22 m of an anchored metal (lamp posts,
 rooftop ironwork, balconies, bars) the whole way, the same budget
 `tests/test_traversal.gd` holds the story route to, and legs are capped at
-45 m and a 20 m climb. Pursuits are still checked for clearance and step-up only.
+45 m and a 20 m climb. Pursuits are checked for jumps too: wherever a leg
+crosses open air (roofs more than 1.5 m below it), a gap wider than 4 m (a
+running leap) needs an anchor within 22 m of the whole jump arc. All 13
+pursuits pass: 27 street gaps of 4.9-12.2 m, the worst 17 m from an anchor.
 
 ## Fast travel
 

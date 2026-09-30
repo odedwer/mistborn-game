@@ -77,3 +77,19 @@ func test_every_activity_has_exactly_one_start_marker() -> void:
 			counts[id] = int(counts.get(id, 0)) + 1
 	for a in ActivityData.load_all():
 		assert_eq(int(counts.get(String(a.id), 0)), 1, "%s has one start marker" % a.id)
+
+
+func test_pursuit_gap_needs_an_anchor() -> void:
+	# Two 10 m roofs with a 9 m street between them.
+	var boxes: Array[AABB] = [AABB(Vector3(0, 0, -5), Vector3(10, 10, 10)), AABB(Vector3(19, 0, -5), Vector3(10, 10, 10))]
+	var a := Vector3(5, 10.25, 0)
+	var b := Vector3(24, 10.25, 0)
+	var gaps := ActivityValidator.air_gaps(a, b, boxes)
+	assert_eq(gaps.size(), 1)
+	var v := ActivityValidator.new(CityPlan.load_from_file(), 1337)
+	assert_false(v.pursuit_leg_errors(1, a, b, boxes, PackedVector3Array()).is_empty(), "no anchor: can't jump the street")
+	var lamp := PackedVector3Array([Vector3(14.5, 3.0, 4.0)])
+	assert_true(v.pursuit_leg_errors(1, a, b, boxes, lamp).is_empty(), "a street lamp makes it a steel jump")
+	# A narrow alley is a running leap, no anchor needed.
+	var alley: Array[AABB] = [AABB(Vector3(0, 0, -5), Vector3(10, 10, 10)), AABB(Vector3(13, 0, -5), Vector3(10, 10, 10))]
+	assert_true(v.pursuit_leg_errors(1, a, Vector3(18, 10.25, 0), alley, PackedVector3Array()).is_empty())
