@@ -198,7 +198,7 @@ func _build_ui() -> void:
 	_clock = TimeOfDayIndicator.new()
 	_clock.name = "TimeOfDay"
 	_clock.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_clock.position = Vector2(-120, -46)
+	_clock.position = Vector2(-148, -54)
 	root.add_child(_clock)
 
 	# Metal wheel (hold Tab).

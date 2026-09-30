@@ -4,6 +4,8 @@ extends SceneTree
 ##   godot --rendering-driver vulkan -s res://tools/shot.gd -- <location> <out.png> [frames] [look_at] [steel]
 ## <location>/<look_at>: spawn, an objective id (cp_2, keep_courtyard, ...)
 ## or "x,y,z". Chunks around the location are streamed in synchronously.
+## Env: SHOT_MISSION (story mission to jump to), SHOT_TIME (clock hour), and
+## the SHOT_* debug switches below.
 
 
 func _initialize() -> void:
@@ -45,6 +47,12 @@ func _run() -> void:
 		al.call("set_reserve", 0, 100.0)
 		al.call("set_burning", 0, true)
 	player.get("camera_rig").call("snap")
+	# SHOT_TIME=<hour>: override the clock even inside a night-forced mission
+	# (HUD/time-of-day review shots).
+	if OS.get_environment("SHOT_TIME") != "":
+		var tod: Node = root.get_node(^"TimeOfDay")
+		tod.call("release", &"mission")
+		tod.call("set_hour", float(OS.get_environment("SHOT_TIME")))
 	for i in frames:
 		await process_frame
 	# Report floating/sunk enemies: feet vs the ground right under them.
