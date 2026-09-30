@@ -1,10 +1,10 @@
 {
  "name": "breeze",
  "style": "breeze",
- "tris": 5158,
+ "tris": 5254,
  "height": 1.7560261085676205,
  "garments": {},
- "tris_max": 5158,
+ "tris_max": 5254,
  "materials": [
   "Cloth",
   "Metal"
