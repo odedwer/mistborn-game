@@ -13,12 +13,22 @@ extends RefCounted
 ## - rooftop pursuit: every path point and leg is clear at capsule height, and
 ##   the thief never has to jump more than `MAX_STEP_UP`;
 ## - ambush / riot: each spawn point around the start is clear ground.
+## Reachability (coin races): the flight between consecutive rings (sampled
+## along a steel-jump arc) must never be more than `MAX_ANCHOR_GAP` from an
+## anchored metal (street lamps, rooftop ironwork, balconies, bars...) to Push
+## or Pull on, the same budget `tests/test_traversal.gd` holds the story route
+## to; legs are also capped in length and climb (`MAX_LEG`, `MAX_RISE`).
 ## `tests/test_activity_validation.gd` runs it over every activity in the plan.
 
 const RING_RADIUS := 2.5
 const BODY_RADIUS := 1.0
 const THIEF_RADIUS := 0.6
 const MAX_STEP_UP := 6.0
+## Reachability: longest flight between rings, highest climb, and the widest
+## gap to the nearest anchor anywhere along it (m).
+const MAX_LEG := 45.0
+const MAX_RISE := 20.0
+const MAX_ANCHOR_GAP := 22.0
 ## Boxes whose top is below this are ground/curbs, not obstacles.
 const GROUND_TOP := 0.6
 
@@ -27,6 +37,7 @@ var seed_value := 1337
 
 var _solids: Dictionary = {}   # unit key -> Array[AABB]
 var _markers: Dictionary = {}  # unit key -> Array[Dictionary]
+var _anchors: Dictionary = {}  # unit key -> PackedVector3Array (anchored metals)
 
 
 func _init(p_plan: CityPlan, p_seed := 1337) -> void:
@@ -56,6 +67,12 @@ func _load_unit(key: String, data: ChunkBuildData) -> void:
 			boxes.append(bb)
 	_solids[key] = boxes
 	_markers[key] = data.markers
+	var anchors := PackedVector3Array()
+	for m: Dictionary in data.static_metals:
+		anchors.append(m["pos"])
+	for lp: Dictionary in data.lamp_posts:
+		anchors.append((lp["pos"] as Vector3) + Vector3.UP * 3.0)
+	_anchors[key] = anchors
 
 
 func _ensure_chunk(c: Vector2i) -> String:
@@ -75,6 +92,7 @@ func _ensure_landmark(lm: CityPlan.Landmark) -> void:
 func clear() -> void:
 	_solids.clear()
 	_markers.clear()
+	_anchors.clear()
 
 
 ## Drops one chunk's cache (a marker only reshapes the lot it forces, in its own chunk).
@@ -82,6 +100,7 @@ func invalidate_chunk(c: Vector2i) -> void:
 	var key := ChunkGenerator.chunk_key(c)
 	_solids.erase(key)
 	_markers.erase(key)
+	_anchors.erase(key)
 
 
 ## Solid boxes intersecting the XZ `area` (chunks and landmarks around it).
@@ -97,6 +116,58 @@ func solids_in(area: Rect2) -> Array[AABB]:
 			_ensure_landmark(lm)
 			out.append_array(_solids[ChunkGenerator.landmark_key(lm.id)])
 	return out
+
+
+## Anchored metals (Push/Pull anchors) around the XZ `area`.
+func anchors_in(area: Rect2) -> PackedVector3Array:
+	solids_in(area)  # loads the units
+	var out := PackedVector3Array()
+	var c0 := plan.chunk_of(area.position)
+	var c1 := plan.chunk_of(area.end)
+	for x in range(c0.x, c1.x + 1):
+		for z in range(c0.y, c1.y + 1):
+			out.append_array(_anchors[ChunkGenerator.chunk_key(Vector2i(x, z))])
+	for lm in plan.landmarks:
+		if lm.footprint.intersects(area):
+			out.append_array(_anchors[ChunkGenerator.landmark_key(lm.id)])
+	return out
+
+
+## Widest distance to the nearest anchor along a steel-jump flight from `a`
+## to `b` (sampled every ~4 m on an arc cresting 3 m above the higher end).
+static func worst_anchor_gap(a: Vector3, b: Vector3, anchors: PackedVector3Array) -> float:
+	var cruise := maxf(a.y, b.y) + 3.0
+	var n := maxi(int(ceil(a.distance_to(b) / 4.0)), 1)
+	var worst := 0.0
+	for k in n + 1:
+		var t := float(k) / float(n)
+		var p := a.lerp(b, t)
+		p.y = lerpf(p.y, cruise, sin(t * PI))
+		var best := INF
+		for q in anchors:
+			best = minf(best, q.distance_squared_to(p))
+		worst = maxf(worst, sqrt(best))
+	return worst
+
+
+## Reachability problems of a ring chain (see the class doc); empty = plausible.
+func reachability_errors(start: Vector3, pts: Array[Vector3]) -> Array[String]:
+	var errs: Array[String] = []
+	var all: Array[Vector3] = [start]
+	all.append_array(pts)
+	var anchors := anchors_in(_area_around(all, MAX_ANCHOR_GAP + 2.0))
+	var prev := start + Vector3.UP * 2.0
+	for i in pts.size():
+		var p := pts[i]
+		if Vector2(p.x - prev.x, p.z - prev.z).length() > MAX_LEG:
+			errs.append("leg to ring %d is too long a jump" % i)
+		if p.y - prev.y > MAX_RISE:
+			errs.append("leg to ring %d climbs too high" % i)
+		var gap := worst_anchor_gap(prev, p, anchors)
+		if gap > MAX_ANCHOR_GAP:
+			errs.append("leg to ring %d has no anchor within %.0f m (%.0f m gap)" % [i, MAX_ANCHOR_GAP, gap])
+		prev = p
+	return errs
 
 
 ## The resolved world position of an `activity_start` plan marker.
@@ -194,6 +265,7 @@ func validate(a: ActivityData, start: Vector3) -> Array[String]:
 				if not segment_clear(prev, p, BODY_RADIUS, boxes):
 					errs.append("leg to ring %d is blocked" % i)
 				prev = p
+			errs.append_array(reachability_errors(start, pts))
 		"rooftop_pursuit":
 			var pts := _path_points(start, a.params)
 			if pts.size() < 2:
@@ -234,6 +306,7 @@ func find_ring_offsets(start: Vector3, count: int, rng_seed: int) -> Array:
 	rng.seed = rng_seed
 	var area := Rect2(Vector2(start.x, start.z), Vector2.ZERO).grow(count * 22.0 + 20.0)
 	var boxes := solids_in(area)
+	var anchors := anchors_in(area)
 	for restart in 40:
 		var heading := rng.randf() * TAU
 		var prev := start + Vector3.UP * 2.0
@@ -252,6 +325,8 @@ func find_ring_offsets(start: Vector3, count: int, rng_seed: int) -> Array:
 				if not point_clear(cand, RING_RADIUS + 0.4, boxes):
 					continue
 				if not segment_clear(prev, cand, BODY_RADIUS + 0.3, boxes):
+					continue
+				if worst_anchor_gap(prev, cand, anchors) > MAX_ANCHOR_GAP - 1.0:
 					continue
 				out.append([cand.x - start.x, cand.y - start.y, cand.z - start.z])
 				prev = cand
