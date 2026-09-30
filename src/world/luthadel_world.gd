@@ -26,6 +26,9 @@ signal markers_spawned(nodes: Array[Node3D])
 @export var unload_radius := 500.0
 @export var build_environment := true
 @export var build_far_lod := true
+## Index every plan marker (and prebuild landmarks) in _ready. The preview
+## harness (tools/preview.gd) turns this off: it only needs geometry.
+@export var build_marker_index := true
 ## 0 low .. 3 ultra (GameSettings overrides this through the mist controller).
 @export_range(0, 3) var mist_quality := 2
 
@@ -59,7 +62,11 @@ func _ready() -> void:
 	units_root.name = "Units"
 	add_child(units_root)
 
-	var prebuilt := _build_marker_index()
+	var prebuilt: Array[ChunkBuildData] = []
+	if build_marker_index:
+		prebuilt = _build_marker_index()
+	else:
+		marker_index = MarkerIndex.new()
 
 	if build_environment:
 		var env := EnvironmentBuilder.build(self)
