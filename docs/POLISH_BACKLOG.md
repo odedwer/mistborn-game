@@ -113,3 +113,19 @@ Follow-ups:
 - Keep curtain-wall crenellations read as a jagged zig-zag from above; use regular merlons.
 - Rooftop pursuits are only checked for clearance and step height, not jump reachability.
 - Still open from earlier: the "Trying to cast a freed object" error in the SceneTransition tests, and a fast open-world preview harness (Keep Venture courtyard never screenshotted).
+
+## Review of art pass 7 and world pass 5
+
+Merged art pass 7: the root cause of the skin speckle was an export bug (`build_characters.py` never wrote UVs, so every GLB shipped placeholder UVs and the grain noise sparkled). Also Breeze's linen shirt, Vin's choppy cut and lips that read in profile. Merged world pass 5: the `tools/preview.gd` fast district preview (12–42 s per shot), bevelled and varied ashlar, a regular merlon parapet, a scene-transition freed-object guard (the original error never reproduced), pursuit gap reachability (all 13 pass) and a larger HUD clock. The full suite is 297 green after both merges.
+
+Follow-ups:
+- Faces are clean, with no speckle, and the merchant ashlar now reads as real stone blocks.
+- **Flaky test:** `test_story_sweep::test_every_story_mission_completes` failed 1 of 3 runs after the art merge: a CrowdMember in `c_m1_1` fell out of the world. It passed 2/2 on the pre-merge commit, which isn't enough to rule out a pre-existing flake. The crowd fall-through fix from open-world pass 2 is not airtight; root-cause it.
+- **Ears** show as flat orange diamonds pasted over the hair in profile (Vin, guard, coinshot, thug, inquisitor). The hair shell draws over the head, but the ear mesh sits outside it. Tuck the ears under the hair or cut the hair shell around them.
+- Vin's hair in profile is still close to a helmet silhouette.
+- Dockson's and Breeze's shirt V still streaks.
+- noble_woman_1's white hat is very bright at night.
+- **Night readability:** in p5w_hud_night the rooftop around the player is almost pure black and the player is a silhouette. Night needs a cool moonlight fill or ambient floor so the player and nearby roofs read (tin brightens it, but base night must still be playable).
+- **Font glyph bug:** the dialogue line "That's steel in your blood" rendered as "That's sted in your blood" in the HUD shot. The text in `mistwalk_to_keep_venture.json` is correct, so check the dialogue font for missing or ligature glyphs ("el").
+- **Keep Venture courtyard** (first review): a big flat empty paved yard with a few scattered crates and a well. Its perimeter walls still use the old crazy-paving stone. It needs dressing (planters, carriage, guards' posts, a fountain, banners) and the ashlar material on its walls.
+- The HUD clock reads at the bottom-right.
