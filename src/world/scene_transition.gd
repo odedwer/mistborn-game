@@ -42,8 +42,8 @@ func outdoor_transform() -> Transform3D:
 func enter_interior(scene_path: String) -> void:
 	if is_inside_interior() or not ResourceLoader.exists(scene_path):
 		return
-	var player := get_tree().get_first_node_in_group(&"player")
-	var host := _host_node()
+	var player = get_tree().get_first_node_in_group(&"player")  # untyped: may be freed across the fade
+	var host = _host_node()
 	if player == null or host == null:
 		return
 	busy = true
@@ -88,22 +88,23 @@ func switch_interior(scene_path: String) -> void:
 	if _interior_root.scene_file_path == scene_path:
 		Events.interior_entered.emit(scene_path)
 		return
-	var player := get_tree().get_first_node_in_group(&"player")
-	var host := _host_node()
+	var player = get_tree().get_first_node_in_group(&"player")  # untyped: may be freed across the fade
+	var host = _host_node()
 	if player == null or host == null:
 		return
 	busy = true
 	await _fade_to(1.0)
-	if not is_instance_valid(player) or not is_instance_valid(host):
+	# The game (and with it the current interior) may be freed during the fade.
+	if not is_instance_valid(player) or not is_instance_valid(host) or not is_inside_interior():
 		busy = false
 		await _fade_to(0.0)
 		return
 	var next := (load(scene_path) as PackedScene).instantiate()
 	host.add_child(next)
 	_reparent(player, next)
-	var old := _interior_root
+	var old = _interior_root
 	_interior_root = next
-	if old != null and is_instance_valid(old):
+	if is_instance_valid(old):
 		old.queue_free()
 	var spawn := _find_in_group(next, &"interior_spawn")
 	if spawn != null:
@@ -125,8 +126,8 @@ func current_interior() -> Node:
 func fast_travel_to(world_pos: Vector3) -> bool:
 	if is_inside_interior():
 		return false
-	var player := get_tree().get_first_node_in_group(&"player")
-	var world := get_tree().get_first_node_in_group(&"world")
+	var player = get_tree().get_first_node_in_group(&"player")  # untyped: may be freed across the fade
+	var world = get_tree().get_first_node_in_group(&"world")
 	if player == null or world == null:
 		return false
 	busy = true
@@ -160,13 +161,15 @@ func fade_through(action: Callable) -> void:
 func exit_interior() -> void:
 	if not is_inside_interior():
 		return
-	var player := get_tree().get_first_node_in_group(&"player")
-	var host := _host_node()
-	var interior := _interior_root
+	var player = get_tree().get_first_node_in_group(&"player")  # untyped: may be freed across the fade
+	var host = _host_node()
+	# Compare by id: a typed local holding the interior would raise "Trying
+	# to cast a freed object" if the scene is freed during the fade.
+	var interior_id := _interior_root.get_instance_id()
 	await _fade_to(1.0)
 	# Torn down during the fade (the game scene was freed, or another
 	# transition already exited or switched): just clear the stale state.
-	if not is_inside_interior() or interior != _interior_root:
+	if not is_inside_interior() or interior_id != _interior_root.get_instance_id():
 		if not is_inside_interior():
 			_interior_root = null
 		await _fade_to(0.0)

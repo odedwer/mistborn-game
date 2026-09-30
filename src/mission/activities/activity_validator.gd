@@ -18,6 +18,10 @@ extends RefCounted
 ## anchored metal (street lamps, rooftop ironwork, balconies, bars...) to Push
 ## or Pull on, the same budget `tests/test_traversal.gd` holds the story route
 ## to; legs are also capped in length and climb (`MAX_LEG`, `MAX_RISE`).
+## Reachability (rooftop pursuits): wherever a path leg crosses open air (the
+## roofs below drop more than `GAP_DROP` under the leg), a gap wider than
+## `MAX_RUN_GAP` (a running leap) needs an anchor within `MAX_ANCHOR_GAP` of
+## the whole jump arc, so the player can steel-jump the street.
 ## `tests/test_activity_validation.gd` runs it over every activity in the plan.
 
 const RING_RADIUS := 2.5
@@ -29,6 +33,10 @@ const MAX_STEP_UP := 6.0
 const MAX_LEG := 45.0
 const MAX_RISE := 20.0
 const MAX_ANCHOR_GAP := 22.0
+## Pursuit gaps: open air counts from this far below the leg; a leap this
+## wide is plausible on foot (pewter-assisted).
+const GAP_DROP := 1.5
+const MAX_RUN_GAP := 4.0
 ## Boxes whose top is below this are ground/curbs, not obstacles.
 const GROUND_TOP := 0.6
 
@@ -170,6 +178,46 @@ func reachability_errors(start: Vector3, pts: Array[Vector3]) -> Array[String]:
 	return errs
 
 
+## Open-air spans along a rooftop leg a -> b, as [from, to] points: where the
+## highest solid under the leg is more than `GAP_DROP` below it.
+static func air_gaps(a: Vector3, b: Vector3, boxes: Array[AABB]) -> Array:
+	var out: Array = []
+	var floor_y := minf(a.y, b.y) - GAP_DROP
+	var n := maxi(int(ceil(Vector2(b.x - a.x, b.z - a.z).length() / 0.5)), 1)
+	var start := -1
+	for k in n + 1:
+		var p := a.lerp(b, float(k) / float(n))
+		var air := top_at(p.x, p.z, boxes) < floor_y
+		if air and start < 0:
+			start = k
+		if (not air or k == n) and start >= 0:
+			var end := k if air else k - 1
+			out.append([a.lerp(b, float(start) / float(n)), a.lerp(b, float(end) / float(n))])
+			start = -1
+	return out
+
+
+## Jump problems of pursuit leg `i` (a -> b); empty = the player can follow.
+func pursuit_leg_errors(i: int, a: Vector3, b: Vector3, boxes: Array[AABB], anchors: PackedVector3Array) -> Array[String]:
+	var errs: Array[String] = []
+	for g: Array in air_gaps(a, b, boxes):
+		var g0: Vector3 = g[0]
+		var g1: Vector3 = g[1]
+		var width := Vector2(g1.x - g0.x, g1.z - g0.z).length()
+		if width <= MAX_RUN_GAP:
+			continue
+		# Take off and land on the roofs either side of the gap.
+		var dir := (b - a).normalized()
+		var from := g0 - dir * 0.5
+		var to := g1 + dir * 0.5
+		from.y = a.y
+		to.y = b.y
+		var gap := worst_anchor_gap(from, to, anchors)
+		if gap > MAX_ANCHOR_GAP:
+			errs.append("path leg %d: %.0f m gap with no anchor within %.0f m" % [i, width, MAX_ANCHOR_GAP])
+	return errs
+
+
 ## The resolved world position of an `activity_start` plan marker.
 func resolve_start(activity_id: StringName) -> Vector3:
 	for m: Dictionary in plan.markers:
@@ -272,6 +320,7 @@ func validate(a: ActivityData, start: Vector3) -> Array[String]:
 				errs.append("path too short")
 				return errs
 			var boxes := solids_in(_area_around(pts, 12.0))
+			var anchors := anchors_in(_area_around(pts, MAX_ANCHOR_GAP + 2.0))
 			var up := Vector3.UP * 1.0
 			for i in pts.size():
 				if not point_clear(pts[i] + up, THIEF_RADIUS, boxes):
@@ -281,6 +330,7 @@ func validate(a: ActivityData, start: Vector3) -> Array[String]:
 						errs.append("path leg %d is blocked" % i)
 					if pts[i].y - pts[i - 1].y > MAX_STEP_UP:
 						errs.append("path leg %d climbs too steeply" % i)
+					errs.append_array(pursuit_leg_errors(i, pts[i - 1], pts[i], boxes, anchors))
 		"obligator_ambush", "crowd_riot":
 			var count := (a.params.get("enemy_types", []) as Array).size() if a.type == &"obligator_ambush" \
 					else int(a.params.get("member_count", 5))
@@ -347,6 +397,7 @@ func find_path_offsets(start: Vector3, count: int, rng_seed: int) -> Array:
 	rng.seed = rng_seed
 	var area := Rect2(Vector2(start.x, start.z), Vector2.ZERO).grow(count * 18.0 + 20.0)
 	var boxes := solids_in(area)
+	var anchors := anchors_in(area)
 	var up := Vector3.UP * 1.0
 	for restart in 120:
 		var heading := rng.randf() * TAU
@@ -369,6 +420,8 @@ func find_path_offsets(start: Vector3, count: int, rng_seed: int) -> Array:
 				if not point_clear(cand + up, THIEF_RADIUS + 0.2, boxes):
 					continue
 				if not segment_clear(prev + up, cand + up, THIEF_RADIUS + 0.2, boxes):
+					continue
+				if not pursuit_leg_errors(0, prev, cand, boxes, anchors).is_empty():
 					continue
 				out.append([cand.x - start.x, cand.y - start.y, cand.z - start.z])
 				prev = cand

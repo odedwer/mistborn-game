@@ -100,8 +100,8 @@ static func _create(id: int) -> Material:
 			return _shader_mat("far_silhouette.gdshader")
 		Mat.ASHLAR:
 			# Merchant/noble dressed stone: its own coursed-block texture
-			# (tools/gen_textures.py `ashlar`: 8 courses per tile), so a 2.4 m
-			# tile gives 0.3 m courses of 0.3-0.8 m blocks. The shared
+			# (tools/gen_textures.py `ashlar`: 12 courses per tile), so a 2.4 m
+			# tile gives 0.2 m courses of 0.2-0.45 m bevelled blocks. The shared
 			# stone_wall texture is a polygonal rubble that read as crazy
 			# paving at any scale.
 			return _triplanar("ashlar", 2.4, 0.9, Color(1, 1, 1))

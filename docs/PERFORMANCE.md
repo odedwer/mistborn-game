@@ -125,3 +125,23 @@ new, with 2 x 6 runs each on a noisy one-core VM:
 Noble chunk generation got slightly faster, not slower. The absolute numbers
 are higher than in pass 2 because this VM is slower.
 
+
+## Fast preview shots (`tools/preview.gd`)
+
+The full game or `scenes/test/world_preview.tscn` streams a 260-400 m radius,
+builds the far-LOD skyline and the citywide marker index, and bakes navmeshes,
+so one opengl3/llvmpipe screenshot took 3-10 minutes. `tools/preview.gd` skips
+all of that. It streams only the chunks and landmarks within `--radius`
+(default 140 m) of each pose, synchronously, with no far LOD, no marker index,
+no navmesh bakes, no crowd or enemies, the lowest mist setting and a 500 m far
+plane:
+
+    xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 \
+      --resolution 1280x720 -s res://tools/preview.gd -- \
+      --shot=x,y,z,yaw,pitch,out.png[;...] [--time=<hour>] [--radius=140] [--far=500] [--frames=6]
+
+Yaw and pitch are in degrees: yaw 0 looks -Z, -90 looks +X, and pitch -90
+looks straight down. `--time` is read by the TimeOfDay autoload (11 = day,
+22 = night). A Keep Venture courtyard shot takes about 17 s end to end
+(0.3 s world setup, 11 units, 236k primitives). Distant skyline and mist are
+missing by design, so use the full preview for skyline shots.
