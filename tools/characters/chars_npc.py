@@ -406,7 +406,7 @@ def build_kelsier():
 
 def build_dockson():
     b = Body(H=1.76, sh_w=0.19, hip_w=0.1, apose=40, width=1.1, limb=1.05, neck=1.1)
-    coat, shirt, vest = hexcol("5c4630"), hexcol("b8ae96"), hexcol("3a3630")
+    coat, shirt, vest = hexcol("5c4630"), hexcol("9a9280"), hexcol("3a3630")
     pants, boots = hexcol("4a4236"), hexcol("2e241c")
     skin, hair = hexcol("c49a7c"), hexcol("3a2818")
     H, s = b.H, b.s
@@ -415,7 +415,7 @@ def build_dockson():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 6 + 90 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
+        if abs(th - 90) < 6 + 60 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
             return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 24 and p[2] > 0.6 * H:
             return vest
@@ -429,7 +429,7 @@ def build_dockson():
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2e2016"), lips=hexcol("8a5c4e"), jaw=1.1)
     b.hair_shell(hair, puff=1.0, jag=0.004, back_z=b.head_lm["chin_z"] + 0.05 * s, fringe_z=b.head_lm["brow_z"] + 0.035 * s,
-                 spikes=5)
+                 spikes=5, clumps=1.0, seed=0.4)
     b.beard(hexcol("4a3624"), length=0.022, full=False)
     for side in (1, -1):
         b.arm(side, color=band(coat, [(0, 0.0, coat)]), flare=0.008, radii_scale=1.06)
@@ -448,7 +448,7 @@ def build_dockson():
 
 def build_breeze():
     b = Body(H=1.74, sh_w=0.18, hip_w=0.1, apose=40, width=1.12, limb=1.02, neck=1.1)
-    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("ebe5d8")
+    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("cfc8b8")
     pants, shoes = hexcol("2c2830"), hexcol("141110")
     skin, hair = hexcol("e0b49c"), hexcol("2a1e18")
     H, s = b.H, b.s
@@ -457,7 +457,7 @@ def build_breeze():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 6 + 90 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
+        if abs(th - 90) < 6 + 60 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
             return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 30 and p[2] > 0.56 * H:
             # waistcoat (its buttons are real studs below: painted onto the
@@ -471,7 +471,7 @@ def build_breeze():
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2a1e18"), lips=hexcol("b0746a"), jaw=1.08)
     b.hair_shell(hair, puff=1.04, jag=0.0, back_z=b.head_lm["chin_z"] + 0.055 * s, fringe_z=b.head_lm["brow_z"] + 0.04 * s,
-                 spikes=3)
+                 spikes=3, clumps=1.0, seed=2.2)
     for side in (1, -1):
         b.arm(side, color=lambda p, i, th, side=side: hexcol("ebe5d8") if arm_t(b, side, p) > 1.9 else coat,
               flare=0.01, radii_scale=1.06)
@@ -524,7 +524,7 @@ def build_ham():
     b.neck(skin, r=0.064)
     b.head(skin, brow=hexcol("2a1e16"), lips=hexcol("8a5a4c"), jaw=1.12)
     b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.01 * s, fringe_z=b.head_lm["top"] - 0.02 * s,
-                 style="long")
+                 style="long", clumps=1.0, seed=4.1)
     for side in (1, -1):
         b.arm(side, color=skin, radii_scale=1.12)
         b.hand(side, skin, scale=1.06)

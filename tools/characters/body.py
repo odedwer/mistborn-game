@@ -356,7 +356,7 @@ class Body:
         return lm
 
     def hair_shell(self, color, *, fringe_z=None, back_z=None, puff=1.12, jag=0.012, n=20, spikes=7,
-                   style="short", bald_amount=0.55):
+                   style="short", bald_amount=0.55, clumps=0.0, seed=0.0):
         """Hair cap built from the head profile, hidden in front below the fringe.
 
         `style`:
@@ -366,6 +366,10 @@ class Body:
           - "bald": a thin fringe of hair low on the sides/back only, leaving
             the crown bare (pair with `bald_top=` on `head()` for the scalp
             tone to show through).
+
+        `clumps` (0..1) breaks a short cap up so it doesn't read as a smooth
+        helmet: raised, slightly swept locks (lighter on top, darker in the
+        grooves) and a ragged, uneven hairline. `seed` varies the pattern.
         """
         lm = self.head_lm
         s = lm["s"]
@@ -404,8 +408,34 @@ class Body:
             centers.append(c)
             radii.append(tuple(max(x, 0.036 * s) * puff + (0.004 if style == "bald" else 0.008) * s for x in r))
 
+        if clumps > 0.0:
+            n = max(n, 28)
+
+        def lump(i, th):
+            """Swept lock pattern in [-1, 1]: locks run back from the hairline."""
+            u = (rings_z[i] - rings_z[0]) / max(rings_z[-1] - rings_z[0], 1e-6)
+            a = math.radians(th)
+            v = (0.55 * math.sin(5 * a + 2.1 + seed + 5.0 * u) * math.sin(3 * a - 1.3 + 7.0 * u)
+                 + 0.45 * math.sin(11 * a + 0.7 * seed + 3.0 * u))
+            return max(-1.0, min(1.0, v * 1.25))
+
+        def hairline(th):
+            a = math.radians(th)
+            return fz + clumps * 0.016 * s * (0.55 * math.sin(4 * a + seed) + 0.45 * math.sin(11 * a + 2 * seed))
+
+        base_color = color
+        if clumps > 0.0:
+            def color(p, i, th):
+                c = np.array(base_color(p, i, th) if callable(base_color) else base_color, dtype=float)
+                # lock tops catch a lighter sheen, grooves go darker: dark hair
+                # needs an additive lift or it stays one flat black under light
+                t = clumps * (lump(i, th) + 1.0) * 0.5
+                rgb = lerp(c[:3] * 0.7, c[:3] * 1.4 + 0.2, t * t)
+                return tuple(rgb) + (c[3] if len(c) > 3 else 1.0,)
+
         def shape(i, th):
             z = rings_z[i]
+            fz = hairline(th)
             front = math.exp(-((th - 90) / 55.0) ** 2)
             side_ = math.exp(-((th - 90) / 95.0) ** 2)
             k = 1.0
@@ -429,6 +459,9 @@ class Body:
                 k += -0.03 + 0.035 * math.sin(math.pi * t_b) * min(1.0, bald_amount / 0.55)
             if i == 0 or (z < fz + 0.01 * s and front > 0.3):
                 k += jag / 0.1 * 0.25 * math.sin(math.radians(th) * spikes)
+            if clumps > 0.0:
+                # locks stand proud of the cap; grooves stay above the scalp
+                k += clumps * 0.085 * max(lump(i, th), -0.3)
             return k
 
         # Level rings: letting them tilt with the (slightly forward-leaning)
@@ -439,9 +472,9 @@ class Body:
              weights={"Head": 1.0}, cap1=0.026 * s)
 
         if style == "long":
-            self._hair_tail(color, bz, s)
+            self._hair_tail(base_color, bz, s)
         elif style == "bun":
-            self._hair_bun(color, top_z, s)
+            self._hair_bun(base_color, top_z, s)
 
     def _back_point(self, z, s, push=1.0):
         """A point on the back surface of the head profile at height `z`."""
