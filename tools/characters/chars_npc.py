@@ -226,22 +226,43 @@ def hair_bun(b: Body, col, *, bun=0.045):
          n=10, hint=(0, 0, 1), color=col, weights={"Head": 1.0}, cap1=0.02 * s)
 
 
-def fringe_hair(b: Body, col):
-    """Horseshoe of hair round the back and sides of a balding head (Clubs)."""
+def fringe_hair(b: Body, col, skin=None):
+    """Horseshoe of hair round the back and sides of a balding head (Clubs).
+
+    Blended into the scalp rather than stuck on it. The top edge breaks into
+    uneven tufts that dip under the skin, the colour thins toward the skin
+    tone along the top and at the temples, and per-vertex speckle breaks up
+    the flat grey. (It used to read as a flat grey patch stuck to the head.)
+    """
     lm = b.head_lm
     s = lm["s"]
-    rows = 6
+    rows = 9
+    z0, z1 = lm["eye_z"] - 0.03 * s, lm["brow_z"] + 0.04 * s
+    base = np.array(col, dtype=float)
+    sk = np.array(skin if skin is not None else col, dtype=float)
+
+    def edge_t(i, th):
+        """0 in the body of the fringe, 1 at its top edge and temple ends."""
+        u = i / (rows - 1)
+        tuft = 0.5 + 0.5 * math.sin(math.radians(th) * 7.0 + 1.3) * math.sin(math.radians(th) * 3.0)
+        top = smoothstep(0.45 + 0.25 * tuft, 1.0, u)
+        ends = math.exp(-((th - 165) / 16.0) ** 2) + math.exp(-((th - 375) / 16.0) ** 2)
+        return min(1.0, top + ends), tuft
 
     def shape(i, th):
-        # Feather every edge of the open shell into the scalp, so it reads as
-        # hair rather than a flat plate with a hard rim at the temples.
-        edge = math.exp(-((th - 165) / 12.0) ** 2) + math.exp(-((th - 375) / 12.0) ** 2)
-        k = 1.0 - 0.1 * edge
-        k *= (0.95, 0.99, 1.0, 1.0, 0.975, 0.92)[i]
+        e, tuft = edge_t(i, th)
+        k = 1.0 - 0.09 * e  # the thinning edge dips under the scalp
+        if i == 0:
+            k *= 0.95
         return k
 
-    b.head_shell(col, lm["eye_z"] - 0.03 * s, lm["brow_z"] + 0.035 * s, puff=1.04, add=0.004, arc=(165, 375), n=16,
-                 rows=rows, shape=shape)
+    def color(p, i, th):
+        e, _ = edge_t(i, th)
+        grain = hash01(int(p[0] / 0.006 + 500), int(p[1] / 0.006 + 500), int(p[2] / 0.006)) - 0.5
+        c = lerp(base * (1.0 + 0.16 * grain), sk * 0.92, 0.6 * e)
+        return tuple(c[:3]) + (1.0,)
+
+    b.head_shell(color, z0, z1, puff=1.03, add=0.004, arc=(160, 380), n=20, rows=rows, shape=shape)
 
 
 # --------------------------------------------------------------------- props
@@ -539,7 +560,7 @@ def build_clubs():
     b.torso(t, band(shirt, [(0, 0.5 * H, pants), (0.585 * H, 0.605 * H, hexcol("2a2018"))]))
     b.neck(skin, r=0.05)
     b.head(skin, brow=hexcol("8a8478"), lips=hexcol("8a605a"), jaw=1.02, gaunt=0.4, bald_top=hexcol("d0a890"))
-    fringe_hair(b, hair)
+    fringe_hair(b, hair, skin=skin)
     b.beard(hexcol("9a968c"), length=0.012, full=False)
 
     def acol(side):
