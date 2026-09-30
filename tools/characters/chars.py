@@ -306,23 +306,44 @@ def build_hazekiller():
 
     tube(b.m, centers, radii, n=16, ex=2.3, arc=(20, 160), color=lam, weights=b.W(["Spine", "Chest", "UpperChest"]))
     # hood / cowl
+    # Built with a real face opening instead of pulling the front of a closed
+    # shell inside the head: that let the face cut through the cloth along a
+    # jagged line. The lower hood is now an open shell (front +-55 degrees
+    # left open), the crown a closed cowl, and a rolled hem runs round the
+    # opening so its edge is one clean line.
     lm = b.head_lm
     zs = [lm["chin_z"] - 0.03 * s, lm["chin_z"] + 0.03 * s, lm["eye_z"], lm["brow_z"] + 0.03 * s,
           lm["top"] - 0.02 * s, lm["top"] + 0.02 * s]
-    rs = [(0.1, 0.09, 0.12), (0.092, 0.085, 0.11), (0.09, 0.1, 0.112), (0.094, 0.106, 0.115), (0.07, 0.08, 0.09), (0.03, 0.04, 0.04)]
+    # (rx, rf, rb); the brow row reaches further forward so the forehead
+    # stays under the cloth above the opening; the eye row is wide enough
+    # to swallow the ears
+    rs = [(0.1, 0.09, 0.12), (0.098, 0.085, 0.11), (0.104, 0.1, 0.114), (0.1, 0.122, 0.116), (0.072, 0.085, 0.09),
+          (0.03, 0.04, 0.04)]
+    hc = [v3(0, -0.012 * s - (0.02 * s if i == 0 else 0), z) for i, z in enumerate(zs)]
+    hr = [(r[0] * s, r[0] * s, r[1] * s, r[2] * s) for r in rs]
+    hood_w = b.W(["Head", "Neck", "UpperChest"], {"UpperChest": 0.3, "Neck": 0.4})
+    level = [(v3(1, 0, 0), v3(0, 1, 0))] * 6
+    o0, o1 = 145.0, 395.0  # open between 35 and 145 degrees (the face)
+    tube(b.m, hc[:4], hr[:4], n=16, color=hood, arc=(o0, o1), frames=level[:4], weights=hood_w)
+    tube(b.m, hc[3:], hr[3:], n=16, color=hood, frames=level[3:], weights=hood_w, cap1=0.01 * s)
 
-    def hood_shape(i, th):
-        # open face: pull the front sector inward (inside the head) below the brow
-        if i in (1, 2):
-            return 1.0 - 0.28 * math.exp(-((th - 90) / 40.0) ** 2)
-        return 1.0
+    def hood_pt(z, th, grow=1.0):
+        zc = min(max(z, zs[0]), zs[-1])
+        c = v3(0, np.interp(zc, zs, [p[1] for p in hc]), z)
+        rx = np.interp(zc, zs, [r[0] for r in hr])
+        ry = np.interp(zc, zs, [r[2] if math.sin(math.radians(th)) >= 0 else r[3] for r in hr])
+        a = math.radians(th)
+        return c + v3(math.cos(a) * rx * grow, math.sin(a) * ry * grow, 0)
 
-    tube(b.m, [v3(0, -0.012 * s - (0.02 * s if i == 0 else 0), z) for i, z in enumerate(zs)],
-         [(r[0] * s, r[0] * s, r[1] * s, r[2] * s) for r in rs], n=16, color=hood, shape=hood_shape,
-         weights=b.W(["Head", "Neck", "UpperChest"], {"UpperChest": 0.3, "Neck": 0.4}), cap1=0.01 * s)
-    # mask over the lower face
+    zb, zt = zs[0] + 0.01 * s, zs[3]
+    hem = [hood_pt(z, o0) for z in np.linspace(zb, zt, 5)]
+    hem += [hood_pt(zt, th) for th in np.linspace(o0, o1 - 360.0, 7)[1:-1]]
+    hem += [hood_pt(z, o1 - 360.0) for z in np.linspace(zt, zb, 5)]
+    tube(b.m, hem, [0.011 * s] * len(hem), n=8, hint=(0, 1, 0), color=tuple(np.array(hood) * np.array([0.85, 0.85, 0.85, 1])),
+         weights=hood_w, cap0=0.006 * s, cap1=0.006 * s)
+    # mask over the lower face (a touch fuller so no skin shows at its edges)
     tube(b.m, [v3(0, 0.0, lm["chin_z"] - 0.005 * s), v3(0, 0.005 * s, lm["chin_z"] + 0.075 * s)],
-         [(0.06 * s, 0.088 * s, 0.07 * s), (0.068 * s, 0.098 * s, 0.08 * s)], n=12, arc=(20, 160),
+         [(0.066 * s, 0.093 * s, 0.075 * s), (0.074 * s, 0.103 * s, 0.085 * s)], n=12, arc=(20, 160),
          color=hexcol("2e2c22"), weights={"Head": 1.0})
     staff(b, 1)
     round_shield(b, -1)
