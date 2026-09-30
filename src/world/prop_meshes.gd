@@ -79,6 +79,21 @@ static func _prism(b: WorldMeshBuilder, center: Vector3, radius: float, height: 
 			b.add_tri(p0 + Vector3.UP * height, p1 + Vector3.UP * height, top, col)
 
 
+## A tapered four-sided limb from `a` to `b` (radius `r0` -> `r1`): used for
+## tree branches, which need arbitrary directions (boxes are axis-aligned).
+static func _limb(b: WorldMeshBuilder, a: Vector3, e: Vector3, r0: float, r1: float, col: Color) -> void:
+	var d := (e - a).normalized()
+	var u := d.cross(Vector3.UP if absf(d.y) < 0.95 else Vector3.RIGHT).normalized()
+	var v := u.cross(d)
+	for k in 4:
+		var a0 := TAU * float(k) / 4.0 + 0.785
+		var a1 := TAU * float(k + 1) / 4.0 + 0.785
+		var o0 := u * sin(a0) + v * cos(a0)
+		var o1 := u * sin(a1) + v * cos(a1)
+		var nm := (o0 + o1).normalized()
+		b.add_quad(a + o0 * r0, a + o1 * r0, e + o1 * r1, e + o0 * r1, nm, col, col * 0.85)
+
+
 static func _box_c(b: WorldMeshBuilder, center: Vector3, size: Vector3, col: Color) -> void:
 	var h := size * 0.5
 	b.add_box(center - h, center + h, col, col, col, true)
@@ -186,13 +201,21 @@ static func _build(kind: StringName) -> Mesh:
 			_box_c(iron, Vector3(0, 1.6, 0), Vector3(0.1, 1.1, 0.1), white)
 		&"balcony":
 			# A shallow stone ledge with an iron railing (also a Push/Pull anchor).
-			_box_c(stone, Vector3(0, -0.08, 0.35), Vector3(1.6, 0.12, 0.9), Color(0.55, 0.53, 0.5))
-			for sx: float in [-0.75, 0, 0.75]:
-				_box_c(iron, Vector3(sx, 0.35, 0.76), Vector3(0.04, 0.7, 0.04), white)
-			_box_c(iron, Vector3(0, 0.68, 0.76), Vector3(1.6, 0.04, 0.04), white)
-			_box_c(iron, Vector3(0, 0.15, 0.76), Vector3(1.6, 0.04, 0.04), white)
-			for sx: float in [-0.75, 0.75]:
-				_box_c(stone, Vector3(sx, -0.14, -0.02), Vector3(0.14, 0.28, 0.7), Color(0.5, 0.48, 0.45))
+			# Dark, heavy wrought iron so the rail reads against pale stone at
+			# street distance: thick corner posts and top rail, close balusters.
+			var ironc := Color(0.3, 0.28, 0.27)
+			_box_c(stone, Vector3(0, -0.08, 0.35), Vector3(1.8, 0.14, 0.95), Color(0.55, 0.53, 0.5))
+			for sx: float in [-0.86, 0.86]:
+				_box_c(iron, Vector3(sx, 0.47, 0.76), Vector3(0.09, 0.94, 0.09), ironc)
+				_box_c(iron, Vector3(sx, 0.47, 0.35), Vector3(0.06, 0.94, 0.06), ironc)
+				_box_c(iron, Vector3(sx, 0.92, 0.35), Vector3(0.06, 0.07, 0.82), ironc)
+			_box_c(iron, Vector3(0, 0.92, 0.76), Vector3(1.8, 0.09, 0.09), ironc)
+			_box_c(iron, Vector3(0, 0.12, 0.76), Vector3(1.8, 0.06, 0.06), ironc)
+			for k in 11:
+				var sx := -0.72 + 0.144 * float(k)
+				_box_c(iron, Vector3(sx, 0.5, 0.76), Vector3(0.035, 0.78, 0.035), ironc)
+			for sx: float in [-0.8, 0.8]:
+				_box_c(stone, Vector3(sx, -0.16, -0.02), Vector3(0.16, 0.32, 0.72), Color(0.5, 0.48, 0.45))
 		&"hedge":
 			# A trimmed, half-dead garden hedge segment (Ashmount soot, not lush).
 			_box_c(stone, Vector3.ZERO, Vector3(1.8, 0.7, 0.5), Color(0.28, 0.3, 0.2))
@@ -207,12 +230,21 @@ static func _build(kind: StringName) -> Mesh:
 				var lean := Vector3(sin(a) * 0.18, 0.7 + float(i % 3) * 0.15, cos(a) * 0.18)
 				_box_c(wood, lean * 0.5 + Vector3(0, 0.6, 0), Vector3(0.04, lean.y, 0.04), Color(0.28, 0.24, 0.2))
 		&"street_tree":
-			# A bare, ash-dead street tree: trunk and a few leafless branches.
-			_prism(wood, Vector3(0, 1.1, 0), 0.16, 2.2, 8, Color(0.25, 0.22, 0.19))
-			for i in 6:
-				var a := TAU * float(i) / 6.0 + 0.3
-				var len := 0.9 + float(i % 3) * 0.3
-				var dir := Vector3(sin(a), 0.55 + float(i % 2) * 0.25, cos(a)).normalized()
-				_box_c(wood, Vector3(0, 2.2, 0) + dir * len * 0.5, Vector3(0.06, len, 0.06) if absf(dir.y) > 0.5
-						else Vector3(len, 0.06, 0.06), Color(0.22, 0.19, 0.17))
+			# A bare, ash-dead street tree: a stout trunk that forks into a
+			# vase of limbs, each splitting into twigs, so the crown reads as a
+			# mass (not a few sticks) from across the avenue.
+			var bark := Color(0.2, 0.18, 0.16)
+			_limb(wood, Vector3(0, 0.0, 0), Vector3(0, 2.6, 0), 0.24, 0.16, bark)
+			for i in 8:
+				var a := TAU * float(i) / 8.0 + 0.3
+				var base := Vector3(0, 2.1 + float(i % 3) * 0.25, 0)
+				var len := 1.9 + float(i % 3) * 0.4
+				var dir := Vector3(sin(a), 0.75 + float(i % 2) * 0.35, cos(a)).normalized()
+				var tip := base + dir * len
+				_limb(wood, base, tip, 0.13, 0.06, bark)
+				for j in 4:
+					var b2 := a + (float(j) - 1.5) * 0.6
+					var mid := base.lerp(tip, 0.45 + 0.15 * float(j))
+					var tw := Vector3(sin(b2), 0.9, cos(b2)).normalized() * (0.9 + 0.2 * float(j % 2))
+					_limb(wood, mid, mid + tw, 0.055, 0.02, bark)
 	return _commit({M.IRON: iron, M.LANTERN_GLASS: glass, M.WOOD: wood, M.STONE: stone})

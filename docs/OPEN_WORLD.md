@@ -175,5 +175,5 @@ fades back in.
 
 - Interiors beyond the gatehouse office, Kredik Shaw's interior and the other keeps' courtyards.
 - Persisting the state of loose props per chunk. They currently reset on reload.
-- Cornices, statues and guild signage beyond the new pilasters/balconies.
+- Statues and guild signage beyond the pilasters, balconies and cornices.
 - HLOD for the mid-range. Chunks currently switch from full detail straight to far-LOD boxes.

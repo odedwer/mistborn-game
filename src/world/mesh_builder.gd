@@ -32,14 +32,32 @@ func add_quad(bl: Vector3, br: Vector3, tr: Vector3, tl: Vector3, n: Vector3,
 	verts.append(br)
 	verts.append(tr)
 	verts.append(tl)
-	for _k in 4:
-		normals.append(n)
+	# Unrolled: this is the hottest call in chunk generation, and GDScript
+	# loop overhead was ~8 % of it.
+	normals.append(n)
+	normals.append(n)
+	normals.append(n)
+	normals.append(n)
 	var t := (br - bl).normalized()
-	for _k in 4:
-		tangents.append(t.x)
-		tangents.append(t.y)
-		tangents.append(t.z)
-		tangents.append(1.0)
+	var tx := t.x
+	var ty := t.y
+	var tz := t.z
+	tangents.append(tx)
+	tangents.append(ty)
+	tangents.append(tz)
+	tangents.append(1.0)
+	tangents.append(tx)
+	tangents.append(ty)
+	tangents.append(tz)
+	tangents.append(1.0)
+	tangents.append(tx)
+	tangents.append(ty)
+	tangents.append(tz)
+	tangents.append(1.0)
+	tangents.append(tx)
+	tangents.append(ty)
+	tangents.append(tz)
+	tangents.append(1.0)
 	colors.append(cb)
 	colors.append(cb)
 	colors.append(ct)

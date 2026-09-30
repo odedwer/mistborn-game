@@ -106,3 +106,22 @@ The extra cost is the pilaster boxes and balcony/planter/tree instances.
 Generation runs off the main thread and instancing stays under the per-frame
 budget; avenue trees/planters are MultiMesh instances, so draw calls barely
 move. Activity validation adds no runtime cost (tool and test only).
+
+## Pass 3: cornices, trees, balconies
+
+Pass 3 added a frieze and a projecting crown cornice on every free merchant/noble
+face, forked ash-dead trees and heavier balcony ironwork. To pay for them,
+pilasters now emit only their three visible faces (they were full boxes), and
+`WorldMeshBuilder.add_quad` is unrolled (it is the hottest call in chunk
+generation). The benchmark ran the same chunks back to back, old tree against
+new, with 2 x 6 runs each on a noisy one-core VM:
+
+| Chunk | Before | After |
+|---|---|---|
+| noble | 14.7 ms | 13.5 ms |
+| merchant avenue | 13.8 ms | 12.9 ms |
+| merchant | 17.6 ms | 15.9 ms |
+
+Noble chunk generation got slightly faster, not slower. The absolute numbers
+are higher than in pass 2 because this VM is slower.
+
