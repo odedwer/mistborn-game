@@ -27,9 +27,11 @@ const QUALITY := [
 @export var base_exposure := 1.15
 @export var base_depth_fog := 0.0045
 @export var low_quality_depth_fog := 0.011
-## Matches `EnvironmentBuilder`'s ambient so tin vision brightens *from*
-## a readable baseline instead of overriding it back down to a dim one.
-@export var base_ambient := 1.8
+## Night ambient floor for the open world (above `EnvironmentBuilder`'s 1.8,
+## which the hand-built mission scenes keep): with the moon fill it keeps
+## streets, roofs and the player readable at night without tin, and tin
+## vision still brightens *from* it.
+@export var base_ambient := 3.0
 ## Daytime (see `set_daylight`): the mist burns off to a thin ash haze.
 @export var day_mist_scale := 0.06
 @export var day_base_fog_scale := 0.4

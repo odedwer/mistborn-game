@@ -32,6 +32,9 @@ var light: DirectionalLight3D
 var mist: MistController
 var far_lod: FarLod
 var sky_material: ShaderMaterial
+## Night-only cool fill light (EnvironmentBuilder's "MoonFill"), optional.
+var fill: DirectionalLight3D
+var _fill_energy := 0.0
 
 var _night_basis := Basis.IDENTITY
 var _night_color := Color.WHITE
@@ -47,8 +50,12 @@ func _init() -> void:
 	name = "DayNight"
 
 
-func setup(p_env: Environment, p_light: DirectionalLight3D, p_mist: MistController, p_far: FarLod) -> void:
+func setup(p_env: Environment, p_light: DirectionalLight3D, p_mist: MistController, p_far: FarLod,
+		p_fill: DirectionalLight3D = null) -> void:
 	environment = p_env
+	fill = p_fill
+	if fill != null:
+		_fill_energy = fill.light_energy
 	light = p_light
 	mist = p_mist
 	far_lod = p_far
@@ -95,6 +102,9 @@ func apply(force: bool) -> void:
 		var k := clampf(absf(n - 0.5) * 2.0, 0.0, 1.0)
 		light.light_energy = lerpf(DAY_LIGHT_ENERGY, _night_energy, n) * lerpf(0.3, 1.0, k)
 		light.shadow_blur = lerpf(2.2, _night_shadow_blur, n)
+	if fill != null and is_instance_valid(fill):
+		fill.light_energy = _fill_energy * n
+		fill.visible = n > 0.01
 	if environment != null:
 		environment.ambient_light_color = DAY_AMBIENT_COLOR.lerp(_night_ambient, n)
 		environment.fog_light_color = DAY_FOG_COLOR.lerp(_night_fog_color, n)

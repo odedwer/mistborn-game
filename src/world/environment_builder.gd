@@ -12,9 +12,23 @@ const MOON_AZIMUTH := -35.0
 const MOON_ELEVATION := 30.0
 
 
-## Creates WorldEnvironment + moon under `parent`. Returns
-## {"world_env": WorldEnvironment, "environment": Environment, "moon": DirectionalLight3D}.
-static func build(parent: Node3D) -> Dictionary:
+## Moon fill: a soft, shadowless, cool light from high on the opposite side,
+## so roofs, streets and the player in the moon's shadow still read at night
+## (base night must be playable without tin) while the key moonlight and the
+## lanterns keep the contrast. Energy is the night value; DayNightDriver fades
+## it out by day.
+const FILL_AZIMUTH := MOON_AZIMUTH + 165.0
+const FILL_ELEVATION := 62.0
+const FILL_COLOR := Color(0.52, 0.6, 0.86)
+const FILL_ENERGY := 3.0
+
+
+## Creates WorldEnvironment + moon under `parent` (+ the moon fill when
+## `with_fill`: the streamed open world only; the hand-built mission scenes
+## keep their authored night lighting). Returns {"world_env": WorldEnvironment,
+## "environment": Environment, "moon": DirectionalLight3D, "fill":
+## DirectionalLight3D or null}.
+static func build(parent: Node3D, with_fill := false) -> Dictionary:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
@@ -119,4 +133,22 @@ static func build(parent: Node3D) -> Dictionary:
 	moon.directional_shadow_blend_splits = true
 	moon.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_AND_SKY
 	parent.add_child(moon)
-	return {"world_env": we, "environment": env, "moon": moon}
+	if not with_fill:
+		return {"world_env": we, "environment": env, "moon": moon, "fill": null}
+
+	var fill := DirectionalLight3D.new()
+	fill.name = "MoonFill"
+	var faz := deg_to_rad(FILL_AZIMUTH)
+	var fel := deg_to_rad(FILL_ELEVATION)
+	var to_fill := Vector3(sin(faz) * cos(fel), sin(fel), -cos(faz) * cos(fel))
+	fill.basis = Basis.looking_at(-to_fill, Vector3.UP)
+	fill.light_color = FILL_COLOR
+	fill.light_energy = FILL_ENERGY
+	fill.light_specular = 0.15
+	fill.light_indirect_energy = 0.0
+	fill.light_volumetric_fog_energy = 0.0
+	fill.shadow_enabled = false
+	fill.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_ONLY
+	fill.add_to_group(&"moon_fill")
+	parent.add_child(fill)
+	return {"world_env": we, "environment": env, "moon": moon, "fill": fill}
