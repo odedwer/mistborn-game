@@ -11,7 +11,7 @@ extends RefCounted
 enum Mat {
 	STONE, BRICK, PLASTER, TRIM, SLATE, ROOF_FLAT, WOOD, WINDOW, COBBLE,
 	GROUND_DARK, ASH, WATER, IRON, KEEP_STONE, OBSIDIAN, LANTERN_GLASS, CANAL_WALL, FAR,
-	ASHLAR,
+	ASHLAR, BANNER,
 }
 
 const TEX_DIR := "res://assets/textures/"
@@ -98,6 +98,13 @@ static func _create(id: int) -> Material:
 			return m
 		Mat.FAR:
 			return _shader_mat("far_silhouette.gdshader")
+		Mat.BANNER:
+			# Heraldic cloth: colour from the vertex colour, double-sided.
+			var m := StandardMaterial3D.new()
+			m.vertex_color_use_as_albedo = true
+			m.roughness = 0.92
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+			return m
 		Mat.ASHLAR:
 			# Merchant/noble dressed stone: its own coursed-block texture
 			# (tools/gen_textures.py `ashlar`: 12 courses per tile), so a 2.4 m
