@@ -180,17 +180,17 @@ STYLES = {
                 stride=1.0, swing=1.0, hunch=0.0, speed_k=1.0),
     "guard": dict(base={"r_elbow": 82, "r_abd": 9, "r_flex": 8, "r_twist": -8, "r_wrist": -8,
                         "l_elbow": 72, "l_flex": 12, "l_abd": 10, "l_twist": 5},
-                  arm_lock={"r", "l"}, stride=1.0, swing=0.35, hunch=0.0),
+                  arm_lock={"r", "l"}, stride=1.0, swing=0.35, hunch=0.0, weapon_r=True),
     "haze": dict(base={"r_elbow": 78, "r_abd": 10, "r_flex": 6, "r_twist": -6, "r_wrist": -6,
                        "l_abd": 16, "l_elbow": 30, "l_flex": 8},
-                 arm_lock={"r"}, stride=1.0, swing=0.6, hunch=2.0),
+                 arm_lock={"r"}, stride=1.0, swing=0.6, hunch=2.0, weapon_r=True),
     "thug": dict(base={"r_abd": 22, "l_abd": 22, "r_elbow": 38, "l_elbow": 32, "r_twist": 10, "l_twist": 10,
                        "spine_lean": 9, "head_pitch": -6, "r_shrug": 6, "l_shrug": 6},
-                 stride=1.1, swing=0.8, hunch=9.0, wide=0.035),
+                 stride=1.1, swing=0.8, hunch=9.0, wide=0.035, weapon_r=True),
     "coinshot": dict(base={"r_elbow": 20, "l_elbow": 18, "r_abd": 6, "l_abd": 6}, stride=1.0, swing=1.0, hunch=0.0),
     "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 58, "r_flex": 6, "l_elbow": 20, "spine_lean": 6,
                              "head_pitch": 8, "r_wrist": -10},
-                       stride=1.12, swing=0.7, hunch=6.0),
+                       stride=1.12, swing=0.7, hunch=6.0, robe=True, weapon_r=True),
     # ---- NPCs (crew, nobles, obligators, skaa)
     "kelsier": dict(base={"r_elbow": 16, "l_elbow": 14, "r_abd": 9, "l_abd": 9, "head_pitch": -4, "spine_lean": -2},
                     stride=1.06, swing=1.0, hunch=0.0),
@@ -208,23 +208,23 @@ STYLES = {
                         "r_shrug": 5, "l_shrug": 5, "r_twist": 8, "l_twist": 8}, stride=1.05, swing=0.9, hunch=4.0),
     "sazed": dict(base={"r_abd": 12, "l_abd": 12, "r_flex": 5, "l_flex": 5, "r_elbow": 68, "l_elbow": 68,
                         "r_twist": -60, "l_twist": -60, "r_wrist": 10, "l_wrist": 10, "head_pitch": 3},
-                  arm_lock={"r", "l"}, stride=1.0, swing=0.3, hunch=2.0),
+                  arm_lock={"r", "l"}, stride=1.0, swing=0.3, hunch=2.0, robe=True),
     "marsh": dict(base={"r_abd": 7, "l_abd": 7, "r_elbow": 9, "l_elbow": 9, "head_pitch": 4, "spine_lean": -1},
-                  stride=1.0, swing=0.45, hunch=0.0),
+                  stride=1.0, swing=0.45, hunch=0.0, robe=True),
     "elend": dict(base={"l_abd": 28, "l_flex": 20, "l_elbow": 76, "l_twist": -90, "r_abd": 9, "r_elbow": 18,
                         "head_pitch": 5, "spine_lean": 3, "head_roll": 3}, arm_lock={"l"}, stride=1.0, swing=0.8,
                   hunch=2.0),
     "gown": dict(base={"r_abd": 13, "l_abd": 13, "r_elbow": 42, "l_elbow": 40, "r_flex": 12, "l_flex": 10,
                        "r_twist": -18, "l_twist": -18, "head_pitch": -3, "spine_lean": -2},
-                 stride=0.78, swing=0.45, hunch=0.0),
+                 stride=0.78, swing=0.45, hunch=0.0, robe=True),
     "noble_m": dict(base={"r_abd": 10, "l_abd": 10, "r_elbow": 18, "l_elbow": 20, "head_pitch": -5, "spine_lean": -3},
                     stride=1.0, swing=0.7, hunch=0.0),
     "obligator": dict(base={"r_abd": 16, "l_abd": 16, "r_flex": 15, "l_flex": 15, "r_elbow": 68, "l_elbow": 68,
                             "r_twist": -70, "l_twist": -70, "head_pitch": 6, "spine_lean": 2},
-                      arm_lock={"r", "l"}, stride=0.95, swing=0.25, hunch=1.0),
+                      arm_lock={"r", "l"}, stride=0.95, swing=0.25, hunch=1.0, robe=True),
     "obligator_b": dict(base={"r_abd": 12, "l_abd": 12, "r_flex": -25, "l_flex": -25, "r_elbow": 52, "l_elbow": 52,
                               "r_twist": -90, "l_twist": -90, "spine_lean": -3, "head_pitch": -4},
-                        arm_lock={"r", "l"}, stride=0.9, swing=0.2, hunch=0.0),
+                        arm_lock={"r", "l"}, stride=0.9, swing=0.2, hunch=0.0, robe=True),
     "skaa": dict(base={"spine_lean": 9, "head_pitch": -7, "r_abd": 10, "l_abd": 10, "r_elbow": 22, "l_elbow": 18,
                        "r_shrug": 3, "l_shrug": 3}, stride=0.88, swing=0.65, hunch=8.0),
 }
@@ -328,10 +328,16 @@ def make_anims(style: str, S: Skel):
     add("walk", 1.05, lambda t: gait(t, 1.05, base, S, stride=0.62 * k, lift=0.1 * k, duty=0.6, bob=0.008 * k,
                                      drop=0.01 * k, lean=3, arm_amp=16, elbow_add=5, sway=0.018 * k, yaw=6,
                                      style=style), True)
-    add("run", 0.72, lambda t: gait(t, 0.72, base, S, stride=1.05 * k, lift=0.22 * k, duty=0.4, bob=0.02 * k,
+    # Robed characters run with a lower knee lift and shorter stride: the full
+    # lift drove the knee straight through the front of the robe.
+    robe = STYLES[style].get("robe", False)
+    rl = 0.55 if robe else 1.0
+    add("run", 0.72, lambda t: gait(t, 0.72, base, S, stride=1.05 * k * (0.85 if robe else 1.0), lift=0.22 * k * rl,
+                                    duty=0.4, bob=0.02 * k,
                                     drop=0.035 * k, lean=10, arm_amp=38, elbow_add=62, sway=0.012 * k, yaw=10,
-                                    style=style, pitch_on=10, pitch_off=-40, arm_flex_add=8), True)
-    add("sprint", 0.6, lambda t: gait(t, 0.6, base, S, stride=1.35 * k, lift=0.28 * k, duty=0.34, bob=0.022 * k,
+                                    style=style, pitch_on=10, pitch_off=-40 * rl, arm_flex_add=8), True)
+    add("sprint", 0.6, lambda t: gait(t, 0.6, base, S, stride=1.35 * k * (0.85 if robe else 1.0), lift=0.28 * k * rl,
+                                      duty=0.34, bob=0.022 * k,
                                       drop=0.045 * k, lean=20, arm_amp=55, elbow_add=75, sway=0.008 * k, yaw=12,
                                       style=style, pitch_on=5, pitch_off=-50, arm_flex_add=12), True)
 
@@ -403,10 +409,15 @@ def make_anims(style: str, S: Skel):
         keys = [
             (0.0, {}),
             (0.12, dict(crouch_land, r_flex=-25, l_flex=-25, hips_z=-0.14 * k)),
-            (0.3, {"hips_z": 0.04 * k, "r_fpitch": -35, "l_fpitch": -35, "r_flex": 60, "l_flex": 50,
-                   "r_abd": 18, "l_abd": 18, "spine_lean": -4, "head_pitch": -8}),
-            (0.45, {"hips_z": 0.05 * k, "r_fz": 0.1 * k, "l_fz": 0.12 * k, "r_fpitch": -25, "l_fpitch": -25,
-                    "r_flex": 45, "l_flex": 40, "r_abd": 30, "l_abd": 30, "spine_lean": 2}),
+            (0.3, {"hips_z": 0.04 * k, "r_fz": 0.08 * k, "l_fz": 0.06 * k, "r_fpitch": -35, "l_fpitch": -35,
+                   "r_flex": 70, "l_flex": 60, "r_abd": 22, "l_abd": 22, "r_elbow": 40, "l_elbow": 40,
+                   "spine_lean": -4, "head_pitch": -8}),
+            # apex: knees tucked up (feet drawn under and behind the hips), arms
+            # thrown up and out for balance. The old apex was nearly a standing
+            # pose with straight legs and it read as a stumble.
+            (0.45, {"hips_z": 0.05 * k, "r_fz": 0.26 * k, "l_fz": 0.2 * k, "r_fy": 0.06 * k, "l_fy": -0.05 * k,
+                    "r_fpitch": -10, "l_fpitch": -30, "r_flex": 40, "l_flex": 25, "r_abd": 55, "l_abd": 60,
+                    "r_elbow": 45, "l_elbow": 35, "spine_lean": 8, "head_pitch": -4}),
         ]
         keys = [(tk, {kk: vv for kk, vv in d.items()
                       if not (kk[:2] in ("r_", "l_") and kk[0] in STYLES[style].get("arm_lock", set())
@@ -562,29 +573,54 @@ def make_anims(style: str, S: Skel):
 
     add("alert", 1.3, alert)
 
+    # Push/Pull reach with the free hand: armed styles hold their weapon in the
+    # right, and reaching with it swung the spear/axe horizontally through
+    # their own head. The stance is braced too (feet split, knees soft), leaning
+    # into a Push and hauling back on a Pull, where it used to stand upright
+    # with only the arm moving.
+    hand = "l" if STYLES[style].get("weapon_r", False) else "r"
+    tw = -1.0 if hand == "l" else 1.0  # spine twist mirrors with the hand
+
+    def arm(d):
+        """Re-keys an r_* arm pose onto the reaching hand."""
+        out = {}
+        for key, v in d.items():
+            if key.startswith("r_") and key[2:] in ("abd", "flex", "elbow", "twist", "wrist"):
+                out[hand + key[1:]] = v
+            elif key == "spine_twist":
+                out[key] = v * tw
+            else:
+                out[key] = v
+        return out
+
+    lead, trail = ("l", "r") if hand == "r" else ("r", "l")
+    brace = {"hips_z": -0.05 * k, f"{lead}_fy": 0.13 * k, f"{trail}_fy": -0.1 * k,
+             f"{trail}_fx": base[f"{trail}_fx"] - 0.03 * k * (1 if trail == "l" else -1)}
+
     def push(t):
         return keyed([
             (0.0, {}),
-            (0.14, {"r_abd": 18, "r_flex": 45, "r_elbow": 115, "r_twist": -10, "r_wrist": 20, "spine_twist": -14,
-                    "spine_lean": 4}),
-            (0.26, {"r_abd": 12, "r_flex": 88, "r_elbow": 0, "r_twist": -60, "r_wrist": 65, "spine_twist": 12,
-                    "spine_lean": -6, "head_pitch": -4, "l_flex": -15, "l_elbow": 30}),
-            (0.42, {"r_abd": 12, "r_flex": 85, "r_elbow": 4, "r_twist": -60, "r_wrist": 60, "spine_twist": 10,
-                    "spine_lean": -4}),
+            (0.14, dict(brace, **arm({"r_abd": 18, "r_flex": 45, "r_elbow": 115, "r_twist": -10, "r_wrist": 20,
+                                      "spine_twist": -14, "spine_lean": 4}))),
+            (0.26, dict(brace, **arm({"r_abd": 12, "r_flex": 88, "r_elbow": 0, "r_twist": -60, "r_wrist": 65,
+                                      "spine_twist": 12, "spine_lean": 8, "head_pitch": -4}))),
+            (0.42, dict(brace, **arm({"r_abd": 12, "r_flex": 85, "r_elbow": 4, "r_twist": -60, "r_wrist": 60,
+                                      "spine_twist": 10, "spine_lean": 6}))),
             (0.65, {}),
         ], t, base)
 
     add("push", 0.65, push)
 
     def pull(t):
+        back = dict(brace, hips_y=-0.04 * k)
         return keyed([
             (0.0, {}),
-            (0.18, {"r_abd": 12, "r_flex": 92, "r_elbow": 2, "r_twist": -20, "r_wrist": -15, "spine_twist": 16,
-                    "spine_lean": 10}),
-            (0.3, {"r_abd": 12, "r_flex": 88, "r_elbow": 5, "r_twist": -20, "r_wrist": 25, "spine_twist": 14,
-                   "spine_lean": 10}),
-            (0.44, {"r_abd": 30, "r_flex": 10, "r_elbow": 125, "r_twist": 30, "r_wrist": 30, "spine_twist": -18,
-                    "spine_lean": -10, "head_pitch": -6, "hips_y": -0.03 * k}),
+            (0.18, dict(brace, **arm({"r_abd": 12, "r_flex": 92, "r_elbow": 2, "r_twist": -20, "r_wrist": -15,
+                                      "spine_twist": 16, "spine_lean": 6}))),
+            (0.3, dict(back, **arm({"r_abd": 12, "r_flex": 88, "r_elbow": 5, "r_twist": -20, "r_wrist": 25,
+                                    "spine_twist": 14, "spine_lean": -6}))),
+            (0.44, dict(back, **arm({"r_abd": 30, "r_flex": 10, "r_elbow": 125, "r_twist": 30, "r_wrist": 30,
+                                     "spine_twist": -18, "spine_lean": -12, "head_pitch": -6}))),
             (0.75, {}),
         ], t, base)
 
