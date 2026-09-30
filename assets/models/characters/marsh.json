@@ -1,10 +1,10 @@
 {
  "name": "marsh",
  "style": "marsh",
- "tris": 3656,
+ "tris": 3780,
  "height": 1.8347862629629597,
  "garments": {},
- "tris_max": 3656,
+ "tris_max": 3780,
  "materials": [
   "Cloth"
  ],
