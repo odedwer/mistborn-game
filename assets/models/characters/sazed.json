@@ -1,10 +1,10 @@
 {
  "name": "sazed",
  "style": "sazed",
- "tris": 4696,
+ "tris": 4852,
  "height": 2.014325413935665,
  "garments": {},
- "tris_max": 4696,
+ "tris_max": 4852,
  "materials": [
   "Cloth",
   "Metal"

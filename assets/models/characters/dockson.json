@@ -1,10 +1,10 @@
 {
  "name": "dockson",
  "style": "dockson",
- "tris": 5256,
+ "tris": 5412,
  "height": 1.7762097280818172,
  "garments": {},
- "tris_max": 5256,
+ "tris_max": 5412,
  "materials": [
   "Cloth"
  ],

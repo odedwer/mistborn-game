@@ -360,9 +360,22 @@ class Body:
         if ears:
             for side in (1, -1):
                 ex_x = side * 0.074 * s
-                tube(self.m, [v3(ex_x * 0.92, -0.012 * s, eye_z - 0.005 * s), v3(ex_x * 1.12, -0.02 * s, eye_z - 0.005 * s)],
-                     [(0.018 * s, 0.009 * s), (0.02 * s, 0.01 * s)], n=6, hint=(0, 0, 1), color=skin,
-                     weights={"Head": 1.0}, cap1=0.004 * s)
+                # A C-shaped rim (helix down to the lobe) standing off the side
+                # of the head and angled back, instead of one short flattened
+                # tube, which read as a flat diamond pasted onto the hair.
+                ear_pts = [(0.066, -0.006, 0.010), (0.072, -0.014, 0.014), (0.078, -0.024, 0.009),
+                           (0.080, -0.028, -0.002), (0.077, -0.025, -0.013), (0.071, -0.017, -0.02)]
+                ear_col = tuple(np.array(skin[:3]) * 0.93) + (1.0,)
+                tube(self.m, [v3(side * x * s, y * s, eye_z - 0.003 * s + z * s) for x, y, z in ear_pts],
+                     [(0.0045 * s, 0.0035 * s), (0.005 * s, 0.004 * s), (0.0055 * s, 0.004 * s),
+                      (0.0055 * s, 0.004 * s), (0.006 * s, 0.0045 * s), (0.0045 * s, 0.004 * s)],
+                     n=6, hint=(side, 0, 0), color=ear_col, weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.003 * s)
+                # the concha filling the C, set a little deeper
+                tube(self.m, [v3(side * 0.07 * s, -0.018 * s, eye_z + 0.004 * s),
+                              v3(side * 0.071 * s, -0.019 * s, eye_z - 0.012 * s)],
+                     [(0.007 * s, 0.003 * s), (0.006 * s, 0.003 * s)], n=6, hint=(side, 0, 0),
+                     color=tuple(np.array(skin[:3]) * 0.8) + (1.0,), weights={"Head": 1.0},
+                     cap0=0.003 * s, cap1=0.003 * s)
                 if earrings is not None:
                     # a stack of metal rings down the (stretched) lobe: Sazed's metalminds
                     for k_ in range(earrings[1]):
@@ -378,7 +391,7 @@ class Body:
         return lm
 
     def hair_shell(self, color, *, fringe_z=None, back_z=None, puff=1.12, jag=0.012, n=20, spikes=7,
-                   style="short", bald_amount=0.55, clumps=0.0, seed=0.0):
+                   style="short", bald_amount=0.55, clumps=0.0, seed=0.0, ears_out=True):
         """Hair cap built from the head profile, hidden in front below the fringe.
 
         `style`:
@@ -409,6 +422,7 @@ class Body:
         t_ = np.linspace(0.0, 1.0, 15)
         rings_z = list(bz + (top_z - bz) * (1.5 * t_ - 0.5 * t_ * t_))
         sk = lm["skin_cols"]
+        ear_z0, ear_z1 = lm["eye_z"] - 0.026 * s, lm["eye_z"] + 0.013 * s
         centers, radii = [], []
         for z in rings_z:
             yc = np.interp(z, zs, [c[1] for c in cs])
@@ -471,6 +485,14 @@ class Body:
                 hide = 1.0 if abs(th - 90) < (100 if style == "bald" else 60) else 0.0
                 k -= 0.35 * hide * smoothstep(fz, fz - 0.015 * s, z)
                 k -= 0.12 * side_ * smoothstep(lm["eye_z"], lm["eye_z"] - 0.04 * s, z)
+            if ears_out:
+                # Cut the shell around each ear (a hard step between columns,
+                # so there's no band where hair and skin z-fight): the hair
+                # tucks behind the ear and the ear sits in front of it.
+                for e_th in (-10.0, 190.0):
+                    d = abs((th - e_th + 180.0) % 360.0 - 180.0)
+                    if d < 21.0:
+                        k -= 0.3 * smoothstep(ear_z0 - 0.008 * s, ear_z0, z) * (1 - smoothstep(ear_z1, ear_z1 + 0.008 * s, z))
             if style == "bald":
                 # A low band of close-cropped hair round the back: it swells just
                 # clear of the scalp mid-band and tucks under it at both edges,
