@@ -67,6 +67,8 @@ func _run() -> void:
 		cam.global_position = s[0]
 		cam.rotation = Vector3(deg_to_rad(s[2]), deg_to_rad(s[1]), 0.0)
 		world.streamer.call("load_now", s[0], radius)
+		# Static set dressing that the game scene would spawn (sentry guards).
+		(load("res://src/world/sentry_posts.gd") as GDScript).call("populate", get_nodes_in_group(&"sentry_post"))
 		for i in frames:
 			await process_frame
 		var img := root.get_viewport().get_texture().get_image()

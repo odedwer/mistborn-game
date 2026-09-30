@@ -32,6 +32,7 @@ func _ready() -> void:
 	_build_enemy_spawner()
 	_add_crowd()
 	_spawn_pickups(get_tree().get_nodes_in_group("pickup_spawn"))
+	SentryPosts.populate(get_tree().get_nodes_in_group(&"sentry_post"))
 	if world.has_signal(&"markers_spawned"):
 		world.connect(&"markers_spawned", _on_markers_spawned)
 	_add_ui()
@@ -57,6 +58,7 @@ func _on_markers_spawned(nodes: Array) -> void:
 		elif n.is_in_group(&"pickup_spawn"):
 			pickups.append(n)
 	_spawn_pickups(pickups)
+	SentryPosts.populate(nodes)
 
 
 func _build_world() -> void:

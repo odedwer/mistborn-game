@@ -12,7 +12,7 @@ const STONE_C := Color(0.62, 0.6, 0.58)
 
 ## Builds a windowed tower/hall block via a synthetic lot.
 static func block(data: ChunkBuildData, r: Rect2, height: float, floors: int, lit: float,
-		seed_value: int, mat := M.KEEP_STONE, front := ChunkLayout.FACE_S, shared := 0) -> void:
+		seed_value: int, mat := M.ASHLAR, front := ChunkLayout.FACE_S, shared := 0) -> void:
 	var lo := Vector3(r.position.x, 0, r.position.y)
 	var hi := Vector3(r.end.x, height, r.end.y)
 	var c := STONE_C
@@ -76,7 +76,7 @@ static func _crenellate(data: ChunkBuildData, lo: Vector3, hi: Vector3, c: Color
 	var along_x := (hi.x - lo.x) >= (hi.z - lo.z)
 	var length := (hi.x - lo.x) if along_x else (hi.z - lo.z)
 	var a0 := lo.x if along_x else lo.z
-	var det := data.db(M.KEEP_STONE)
+	var det := data.db(M.ASHLAR)
 	var depth := 0.45
 	var band := 0.35
 	var merlon := 1.2
@@ -144,9 +144,10 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 
 	# --- Keep hall -------------------------------------------------------
 	var hall := Rect2(ox - 24, oz - 245, 48, 40)
-	block(data, hall, 26.0, 7, 0.45, seed_value + 1, M.KEEP_STONE, ChunkLayout.FACE_S)
+	# Dressed ashlar masonry (the rubble keep_stone read as crazy paving).
+	block(data, hall, 26.0, 7, 0.45, seed_value + 1, M.ASHLAR, ChunkLayout.FACE_S)
 	data.mb(M.SLATE).add_gable_roof(hall.position, hall.end, 26.0, 9.0, true, 0.6, Color(0.8, 0.82, 0.9),
-			data.mb(M.KEEP_STONE), STONE_C * 0.7)
+			data.mb(M.ASHLAR), STONE_C * 0.7)
 	data.add_convex_shape(PackedVector3Array([
 		Vector3(hall.position.x, 26, hall.position.y), Vector3(hall.end.x, 26, hall.position.y),
 		Vector3(hall.end.x, 26, hall.end.y), Vector3(hall.position.x, 26, hall.end.y),
@@ -159,7 +160,7 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 			continue
 		var lo := Vector3(bx - 0.7, 0, oz - 205)
 		var hi := Vector3(bx + 0.7, 18, oz - 203.4)
-		data.mb(M.KEEP_STONE).add_box(lo, hi, c * 0.4, c, c)
+		data.mb(M.ASHLAR).add_box(lo, hi, c * 0.4, c, c)
 		data.add_box_shape_lohi(lo, hi)
 	# Iron main doors (anchored heavy metal).
 	var door_lo := Vector3(ox - 2.6, 0, oz - 205.0)
@@ -178,7 +179,7 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	tower(data, Vector2(ox + 24, oz - 245), 4.0, 34.0, 12.0, 0.3, seed_value + 5)
 	var spire_r := Rect2(ox - 3.5, oz - 228.5, 7, 7)
 	var sc := STONE_C
-	data.mb(M.KEEP_STONE).add_banded_box(Vector3(spire_r.position.x, 26, spire_r.position.y),
+	data.mb(M.ASHLAR).add_banded_box(Vector3(spire_r.position.x, 26, spire_r.position.y),
 			Vector3(spire_r.end.x, 48, spire_r.end.y), 30, sc * 0.6, sc, sc * 0.8, sc * 0.7, 0, true)
 	data.add_box_shape_lohi(Vector3(spire_r.position.x, 26, spire_r.position.y), Vector3(spire_r.end.x, 48, spire_r.end.y))
 	data.mb(M.SLATE).add_pyramid(Vector3(ox, 48, oz - 225), 4.2, 24.0, Color(0.7, 0.72, 0.8))
@@ -211,16 +212,15 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	_courtyard_fountain(data, Vector3(ox, 0, oz - 178))
 	data.add_metal(Vector3(ox, 2.2, oz - 178), 30.0)
 	_courtyard_dressing(data, o)
+	_courtyard_layout(data, o)
 	_lamp(data, Vector3(ox - 20, 0, oz - 158), Vector2(1, 0), true, true)
 	_lamp(data, Vector3(ox + 20, 0, oz - 158), Vector2(-1, 0), true)
 	_lamp(data, Vector3(ox - 20, 0, oz - 192), Vector2(1, 0), true)
 	_lamp(data, Vector3(ox + 20, 0, oz - 192), Vector2(-1, 0), true, true)
 	_static_crates(data, Vector3(ox - 16, 0, oz - 172), 3, rng)
 	_static_crates(data, Vector3(ox + 14, 0, oz - 183), 3, rng)
-	# Clear of the guards' patrol loop (z = -196).
-	_static_crates(data, Vector3(ox - 9, 0, oz - 190.5), 2, rng)
 	_static_crates(data, Vector3(ox + 22, 0, oz - 152), 2, rng)
-	for p: Vector3 in [Vector3(-12, 0, -165), Vector3(10, 0, -168), Vector3(-24, 0, -186), Vector3(24, 0, -175), Vector3(4, 0, -196)]:
+	for p: Vector3 in [Vector3(-12, 0, -171), Vector3(10, 0, -168.8), Vector3(-24, 0, -186), Vector3(24, 0, -175), Vector3(4, 0, -196)]:
 		var kind := &"barrel" if rng.randf() < 0.5 else &"crate"
 		var def: Array = PropMeshes.RIGID[kind]
 		var sz: Vector3 = def[3]
@@ -288,6 +288,67 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	data.add_marker(&"pickup_spawn", o + Vector3(-9.0, 1.35, -143.2), {"pickup_kind": &"duralumin"})
 	data.add_marker(&"pickup_spawn", o + Vector3(-27, 0.3, -149), {"pickup_kind": &"vial"})
 	data.add_marker(&"pickup_spawn", o + Vector3(27, 0.3, -149), {"pickup_kind": &"health"})
+
+
+## Mid-scale structure for the yard (it read as a vast empty plaza): a pale
+## paved carriage loop around the fountain, paved walks from the gate and to
+## the hall doors, four box-hedged lawns in the quarters between them, lamp
+## posts along the approach, and sentry posts (static guards, spawned by
+## `SentryPosts`) at the gate, the doors and the lawns' corners. All of it
+## stays inside the guards' patrol loop (x = +-22, z = -156..-196), off their
+## door/gate beats and clear of the enemy spawns (see
+## tests/test_keep_venture_courtyard.gd). Hedges are 0.5 m: low enough to
+## step over and to leave the yard readable, high enough to break it up.
+static func _courtyard_layout(data: ChunkBuildData, o: Vector3) -> void:
+	var pave := data.mb(M.KEEP_STONE)
+	var pc := Color(0.95, 0.92, 0.86)
+	var y := 0.025
+	var fc := o + Vector3(0, 0, -178)
+	# Carriage loop: an octagonal ring, r 6.5..10.
+	for k in 16:
+		var a0 := TAU * float(k) / 16.0
+		var a1 := TAU * float(k + 1) / 16.0
+		var i0 := fc + Vector3(sin(a0), 0, cos(a0)) * 6.5
+		var i1 := fc + Vector3(sin(a1), 0, cos(a1)) * 6.5
+		var o0 := fc + Vector3(sin(a0), 0, cos(a0)) * 10.0
+		var o1 := fc + Vector3(sin(a1), 0, cos(a1)) * 10.0
+		i0.y = y; i1.y = y; o0.y = y; o1.y = y
+		pave.add_quad(o0, o1, i1, i0, Vector3.UP, pc, pc)
+	# Walks: gate -> loop, loop -> hall doors.
+	for zr: Array in [[-146.5, -168.2], [-187.8, -204.6]]:
+		var z0: float = zr[0]
+		var z1: float = zr[1]
+		pave.add_quad(o + Vector3(-3.0, y, z0), o + Vector3(3.0, y, z0), o + Vector3(3.0, y, z1), o + Vector3(-3.0, y, z1),
+				Vector3.UP, pc * 0.95, pc * 0.95)
+	# Hedged lawns in the four quarters.
+	var lawn := data.mb(M.GROUND_DARK)
+	var lc := Color(0.62, 0.66, 0.5)
+	var hedge := data.mb(M.STONE)
+	var hc := Color(0.26, 0.29, 0.19)
+	for r: Rect2 in [Rect2(-19, -194, 13, 5.5), Rect2(6, -194, 13, 5.5), Rect2(-19, -167.5, 13, 8), Rect2(6, -167.5, 13, 8)]:
+		var x0 := o.x + r.position.x
+		var z0 := o.z + r.position.y
+		var x1 := x0 + r.size.x
+		var z1 := z0 + r.size.y
+		lawn.add_quad(Vector3(x0, 0.03, z1), Vector3(x1, 0.03, z1), Vector3(x1, 0.03, z0), Vector3(x0, 0.03, z0), Vector3.UP, lc, lc)
+		var t := 0.4
+		var h := 0.5
+		for b: Array in [[Vector3(x0, 0, z0), Vector3(x1, h, z0 + t)], [Vector3(x0, 0, z1 - t), Vector3(x1, h, z1)],
+				[Vector3(x0, 0, z0 + t), Vector3(x0 + t, h, z1 - t)], [Vector3(x1 - t, 0, z0 + t), Vector3(x1, h, z1 - t)]]:
+			hedge.add_box(b[0], b[1], hc * 0.8, hc, hc * 1.15)
+			data.add_box_shape_lohi(b[0], b[1])
+		# Clipped topiary at the corners.
+		for cp: Vector3 in [Vector3(x0 + 1.0, 0, z0 + 1.0), Vector3(x1 - 1.0, 0, z0 + 1.0), Vector3(x0 + 1.0, 0, z1 - 1.0), Vector3(x1 - 1.0, 0, z1 - 1.0)]:
+			data.add_instance(&"topiary", Transform3D(Basis(), cp))
+	# Lamp posts along the approach walk.
+	for z: float in [-153.0, -162.0]:
+		_lamp(data, o + Vector3(-3.6, 0, z), Vector2(1, 0), true)
+		_lamp(data, o + Vector3(3.6, 0, z), Vector2(-1, 0), true)
+	# Sentry posts: static guards at the doors, the inner gate and the loop.
+	for sp: Array in [[Vector3(-3.05, 0, -203.8), 0.0], [Vector3(3.05, 0, -203.8), 0.0],
+			[Vector3(-7.2, 0, -151.6), PI], [Vector3(7.2, 0, -151.6), PI],
+			[Vector3(-10.8, 0, -178.0), PI * 0.5], [Vector3(10.8, 0, -178.0), -PI * 0.5]]:
+		data.add_marker(&"sentry_post", o + (sp[0] as Vector3), {"yaw": sp[1]})
 
 
 ## Octagonal basin (r 1.7 m), dark water, a pedestal and a small iron figure.
@@ -364,7 +425,7 @@ static func _courtyard_dressing(data: ChunkBuildData, o: Vector3) -> void:
 
 
 static func _gatehouse(data: ChunkBuildData, o: Vector3, rng: RandomNumberGenerator, seed_value: int) -> void:
-	var stone := data.mb(M.KEEP_STONE)
+	var stone := data.mb(M.ASHLAR)
 	var c := STONE_C * 0.9
 	var boxes: Array = [
 		# Office walls (west room), with a door to the passage and two windows.
@@ -503,7 +564,7 @@ static func build_generic(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	var hh := clampf(lm.height * 0.35, 18.0, 30.0)
 	block(data, hall, hh, int(hh / 3.4), 0.4, seed_value + 11)
 	data.mb(M.SLATE).add_gable_roof(hall.position, hall.end, hh, minf(hd * 0.35, 9.0), true, 0.6,
-			Color(0.8, 0.82, 0.9), data.mb(M.KEEP_STONE), STONE_C * 0.7)
+			Color(0.8, 0.82, 0.9), data.mb(M.ASHLAR), STONE_C * 0.7)
 	# Towers.
 	var towers := int(lm.params.get("towers", 2))
 	var corners := [Vector2(hall.position.x, hall.end.y), Vector2(hall.end.x, hall.end.y),
