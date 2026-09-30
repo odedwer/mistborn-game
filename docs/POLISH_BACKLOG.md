@@ -129,3 +129,12 @@ Follow-ups:
 - **Font glyph bug:** the dialogue line "That's steel in your blood" rendered as "That's sted in your blood" in the HUD shot. The text in `mistwalk_to_keep_venture.json` is correct, so check the dialogue font for missing or ligature glyphs ("el").
 - **Keep Venture courtyard** (first review): a big flat empty paved yard with a few scattered crates and a well. Its perimeter walls still use the old crazy-paving stone. It needs dressing (planters, carriage, guards' posts, a fountain, banners) and the ashlar material on its walls.
 - The HUD clock reads at the bottom-right.
+
+## Review of art pass 8
+
+Merged: C-shaped ear rims with an inner hollow, set in hair-shell cut-outs; fuller, rounder hair for Vin with nape and side flyaways; the shirt V as a separate crisp panel; the noble hat recoloured to mid grey with an ivory-straw dye (it no longer glows at night). The art agent confirmed crowd collision is a fixed capsule independent of the GLBs. 297 tests green. Reviewed p8_after_faces_crew_34 and enemies_side.
+
+Follow-ups:
+- Ears finally read as ears; the shirt V is crisp with no streak; Vin's silhouette is no longer a helmet.
+- The hair cut-outs around the ears are square windows (clearly visible on the coinshot, thug and guard in profile). Round the cut, or feather it with a sideburn wedge.
+- Breeze's gold waistcoat still has a hot orange glow blob at the chest (the emission or metallic-ish dye on the waistcoat).
