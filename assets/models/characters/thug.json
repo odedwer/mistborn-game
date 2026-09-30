@@ -1,10 +1,10 @@
 {
  "name": "thug",
  "style": "thug",
- "tris": 4118,
+ "tris": 4178,
  "height": 2.1193516862331707,
  "garments": {},
- "tris_max": 4118,
+ "tris_max": 4178,
  "materials": [
   "Cloth"
  ],

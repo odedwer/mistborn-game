@@ -223,7 +223,8 @@ class Body:
             k += (0.018 * math.exp(-(((th - 90) / 10) ** 2)) * smoothstep(mouth_z, brow_z, z)
                   * (1.0 - smoothstep(brow_z, brow_z + 0.03 * s, z)))
             # lips and chin
-            k += 0.03 * math.exp(-(((th - 90) / 16) ** 2 + ((z - mouth_z) / (0.008 * s)) ** 2))
+            # (a fuller muzzle under the lips, so they sit proud in profile)
+            k += 0.045 * math.exp(-(((th - 90) / 18) ** 2 + ((z - mouth_z) / (0.01 * s)) ** 2))
             k += 0.03 * math.exp(-(((th - 90) / 22) ** 2 + ((z - (chin_z + 0.012 * s)) / (0.01 * s)) ** 2))
             # flatten the sides of the face a little (less cylindrical)
             k -= 0.03 * math.exp(-(((th - 90) / 60) ** 2)) * math.exp(-((z - eye_z) / (0.04 * s)) ** 2) * (1 - math.exp(-((th - 90) / 25) ** 2))
@@ -309,15 +310,25 @@ class Body:
         line_col = tuple(np.array(lip_col[:3]) * 0.4) + (1.0,)
         mw = 0.021 * s
         xs = np.linspace(-mw, mw, 7)
-        tube(self.m, [face_pt(x, mouth_z + 0.0012 * s * (abs(x) / mw) ** 2, -0.0004 * s) for x in xs],
+        tube(self.m, [face_pt(x, mouth_z + 0.0012 * s * (abs(x) / mw) ** 2, 0.0022 * s) for x in xs],
              [(0.0022 * s, 0.0016 * s)] * 7, n=6, hint=(0, 0, 1), color=line_col, weights={"Head": 1.0},
              cap0=0.001 * s, cap1=0.001 * s)
+        # Lips with real depth, so they read in profile: a fuller lower lip
+        # standing proud of the (fuller) muzzle, and an upper lip just behind
+        # it, with the dark line between them. They used to sit inside the
+        # face surface and vanished side-on.
         lw = 0.014 * s
         xs = np.linspace(-lw, lw, 5)
-        tube(self.m, [face_pt(x, mouth_z - 0.0045 * s, -0.0022 * s) for x in xs],
-             [(0.0035 * s, 0.0042 * s), (0.0045 * s, 0.0048 * s), (0.005 * s, 0.005 * s), (0.0045 * s, 0.0048 * s),
-              (0.0035 * s, 0.0042 * s)], n=6, hint=(0, 0, 1), color=lip_col, weights={"Head": 1.0},
-             cap0=0.002 * s, cap1=0.002 * s)
+        taper = (0.7, 0.9, 1.0, 0.9, 0.7)
+        tube(self.m, [face_pt(x, mouth_z - 0.005 * s, 0.0012 * s * t) for x, t in zip(xs, taper)],
+             [(0.0056 * s * t, 0.0045 * s * t) for t in taper], n=6, hint=(0, 0, 1), color=lip_col,
+             weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.002 * s)
+        uw = 0.016 * s
+        xs = np.linspace(-uw, uw, 5)
+        up_col = tuple(np.array(lip_col[:3]) * 0.9) + (1.0,)
+        tube(self.m, [face_pt(x, mouth_z + 0.0042 * s + 0.0008 * s * (1 - t), 0.0 * s) for x, t in zip(xs, taper)],
+             [(0.0044 * s * t, 0.003 * s * t) for t in taper], n=6, hint=(0, 0, 1), color=up_col,
+             weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.002 * s)
         if eyes:
             sclera = tuple(lerp(np.array(skin[:3]), np.array([0.93, 0.9, 0.86]), 0.8)) + (1.0,)
             lid = tuple(np.array(brow[:3] if brow is not None else eye[:3]) * 0.8) + (1.0,)
