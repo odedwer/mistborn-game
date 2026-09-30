@@ -1,14 +1,14 @@
 {
  "name": "skaa_woman",
  "style": "skaa",
- "tris": 3742,
- "height": 1.6319239737444597,
+ "tris": 4446,
+ "height": 1.6359450280754395,
  "garments": {
   "headscarf": 206,
   "shawl": 160,
   "basket": 60
  },
- "tris_max": 4168,
+ "tris_max": 4872,
  "materials": [
   "Cloak",
   "Cloth"

@@ -155,8 +155,8 @@ class Body:
         chin_z = H - 0.232 * s
         # (dz from chin, rx, rf, rb, yc)
         tab = [
-            (0.000, 0.020, 0.016, 0.016, 0.066),
-            (0.012, 0.038 * jaw, 0.030, 0.036, 0.054),
+            (0.000, 0.024, 0.018, 0.018, 0.066),
+            (0.012, 0.042 * jaw, 0.032, 0.036, 0.054),
             (0.035, 0.053 * jaw, 0.052, 0.056, 0.034),
             (0.062, 0.061 - gaunt * 0.008, 0.073, 0.074, 0.017),
             (0.090, 0.067 - gaunt * 0.01, 0.088, 0.090, 0.004),
@@ -169,9 +169,15 @@ class Body:
         ]
         eye_z = chin_z + 0.118 * s
         brow_z = chin_z + 0.138 * s
-        mouth_z = chin_z + 0.04 * s
+        # Mouth sits about a third of the way from the nose base to the chin
+        # (it used to be lower, which read as a long, mouthless jaw).
+        mouth_z = chin_z + 0.05 * s
         tab = np.array(tab)
-        dzs = np.concatenate([np.linspace(0.0, 0.035, 4), np.linspace(0.045, 0.2, 13), [0.212, 0.222, 0.228]])
+        # Rows are denser through the eye/brow band (0.1-0.16): with ~13 mm
+        # spacing the brow ridge and socket landed on single rings and read as
+        # a hard horizontal crease running across the forehead to the temples.
+        dzs = np.concatenate([np.linspace(0.0, 0.035, 4), np.linspace(0.045, 0.095, 5), np.linspace(0.103, 0.163, 11),
+                              [0.176, 0.19, 0.2, 0.212, 0.222, 0.228]])
         rows = [[np.interp(dz, tab[:, 0], tab[:, k]) for k in range(5)] for dz in dzs]
         centers = [v3(0, t[4] * s, chin_z + t[0] * s) for t in rows]
         radii = [(t[1] * s, t[1] * s, t[2] * s, t[3] * s) for t in rows]
@@ -189,8 +195,10 @@ class Body:
                 k -= 0.095 * math.exp(-(dth * dth + dz * dz))
             # Brow ridge: stronger and a touch narrower, so it overhangs the
             # (now deeper) socket rather than blending into it.
-            if 52 < th < 128:
-                k += 0.045 * math.exp(-((z - brow_z) / (0.009 * s)) ** 2)
+            # Windowed smoothly across the face (a super-gaussian in theta):
+            # the old hard 52..128 degree cut left a step at each temple that
+            # read as a seam running from the brow back to the ear.
+            k += 0.045 * math.exp(-((th - 90) / 34.0) ** 4) * math.exp(-((z - brow_z) / (0.009 * s)) ** 2)
             # Cheekbones: sharper falloff (tighter sigma) and more prominent,
             # sitting just below and outside the eye sockets.
             for cx in (46.0, 134.0):
@@ -201,7 +209,10 @@ class Body:
                 k += 0.022 * math.exp(-(((th - cx) / 16) ** 2 + ((z - (chin_z + 0.05 * s)) / (0.02 * s)) ** 2))
             # Nose bridge: a faint ridge running up from the nose wedge toward
             # the brow, giving the profile more than a flat cylindrical front.
-            k += 0.018 * math.exp(-(((th - 90) / 10) ** 2)) * smoothstep(mouth_z, brow_z, z)
+            # It fades out again above the brow, so it no longer pushes a
+            # ridge up the forehead and through the crown of the hair cap.
+            k += (0.018 * math.exp(-(((th - 90) / 10) ** 2)) * smoothstep(mouth_z, brow_z, z)
+                  * (1.0 - smoothstep(brow_z, brow_z + 0.03 * s, z)))
             # lips and chin
             k += 0.03 * math.exp(-(((th - 90) / 16) ** 2 + ((z - mouth_z) / (0.008 * s)) ** 2))
             k += 0.03 * math.exp(-(((th - 90) / 22) ** 2 + ((z - (chin_z + 0.012 * s)) / (0.01 * s)) ** 2))
@@ -246,8 +257,19 @@ class Body:
             return tuple(c)
 
         hw = self.W(["Head", "Neck"], {"Neck": 0.05})
-        tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, weights=hw, cap1=0.004 * s,
-             cap0=0.004 * s)
+        # Level (horizontal) rings. The centre line wobbles forward/back by a few
+        # mm around the eyes; rings set perpendicular to it tilted ~10 degrees
+        # either way, and with 0.1 m radii that moved the front of neighbouring
+        # rings past each other. The folded surface read as a hard crease
+        # across the face just above the eyes, running back to the temples.
+        level = [(v3(1, 0, 0), v3(0, 1, 0))] * len(centers)
+        head_rings = tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, weights=hw, cap1=0.004 * s,
+                          cap0=0.004 * s, frames=level)
+        # the skin's actual vertex columns (front/back/sides), for shells that must clear it
+        cols = {}
+        for key, want in (("x+", 0.0), ("y+", 90.0), ("x-", 180.0), ("y-", 270.0)):
+            j = min(range(n), key=lambda j_: abs((360.0 * j_ / n - want + 180.0) % 360.0 - 180.0))
+            cols[key] = np.array([self.m.verts[ring[j][0]] for ring in head_rings])
         face_y = lambda zz: np.interp(zz, [c[2] for c in centers], [c[1] + r[2] for c, r in zip(centers, radii)])
         # nose: diamond-section wedge whose back half sits inside the face
         fy = face_y(eye_z)
@@ -255,13 +277,58 @@ class Body:
                v3(0, fy + 0.012 * s, nose_z + 0.012 * s), v3(0, fy + 0.016 * s, nose_z + 0.002 * s)]
         tube(self.m, pts, [(0.005 * s, 0.007 * s), (0.007 * s, 0.009 * s), (0.01 * s, 0.011 * s), (0.013 * s, 0.01 * s)],
              n=6, hint=(0, 1, 0.2), color=skin, weights={"Head": 1.0}, cap1=0.008 * s, cap0=0.002 * s)
+        # nostril wings: two small lobes either side of the tip, so the nose has
+        # a base from the front instead of reading as a thin blade
+        skin_dk = tuple(np.array(skin[:3]) * 0.9) + (skin[3] if len(skin) > 3 else 1.0,)
+        for side in (1, -1):
+            c = v3(side * 0.0085 * s, fy + 0.006 * s, nose_z + 0.003 * s)
+            tube(self.m, [c - v3(0, 0.004 * s, 0), c + v3(0, 0.002 * s, 0)], [(0.0065 * s, 0.0055 * s)] * 2, n=6,
+                 hint=(0, 0, 1), color=skin_dk, weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.003 * s)
+        # mouth: a dark lip line plus a fuller lower lip, laid onto the front of
+        # the face (vertex-painted lips alone were too coarse to read at all)
+        ic = int(np.argmin([abs(c[2] - mouth_z) for c in centers]))
+        m_rx, m_rf = radii[ic][0], radii[ic][2] * 1.03
+
+        def face_pt(x, z, out=0.0):
+            # front of the (super-elliptic, ex=2.1) head section at lateral offset x
+            u = min(abs(x) / m_rx, 0.98)
+            return v3(x, face_y(z) - m_rf + m_rf * (1 - u ** 2.1) ** (1 / 2.1) + out, z)
+
+        lip_col = lips if lips is not None else tuple(np.array(skin[:3]) * 0.8) + (1.0,)
+        line_col = tuple(np.array(lip_col[:3]) * 0.4) + (1.0,)
+        mw = 0.021 * s
+        xs = np.linspace(-mw, mw, 7)
+        tube(self.m, [face_pt(x, mouth_z + 0.0012 * s * (abs(x) / mw) ** 2, -0.0004 * s) for x in xs],
+             [(0.0022 * s, 0.0016 * s)] * 7, n=6, hint=(0, 0, 1), color=line_col, weights={"Head": 1.0},
+             cap0=0.001 * s, cap1=0.001 * s)
+        lw = 0.014 * s
+        xs = np.linspace(-lw, lw, 5)
+        tube(self.m, [face_pt(x, mouth_z - 0.0045 * s, -0.0022 * s) for x in xs],
+             [(0.0035 * s, 0.0042 * s), (0.0045 * s, 0.0048 * s), (0.005 * s, 0.005 * s), (0.0045 * s, 0.0048 * s),
+              (0.0035 * s, 0.0042 * s)], n=6, hint=(0, 0, 1), color=lip_col, weights={"Head": 1.0},
+             cap0=0.002 * s, cap1=0.002 * s)
         if eyes:
+            sclera = tuple(lerp(np.array(skin[:3]), np.array([0.93, 0.9, 0.86]), 0.8)) + (1.0,)
+            lid = tuple(np.array(brow[:3] if brow is not None else eye[:3]) * 0.8) + (1.0,)
             for side in (1, -1):
                 ex_ = side * 0.031 * s
                 ey = face_y(eye_z) - 0.013 * s
-                tube(self.m, [v3(ex_, ey - 0.004 * s, eye_z), v3(ex_, ey + 0.004 * s, eye_z)],
-                     [(0.012 * s, 0.006 * s), (0.011 * s, 0.0055 * s)], n=8, hint=(0, 0, 1), color=eye,
-                     weights={"Head": 1.0}, cap1=0.003 * s)
+                # white almond, a dark iris in front of it, and an upper lid line:
+                # the eye used to be one dark lozenge with no direction to it
+                tube(self.m, [v3(ex_, ey - 0.004 * s, eye_z), v3(ex_, ey + 0.003 * s, eye_z)],
+                     [(0.012 * s, 0.0058 * s), (0.0115 * s, 0.0055 * s)], n=10, hint=(0, 0, 1), color=sclera,
+                     weights={"Head": 1.0}, cap1=0.0025 * s)
+                ix = ex_ - side * 0.001 * s
+                tube(self.m, [v3(ix, ey + 0.0025 * s, eye_z - 0.0004 * s), v3(ix, ey + 0.005 * s, eye_z - 0.0004 * s)],
+                     [(0.0058 * s, 0.0056 * s), (0.0054 * s, 0.0052 * s)], n=10, hint=(0, 0, 1), color=eye,
+                     weights={"Head": 1.0}, cap1=0.0012 * s)
+                lid_pts = [v3(ex_ - side * 0.0135 * s, ey + 0.0005 * s, eye_z - 0.001 * s),
+                           v3(ex_ - side * 0.006 * s, ey + 0.0035 * s, eye_z + 0.0052 * s),
+                           v3(ex_ + side * 0.004 * s, ey + 0.003 * s, eye_z + 0.0056 * s),
+                           v3(ex_ + side * 0.0135 * s, ey - 0.001 * s, eye_z + 0.0015 * s)]
+                tube(self.m, lid_pts, [(0.0014 * s, 0.0018 * s), (0.0018 * s, 0.0024 * s), (0.0018 * s, 0.0024 * s),
+                                       (0.0014 * s, 0.0016 * s)], n=5, hint=(0, 1, 0), color=lid,
+                     weights={"Head": 1.0}, cap0=0.001 * s, cap1=0.002 * s)
                 if brow is not None:
                     by = face_y(brow_z) - 0.004 * s
                     tube(self.m, [v3(side * 0.012 * s, by, brow_z + 0.002 * s), v3(side * 0.03 * s, by + 0.001 * s, brow_z + 0.005 * s),
@@ -281,7 +348,8 @@ class Body:
                         c0 = v3(ex_x * 1.1, -0.016 * s, zc)
                         tube(self.m, [c0 - v3(0, 0.007 * s, 0), c0 + v3(0, 0.007 * s, 0)], [0.007 * s, 0.007 * s], n=6,
                              hint=(0, 0, 1), mat=METAL, color=earrings[0], weights={"Head": 1.0})
-        lm = dict(chin_z=chin_z, eye_z=eye_z, brow_z=brow_z, top=H, s=s, centers=centers, radii=radii,
+        lm = dict(chin_z=chin_z, eye_z=eye_z, brow_z=brow_z, mouth_z=mouth_z, top=H, s=s, centers=centers, radii=radii,
+                  skin_cols=cols,
                   eye_l=v3(-0.03 * s, face_y(eye_z) - 0.012 * s, eye_z),
                   eye_r=v3(0.03 * s, face_y(eye_z) - 0.012 * s, eye_z))
         self.head_lm = lm
@@ -310,13 +378,31 @@ class Body:
             # Only the lower band (above the ears, below the crown) keeps hair.
             bz = max(bz, lm["eye_z"] - 0.01 * s)
             top_z = min(top_z, lm["brow_z"] + 0.03 * s)
-        rings_z = list(np.linspace(bz, top_z, 12))
+        # Rings bunch up a little towards the crown, where the head profile
+        # curves fastest (straight segments between sparse rings cut inside it).
+        t_ = np.linspace(0.0, 1.0, 15)
+        rings_z = list(bz + (top_z - bz) * (1.5 * t_ - 0.5 * t_ * t_))
+        sk = lm["skin_cols"]
         centers, radii = [], []
         for z in rings_z:
             yc = np.interp(z, zs, [c[1] for c in cs])
             r = [np.interp(z, zs, [rr[k] for rr in rs]) for k in range(4)]
-            centers.append(v3(0, yc - 0.004 * s, z))
-            radii.append(tuple(max(x, 0.032 * s) * puff + 0.007 * s for x in r))
+            # The cap sits a little behind the face, but that offset fades out
+            # towards the crown: at full offset the front of the crown dome
+            # dipped under the scalp and skin poked through on puff~1.0 styles.
+            back = 0.004 * s * (1.0 - smoothstep(lm["brow_z"], top_z, z))
+            c = v3(0, yc - back, z)
+            # Clear the skin as actually built, not just the nominal profile: the
+            # head's rings lean slightly, so on the forehead and crown the skin
+            # sits a few mm outside the interpolated radius and poked through.
+            real = []
+            for key, ax, sgn in (("x+", 0, 1), ("x-", 0, -1), ("y+", 1, 1), ("y-", 1, -1)):
+                col = sk[key]
+                real.append(sgn * (np.interp(z, col[:, 2], col[:, ax]) - c[ax]))
+            # (the nominal radii are about the unshifted centre: re-base them)
+            r = [max(a_ + d_, b_) for a_, b_, d_ in zip(r, real, (0.0, 0.0, back, -back))]
+            centers.append(c)
+            radii.append(tuple(max(x, 0.036 * s) * puff + (0.004 if style == "bald" else 0.008) * s for x in r))
 
         def shape(i, th):
             z = rings_z[i]
@@ -324,19 +410,33 @@ class Body:
             side_ = math.exp(-((th - 90) / 95.0) ** 2)
             k = 1.0
             if z < fz:
-                # hide inside the face below the fringe line (front), keep sides/back
-                k -= 0.35 * front * smoothstep(fz, fz - 0.03 * s, z)
+                # Hide inside the face below the fringe line (front), keep the
+                # sides/back. The front sector is a hard step between two columns:
+                # a smooth falloff left a wide band at the temples where the shell
+                # sat almost exactly on the skin and z-fought into a stripe
+                # running from the eye corner back to the hair.
+                # (bald: only a low band round the back stays, behind the ears)
+                hide = 1.0 if abs(th - 90) < (100 if style == "bald" else 60) else 0.0
+                k -= 0.35 * hide * smoothstep(fz, fz - 0.015 * s, z)
                 k -= 0.12 * side_ * smoothstep(lm["eye_z"], lm["eye_z"] - 0.04 * s, z)
             if style == "bald":
-                # Thin the crown band away entirely, front and back alike, so
-                # the scalp (bald_top on head()) shows through on top.
-                k -= bald_amount * smoothstep(rings_z[0], rings_z[-1], z)
+                # A low band of close-cropped hair round the back: it swells just
+                # clear of the scalp mid-band and tucks under it at both edges,
+                # so there is no rim. (It used to be cut off flat and read as a
+                # dark bar, or a shelf, sticking out behind the ear.) The crown
+                # stays bare so the scalp (bald_top on head()) shows.
+                t_b = (z - rings_z[0]) / max(rings_z[-1] - rings_z[0], 1e-6)
+                k += -0.03 + 0.035 * math.sin(math.pi * t_b) * min(1.0, bald_amount / 0.55)
             if i == 0 or (z < fz + 0.01 * s and front > 0.3):
                 k += jag / 0.1 * 0.25 * math.sin(math.radians(th) * spikes)
             return k
 
-        tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape,
-             weights={"Head": 1.0}, cap1=0.022 * s)
+        # Level rings: letting them tilt with the (slightly forward-leaning)
+        # centre line dropped the front of each ring below the scalp, which is
+        # where skin poked through at the front of the crown.
+        level = [(v3(1, 0, 0), v3(0, 1, 0))] * len(centers)
+        tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, frames=level,
+             weights={"Head": 1.0}, cap1=0.026 * s)
 
         if style == "long":
             self._hair_tail(color, bz, s)
@@ -603,8 +703,10 @@ class Body:
             r = [np.interp(zc, zs, [rr[k] for rr in rs]) for k in range(4)]
             centers.append(v3(0, yc + yoff, z))
             radii.append(tuple(max(x, 0.03 * s) * puff + add * s for x in r))
+        # level rings, like the head itself (tilted ones folded over each other)
+        level = [(v3(1, 0, 0), v3(0, 1, 0))] * len(centers)
         tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, arc=arc, mat=mat,
-             weights=weights or {"Head": 1.0}, cap1=cap1)
+             weights=weights or {"Head": 1.0}, cap1=cap1, frames=level)
         return centers, radii
 
     def beard(self, color, *, length=0.03, full=True, n=18):
@@ -613,16 +715,28 @@ class Body:
         s = lm["s"]
         z0 = lm["chin_z"] - length * s
         z1 = lm["eye_z"] - (0.03 if full else 0.055) * s
-        mouth_z = lm["chin_z"] + 0.04 * s
+        mouth_z = lm["mouth_z"]
+        rows = 12
+        zs = np.linspace(z0, z1, rows)
 
         def shape(i, th):
+            front = math.exp(-((th - 90) / 14.0) ** 2)
             # fuller at the chin, thinning towards the sideburns
-            return 1.0 + 0.12 * math.exp(-((th - 90) / 40.0) ** 2) * (1 - i / 6)
+            k = 1.0 + 0.12 * math.exp(-((th - 90) / 40.0) ** 2) * (1 - i / (rows - 1))
+            # open the mouth: the shell dips inside the face there, so the lips
+            # show between moustache and chin instead of a solid mask of hair
+            k -= 0.3 * front * math.exp(-((zs[i] - mouth_z) / (0.0055 * s)) ** 2)
+            # tuck the top edge into the cheek so it has no visible thickness
+            if i == rows - 1:
+                k *= 0.9
+            elif i == rows - 2:
+                k *= 0.97
+            return k
 
         def col(p, i, th):
             if abs(th - 90) < 20 and abs(p[2] - mouth_z) < 0.009 * s:
-                return tuple(np.array(color[:3]) * 0.55) + (color[3] if len(color) > 3 else 1.0,)
+                return tuple(np.array(color[:3]) * 0.7) + (color[3] if len(color) > 3 else 1.0,)
             return color
 
-        self.head_shell(col, z0, z1, puff=1.0, add=0.009, arc=(-20, 200), n=n, rows=7, shape=shape,
+        self.head_shell(col, z0, z1, puff=1.0, add=0.009, arc=(-20, 200), n=n, rows=rows, shape=shape,
                         weights=self.W(["Head", "Neck"], {"Neck": 0.05}))

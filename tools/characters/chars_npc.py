@@ -215,8 +215,18 @@ def fringe_hair(b: Body, col):
     """Horseshoe of hair round the back and sides of a balding head (Clubs)."""
     lm = b.head_lm
     s = lm["s"]
-    b.head_shell(col, lm["eye_z"] - 0.03 * s, lm["brow_z"] + 0.035 * s, puff=1.04, add=0.004, arc=(150, 390), n=14,
-                 rows=4)
+    rows = 6
+
+    def shape(i, th):
+        # Feather every edge of the open shell into the scalp, so it reads as
+        # hair rather than a flat plate with a hard rim at the temples.
+        edge = math.exp(-((th - 165) / 12.0) ** 2) + math.exp(-((th - 375) / 12.0) ** 2)
+        k = 1.0 - 0.1 * edge
+        k *= (0.95, 0.99, 1.0, 1.0, 0.975, 0.92)[i]
+        return k
+
+    b.head_shell(col, lm["eye_z"] - 0.03 * s, lm["brow_z"] + 0.035 * s, puff=1.04, add=0.004, arc=(165, 375), n=16,
+                 rows=rows, shape=shape)
 
 
 # --------------------------------------------------------------------- props
@@ -619,7 +629,7 @@ def build_sazed():
 def build_marsh():
     b = Body(H=1.84, sh_w=0.178, hip_w=0.09, apose=39, width=0.9, limb=0.9, head=0.98)
     robe, stole, under = hexcol("3c3c42"), hexcol("24242a"), hexcol("2a2a2e")
-    skin, hair = hexcol("c09c86"), hexcol("4a4038")
+    skin = hexcol("c09c86")
     H, s = b.H, b.s
     t = torso_table(hips=0.95, waist=0.9, chest=0.95, shoulders=1.0, depth=0.9)
 
@@ -633,8 +643,8 @@ def build_marsh():
     b.torso(t, tcol)
     b.neck(skin, r=0.047)
     b.head(skin, brow=hexcol("2a241e"), lips=hexcol("7a5a52"), jaw=1.0, gaunt=1.0, bald_top=hexcol("caa88e"))
-    b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.005 * s, fringe_z=b.head_lm["brow_z"] + 0.05 * s,
-                 style="bald")
+    # Fully shaved: the thin "bald" hair band read as a dark slab stuck on
+    # behind each ear at close range, so the scalp tone (bald_top) carries it.
     for side in (1, -1):
         b.arm(side, color=robe, flare=0.02)
         b.hand(side, skin)

@@ -1,10 +1,10 @@
 {
  "name": "spook",
  "style": "spook",
- "tris": 3624,
+ "tris": 4328,
  "height": 1.7850744387216273,
  "garments": {},
- "tris_max": 3624,
+ "tris_max": 4328,
  "materials": [
   "Cloth"
  ],
