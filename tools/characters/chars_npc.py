@@ -185,6 +185,15 @@ def hood(b: Body, col, *, open_front=0.3, rag=False):
          weights=b.W(["Head", "Neck", "UpperChest"], {"UpperChest": 0.3, "Neck": 0.4}), cap1=0.01 * s)
 
 
+def torso_front_y(b: Body, table, z):
+    """Front (+Y) surface of a b.torso(table) at height z, for studs laid onto it."""
+    zf = z / b.H
+    rows = np.array(table)
+    yc = np.interp(zf, rows[:, 0], rows[:, 4])
+    rf = np.interp(zf, rows[:, 0], rows[:, 2])
+    return (yc + rf * b.P["width"]) * b.s
+
+
 def headscarf(b: Body, col):
     """Scarf tied over the hair, knot at the nape."""
     lm = b.head_lm
@@ -379,15 +388,17 @@ def build_dockson():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 7 and p[2] > 0.74 * H:
-            return shirt
+        if abs(th - 90) < 6 + 90 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
+            return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 24 and p[2] > 0.6 * H:
             return vest
         if 0.585 * H < p[2] < 0.608 * H:
             return hexcol("1e1610")
         return coat
 
-    b.torso(t, tcol)
+    # more columns so the narrow shirt front stays a crisp strip instead of
+    # blending across 18-degree faces into a glare-like streak down the chest
+    b.torso(t, tcol, n=32)
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2e2016"), lips=hexcol("8a5c4e"), jaw=1.1)
     b.hair_shell(hair, puff=1.0, jag=0.004, back_z=b.head_lm["chin_z"] + 0.05 * s, fringe_z=b.head_lm["brow_z"] + 0.035 * s,
@@ -419,14 +430,17 @@ def build_breeze():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 8 and p[2] > 0.74 * H:
-            return shirt
+        if abs(th - 90) < 6 + 90 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
+            return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 30 and p[2] > 0.56 * H:
-            # waistcoat with a line of buttons
-            return hexcol("c8b070") if abs(th - 90) < 3 and int(p[2] / (0.03 * s)) % 2 == 0 else vest
+            # waistcoat (its buttons are real studs below: painted onto the
+            # single centre column they smeared into one bright gold streak)
+            return vest
         return coat
 
-    b.torso(t, tcol)
+    # more columns so the narrow shirt/waistcoat front stays crisp instead of
+    # blending across 18-degree faces into a glare-like streak down the chest
+    b.torso(t, tcol, n=32)
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2a1e18"), lips=hexcol("b0746a"), jaw=1.08)
     b.hair_shell(hair, puff=1.04, jag=0.0, back_z=b.head_lm["chin_z"] + 0.055 * s, fringe_z=b.head_lm["brow_z"] + 0.04 * s,
@@ -446,6 +460,12 @@ def build_breeze():
     # tailcoat tails at the back
     b.skirt(0.6 * H, 0.33 * H, (0.17 * s, 0.11 * s, 0.12 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,
             arc=(200, 340), leg_share=0.55, n=12)
+    # waistcoat buttons
+    for k_ in range(5):
+        z_ = (0.6 + 0.03 * k_) * H
+        y_ = torso_front_y(b, t, z_) + 0.002 * s
+        tube(b.m, [v3(0, y_ - 0.003 * s, z_), v3(0, y_ + 0.002 * s, z_)], [0.005 * s] * 2, n=6, hint=(0, 0, 1),
+             mat=METAL, color=hexcol("c8a650"), weights=b.W(["Spine", "Chest"]), cap1=0.002 * s)
     # watch chain
     tube(b.m, [v3(0.06 * s, 0.14 * s, 0.63 * H), v3(0.1 * s, 0.14 * s, 0.61 * H), v3(0.14 * s, 0.12 * s, 0.62 * H)],
          [0.003 * s] * 3, n=4, mat=METAL, color=hexcol("d8b860"), weights=b.W(["Spine", "Hips"]))
