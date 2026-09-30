@@ -175,6 +175,15 @@ func reset() -> void:
 	_set_raw(DEFAULT_HOUR)
 
 
+## "Day", "Dusk", "Night" or "Dawn" for the effective hour (map tab, HUD).
+func phase_name() -> String:
+	var h := effective_hour()
+	var n := night_factor_at(h)
+	if n > 0.0 and n < 1.0:
+		return "Dusk" if h > 12.0 else "Dawn"
+	return "Night" if n >= 1.0 else "Day"
+
+
 ## "HH:MM" of the raw clock.
 func clock_text() -> String:
 	var m := int(hour * 60.0) % (24 * 60)
