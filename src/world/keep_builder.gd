@@ -64,20 +64,48 @@ static func wall(data: ChunkBuildData, lo: Vector3, hi: Vector3) -> void:
 	data.add_occluder_box(lo + Vector3(0.2, 0, 0.2), hi - Vector3(0.2, 0.5, 0.2))
 	data.add_nav_box(lo, hi, true)
 	data.add_nav_obstruction(Rect2(lo.x, lo.z, hi.x - lo.x, hi.z - lo.z), -1.0, hi.y - 0.5)
+	_crenellate(data, lo, hi, c)
+
+
+## Regular battlements along both faces of a wall's top: a continuous parapet
+## band (0.35 m) with evenly pitched merlons (1.2 m wide, 1.0 m tall, 2.0 m
+## pitch), a merlon at each end so corners close cleanly. Replaces a sparse
+## row of lone teeth that read as a zig-zag from above.
+static func _crenellate(data: ChunkBuildData, lo: Vector3, hi: Vector3, c: Color) -> void:
 	var along_x := (hi.x - lo.x) >= (hi.z - lo.z)
 	var length := (hi.x - lo.x) if along_x else (hi.z - lo.z)
-	var n := int(length / 2.4)
+	var a0 := lo.x if along_x else lo.z
 	var det := data.db(M.KEEP_STONE)
-	for i in n:
-		var t := (float(i) + 0.5) / float(n)
-		for side in 2:
-			var p: Vector3
+	var depth := 0.45
+	var band := 0.35
+	var merlon := 1.2
+	var pitch := 2.0
+	var n := maxi(1, int(floor((length - merlon) / pitch)) + 1)
+	var span := length - merlon
+	var step := span / float(n - 1) if n > 1 else 0.0
+	var top := c * 1.05
+	for side in 2:
+		# Parapet band along the whole face.
+		var b_lo: Vector3
+		var b_hi: Vector3
+		if along_x:
+			b_lo = Vector3(lo.x, hi.y, lo.z if side == 0 else hi.z - depth)
+			b_hi = Vector3(hi.x, hi.y + band, lo.z + depth if side == 0 else hi.z)
+		else:
+			b_lo = Vector3(lo.x if side == 0 else hi.x - depth, hi.y, lo.z)
+			b_hi = Vector3(lo.x + depth if side == 0 else hi.x, hi.y + band, hi.z)
+		det.add_box(b_lo, b_hi, c * 0.9, c, top)
+		for i in n:
+			var u0 := a0 + (step * float(i) if n > 1 else span * 0.5)
+			var m_lo := b_lo
+			var m_hi := b_hi
 			if along_x:
-				p = Vector3(lerpf(lo.x, hi.x, t), hi.y, lo.z + 0.25 if side == 0 else hi.z - 0.25)
+				m_lo = Vector3(u0, hi.y + band, b_lo.z)
+				m_hi = Vector3(u0 + merlon, hi.y + 1.0, b_hi.z)
 			else:
-				p = Vector3(lo.x + 0.25 if side == 0 else hi.x - 0.25, hi.y, lerpf(lo.z, hi.z, t))
-			det.add_box(p - Vector3(0.45 if along_x else 0.2, 0, 0.2 if along_x else 0.45),
-					p + Vector3(0.45 if along_x else 0.2, 0.9, 0.2 if along_x else 0.45), c, c, c)
+				m_lo = Vector3(b_lo.x, hi.y + band, u0)
+				m_hi = Vector3(b_hi.x, hi.y + 1.0, u0 + merlon)
+			det.add_box(m_lo, m_hi, c, c, top)
 
 
 static func _lamp(data: ChunkBuildData, p: Vector3, dir: Vector2, lit: bool, shadow := false) -> void:
