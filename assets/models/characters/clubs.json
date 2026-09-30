@@ -1,10 +1,10 @@
 {
  "name": "clubs",
  "style": "clubs",
- "tris": 4448,
+ "tris": 4508,
  "height": 1.655215454760008,
  "garments": {},
- "tris_max": 4448,
+ "tris_max": 4508,
  "materials": [
   "Cloth",
   "Metal"

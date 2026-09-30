@@ -1,10 +1,10 @@
 {
  "name": "obligator_2",
  "style": "obligator_b",
- "tris": 4320,
+ "tris": 4380,
  "height": 1.7309302876618882,
  "garments": {},
- "tris_max": 4320,
+ "tris_max": 4380,
  "materials": [
   "Cloth"
  ],

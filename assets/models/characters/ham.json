@@ -1,10 +1,10 @@
 {
  "name": "ham",
  "style": "ham",
- "tris": 4468,
+ "tris": 4528,
  "height": 1.8866219805989077,
  "garments": {},
- "tris_max": 4468,
+ "tris_max": 4528,
  "materials": [
   "Cloth",
   "Metal"

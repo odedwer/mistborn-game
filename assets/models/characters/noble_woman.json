@@ -1,7 +1,7 @@
 {
  "name": "noble_woman",
  "style": "gown",
- "tris": 4566,
+ "tris": 4626,
  "height": 1.6787349099919273,
  "garments": {
   "bustle": 80,
@@ -9,7 +9,7 @@
   "hat_small": 108,
   "shawl": 160
  },
- "tris_max": 5130,
+ "tris_max": 5190,
  "materials": [
   "Cloak",
   "Cloth",

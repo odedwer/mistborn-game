@@ -448,17 +448,30 @@ def build_dockson():
 
 def build_breeze():
     b = Body(H=1.74, sh_w=0.18, hip_w=0.1, apose=40, width=1.12, limb=1.02, neck=1.1)
-    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("cfc8b8")
+    # Linen, not paper white: the old ~0.8-0.9 albedo shirt next to the gold
+    # waistcoat blew out into a glowing gold-white streak under strong light.
+    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("a49c8c")
+    linen_hi, linen_cuff = hexcol("b8b2a4"), hexcol("aca698")
     pants, shoes = hexcol("2c2830"), hexcol("141110")
     skin, hair = hexcol("e0b49c"), hexcol("2a1e18")
     H, s = b.H, b.s
     t = torso_table(hips=1.08, waist=1.14, chest=1.06, shoulders=0.98, depth=1.1, belly=0.045)
 
+    def shirt_col(p, th, half):
+        """Fabric shading: shadowed where the waistcoat overlaps, soft pleats."""
+        edge = min(abs(th - 90) / max(half, 1e-3), 1.0)
+        pleat = 0.9 + 0.1 * math.cos(p[2] / (0.011 * s) * math.pi)
+        k = (1.0 - 0.3 * edge ** 2) * pleat
+        return tuple(np.array(shirt[:3]) * k) + (1.0,)
+
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 6 + 60 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
-            return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
+        half = 6 + 60 * max(p[2] / H - 0.72, 0.0)
+        if abs(th - 90) < half and p[2] > 0.72 * H:
+            return shirt_col(p, th, half)  # a V opening spanning several columns
+        if abs(th - 90) < half + 8 and p[2] > 0.72 * H:
+            return tuple(np.array(vest[:3]) * 0.55) + (1.0,)  # shadowed lapel edge
         if abs(th - 90) < 30 and p[2] > 0.56 * H:
             # waistcoat (its buttons are real studs below: painted onto the
             # single centre column they smeared into one bright gold streak)
@@ -473,7 +486,7 @@ def build_breeze():
     b.hair_shell(hair, puff=1.04, jag=0.0, back_z=b.head_lm["chin_z"] + 0.055 * s, fringe_z=b.head_lm["brow_z"] + 0.04 * s,
                  spikes=3, clumps=1.0, seed=2.2)
     for side in (1, -1):
-        b.arm(side, color=lambda p, i, th, side=side: hexcol("ebe5d8") if arm_t(b, side, p) > 1.9 else coat,
+        b.arm(side, color=lambda p, i, th, side=side: linen_cuff if arm_t(b, side, p) > 1.9 else coat,
               flare=0.01, radii_scale=1.06)
         b.hand(side, skin)
         b.leg(side, pants, thigh=1.08)
@@ -482,7 +495,7 @@ def build_breeze():
     lm = b.head_lm
     tube(b.m, [v3(0, 0.06 * s, 0.815 * H), v3(0, 0.08 * s, 0.79 * H), v3(0, 0.1 * s, 0.75 * H)],
          [(0.03 * s, 0.018 * s), (0.028 * s, 0.02 * s), (0.012 * s, 0.01 * s)], n=6, hint=(0, 1, 0),
-         color=hexcol("f4f0e6"), weights=b.W(["UpperChest", "Neck"]), cap1=0.006 * s)
+         color=linen_hi, weights=b.W(["UpperChest", "Neck"]), cap1=0.006 * s)
     collar(b, coat, h=0.045, r=(0.08, 0.075, 0.08))
     # tailcoat tails at the back
     b.skirt(0.6 * H, 0.33 * H, (0.17 * s, 0.11 * s, 0.12 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,

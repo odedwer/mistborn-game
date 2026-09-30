@@ -1,10 +1,10 @@
 {
  "name": "vin",
  "style": "vin",
- "tris": 4742,
- "height": 1.6665389230808354,
+ "tris": 5724,
+ "height": 1.6665405784571519,
  "garments": {},
- "tris_max": 4742,
+ "tris_max": 5724,
  "materials": [
   "Cloak",
   "Cloth",

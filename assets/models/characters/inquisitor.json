@@ -1,10 +1,10 @@
 {
  "name": "inquisitor",
  "style": "inquisitor",
- "tris": 3900,
+ "tris": 3960,
  "height": 1.9944059496716777,
  "garments": {},
- "tris_max": 3900,
+ "tris_max": 3960,
  "materials": [
   "Cloth",
   "Metal",

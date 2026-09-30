@@ -19,6 +19,12 @@ MAT_NAMES = ["Cloth", "Cloak", "Metal", "Gloss", "Glow"]
 DYE_ALPHA = {0: 1.0, 1: 0.75, 2: 0.5, 3: 0.25}
 
 
+# UV scale for skin surfaces (head, neck). The shared character shader adds a
+# ~1 cm cloth weave; on skin at a third of the scale it reads as soft
+# mottling rather than a fabric grid.
+SKIN_UV = 0.3
+
+
 def dyed(col, slot):
     """Returns `col` tagged with dye slot 1..3 (0 = not dyeable)."""
     return (col[0], col[1], col[2], DYE_ALPHA[slot])
@@ -144,7 +150,7 @@ class Body:
         r *= s * self.P["neck"]
         cs = [v3(0, -0.01 * s, bot * H), v3(0, -0.006 * s, 0.86 * H), v3(0, 0.0, top * H)]
         tube(self.m, cs, [(r * 1.15, r * 1.05), (r, r * 0.95), (r * 0.95, r * 0.95)], n=10,
-             color=color, weights=self.W(["UpperChest", "Neck", "Head"], {"UpperChest": 0.5}))
+             color=color, weights=self.W(["UpperChest", "Neck", "Head"], {"UpperChest": 0.5}), uv_scale=SKIN_UV)
 
     def head(self, skin, *, hair=None, brow=None, lips=None, eye=(0.12, 0.09, 0.08, 1),
              ears=True, jaw=1.0, n=20, gaunt=0.0, eyes=True, tattoo=None, tattoo_rank=1, bald_top=None,
@@ -217,7 +223,8 @@ class Body:
             k += (0.018 * math.exp(-(((th - 90) / 10) ** 2)) * smoothstep(mouth_z, brow_z, z)
                   * (1.0 - smoothstep(brow_z, brow_z + 0.03 * s, z)))
             # lips and chin
-            k += 0.03 * math.exp(-(((th - 90) / 16) ** 2 + ((z - mouth_z) / (0.008 * s)) ** 2))
+            # (a fuller muzzle under the lips, so they sit proud in profile)
+            k += 0.045 * math.exp(-(((th - 90) / 18) ** 2 + ((z - mouth_z) / (0.01 * s)) ** 2))
             k += 0.03 * math.exp(-(((th - 90) / 22) ** 2 + ((z - (chin_z + 0.012 * s)) / (0.01 * s)) ** 2))
             # flatten the sides of the face a little (less cylindrical)
             k -= 0.03 * math.exp(-(((th - 90) / 60) ** 2)) * math.exp(-((z - eye_z) / (0.04 * s)) ** 2) * (1 - math.exp(-((th - 90) / 25) ** 2))
@@ -267,7 +274,7 @@ class Body:
         # across the face just above the eyes, running back to the temples.
         level = [(v3(1, 0, 0), v3(0, 1, 0))] * len(centers)
         head_rings = tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, weights=hw, cap1=0.004 * s,
-                          cap0=0.004 * s, frames=level)
+                          cap0=0.004 * s, frames=level, uv_scale=SKIN_UV)
         # the skin's actual vertex columns (front/back/sides), for shells that must clear it
         cols = {}
         for key, want in (("x+", 0.0), ("y+", 90.0), ("x-", 180.0), ("y-", 270.0)):
@@ -303,15 +310,25 @@ class Body:
         line_col = tuple(np.array(lip_col[:3]) * 0.4) + (1.0,)
         mw = 0.021 * s
         xs = np.linspace(-mw, mw, 7)
-        tube(self.m, [face_pt(x, mouth_z + 0.0012 * s * (abs(x) / mw) ** 2, -0.0004 * s) for x in xs],
+        tube(self.m, [face_pt(x, mouth_z + 0.0012 * s * (abs(x) / mw) ** 2, 0.0022 * s) for x in xs],
              [(0.0022 * s, 0.0016 * s)] * 7, n=6, hint=(0, 0, 1), color=line_col, weights={"Head": 1.0},
              cap0=0.001 * s, cap1=0.001 * s)
+        # Lips with real depth, so they read in profile: a fuller lower lip
+        # standing proud of the (fuller) muzzle, and an upper lip just behind
+        # it, with the dark line between them. They used to sit inside the
+        # face surface and vanished side-on.
         lw = 0.014 * s
         xs = np.linspace(-lw, lw, 5)
-        tube(self.m, [face_pt(x, mouth_z - 0.0045 * s, -0.0022 * s) for x in xs],
-             [(0.0035 * s, 0.0042 * s), (0.0045 * s, 0.0048 * s), (0.005 * s, 0.005 * s), (0.0045 * s, 0.0048 * s),
-              (0.0035 * s, 0.0042 * s)], n=6, hint=(0, 0, 1), color=lip_col, weights={"Head": 1.0},
-             cap0=0.002 * s, cap1=0.002 * s)
+        taper = (0.7, 0.9, 1.0, 0.9, 0.7)
+        tube(self.m, [face_pt(x, mouth_z - 0.005 * s, 0.0012 * s * t) for x, t in zip(xs, taper)],
+             [(0.0056 * s * t, 0.0045 * s * t) for t in taper], n=6, hint=(0, 0, 1), color=lip_col,
+             weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.002 * s)
+        uw = 0.016 * s
+        xs = np.linspace(-uw, uw, 5)
+        up_col = tuple(np.array(lip_col[:3]) * 0.9) + (1.0,)
+        tube(self.m, [face_pt(x, mouth_z + 0.0042 * s + 0.0008 * s * (1 - t), 0.0 * s) for x, t in zip(xs, taper)],
+             [(0.0044 * s * t, 0.003 * s * t) for t in taper], n=6, hint=(0, 0, 1), color=up_col,
+             weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.002 * s)
         if eyes:
             sclera = tuple(lerp(np.array(skin[:3]), np.array([0.93, 0.9, 0.86]), 0.8)) + (1.0,)
             lid = tuple(np.array(brow[:3] if brow is not None else eye[:3]) * 0.8) + (1.0,)
@@ -480,6 +497,58 @@ class Body:
             self._hair_tail(base_color, bz, s)
         elif style == "bun":
             self._hair_bun(base_color, top_z, s)
+        elif style == "choppy":
+            self._choppy_locks(base_color, centers, radii, rings_z, fz, seed)
+
+    def _choppy_locks(self, color, centers, radii, rings_z, fz, seed):
+        """Short, choppy cut: uneven locks break the cap's outline.
+
+        A swept fringe of uneven strands over the forehead (kept above the
+        brows), a ragged nape and side hem of flared locks, and a few tufts
+        sticking up at the crown. Each lock is a flattened, tapering strand
+        laid on the cap surface.
+        """
+        lm = self.head_lm
+        s = lm["s"]
+        rng = np.random.default_rng(int(seed * 1000) + 7)
+        base = np.array(color[:3], dtype=float)
+
+        def surf(z, th, out=1.0):
+            zc = min(max(z, rings_z[0]), rings_z[-1])
+            c = np.array([0.0, np.interp(zc, rings_z, [p[1] for p in centers]), z])
+            a = math.radians(th)
+            rx = np.interp(zc, rings_z, [r[0] for r in radii])
+            ry = np.interp(zc, rings_z, [r[2] if math.sin(a) >= 0 else r[3] for r in radii])
+            return c + np.array([math.cos(a) * rx * out, math.sin(a) * ry * out, 0.0])
+
+        def lock(z, th, down, length, width, sweep=0.0, flare=0.0, lift=0.0):
+            a = math.radians(th)
+            nrm = np.array([math.cos(a), math.sin(a), 0.0])
+            tang = np.array([-math.sin(a), math.cos(a), 0.0])
+            p0 = surf(z, th, 0.96)
+            d = np.array([0.0, 0.0, -down]) + tang * sweep + nrm * flare
+            d = d / np.linalg.norm(d)
+            pts = [p0 + d * length * s * t + nrm * (lift * s * t * t + 0.004 * s) for t in (0.0, 0.35, 0.7, 1.0)]
+            k = 0.8 + 0.4 * rng.random()
+            col = tuple(np.clip(base * k, 0, 1)) + (1.0,)
+            tube(self.m, pts, [(width * s, 0.004 * s), (width * 0.85 * s, 0.0035 * s), (width * 0.5 * s, 0.0025 * s),
+                               (0.0012 * s, 0.001 * s)],
+                 n=5, hint=tuple(nrm), color=col, weights={"Head": 1.0})
+
+        # fringe: swept strands, longest on the sweep side, tips above the brows
+        max_len = (fz + 0.012 * s - (lm["brow_z"] + 0.004 * s)) / s
+        for j, th in enumerate(np.linspace(58, 122, 7)):
+            ln = max_len * (0.55 + 0.45 * (j / 6.0)) * (0.8 + 0.25 * rng.random())
+            lock(fz + 0.012 * s, th, 1.0, max(ln, 0.012), 0.011, sweep=-0.45, lift=0.004)
+        # ragged hem round the sides and nape, flared out a little
+        for th in np.linspace(150, 390, 13):
+            ln = 0.014 + 0.018 * rng.random()
+            lock(rings_z[1], th, 1.0, ln, 0.017, sweep=0.2 * (rng.random() - 0.5), flare=0.25)
+        # crown tufts: short, broad and lying back along the head (upright
+        # ones read as horns)
+        for th in (215.0, 260.0, 305.0):
+            z = rings_z[-4]
+            lock(z, th + 15 * (rng.random() - 0.5), 0.35, 0.02 + 0.008 * rng.random(), 0.016, flare=0.35)
 
     def _back_point(self, z, s, push=1.0):
         """A point on the back surface of the head profile at height `z`."""
