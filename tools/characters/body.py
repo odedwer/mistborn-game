@@ -198,7 +198,10 @@ class Body:
             # Windowed smoothly across the face (a super-gaussian in theta):
             # the old hard 52..128 degree cut left a step at each temple that
             # read as a seam running from the brow back to the ear.
-            k += 0.045 * math.exp(-((th - 90) / 34.0) ** 4) * math.exp(-((z - brow_z) / (0.009 * s)) ** 2)
+            # Deeper than before (0.045 / 9 mm) so it reads in profile, with a
+            # little extra at the glabella over the nose root.
+            k += 0.07 * math.exp(-((th - 90) / 34.0) ** 4) * math.exp(-((z - brow_z) / (0.011 * s)) ** 2)
+            k += 0.02 * math.exp(-((th - 90) / 12.0) ** 2) * math.exp(-((z - brow_z + 0.004 * s) / (0.008 * s)) ** 2)
             # Cheekbones: sharper falloff (tighter sigma) and more prominent,
             # sitting just below and outside the eye sockets.
             for cx in (46.0, 134.0):
@@ -273,15 +276,17 @@ class Body:
         face_y = lambda zz: np.interp(zz, [c[2] for c in centers], [c[1] + r[2] for c, r in zip(centers, radii)])
         # nose: diamond-section wedge whose back half sits inside the face
         fy = face_y(eye_z)
-        pts = [v3(0, fy - 0.008 * s, eye_z + 0.006 * s), v3(0, fy + 0.002 * s, eye_z - 0.012 * s),
-               v3(0, fy + 0.012 * s, nose_z + 0.012 * s), v3(0, fy + 0.016 * s, nose_z + 0.002 * s)]
+        # Projects further than before (tip ~1 cm more), so the profile has a
+        # real nose rather than a bump on a flat face.
+        pts = [v3(0, fy - 0.006 * s, eye_z + 0.006 * s), v3(0, fy + 0.007 * s, eye_z - 0.012 * s),
+               v3(0, fy + 0.019 * s, nose_z + 0.012 * s), v3(0, fy + 0.025 * s, nose_z + 0.002 * s)]
         tube(self.m, pts, [(0.005 * s, 0.007 * s), (0.007 * s, 0.009 * s), (0.01 * s, 0.011 * s), (0.013 * s, 0.01 * s)],
              n=6, hint=(0, 1, 0.2), color=skin, weights={"Head": 1.0}, cap1=0.008 * s, cap0=0.002 * s)
         # nostril wings: two small lobes either side of the tip, so the nose has
         # a base from the front instead of reading as a thin blade
         skin_dk = tuple(np.array(skin[:3]) * 0.9) + (skin[3] if len(skin) > 3 else 1.0,)
         for side in (1, -1):
-            c = v3(side * 0.0085 * s, fy + 0.006 * s, nose_z + 0.003 * s)
+            c = v3(side * 0.009 * s, fy + 0.011 * s, nose_z + 0.003 * s)
             tube(self.m, [c - v3(0, 0.004 * s, 0), c + v3(0, 0.002 * s, 0)], [(0.0065 * s, 0.0055 * s)] * 2, n=6,
                  hint=(0, 0, 1), color=skin_dk, weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.003 * s)
         # mouth: a dark lip line plus a fuller lower lip, laid onto the front of
