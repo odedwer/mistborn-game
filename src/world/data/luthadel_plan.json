@@ -224,7 +224,7 @@
 		{"group": "activity_start", "activity_id": "riot_noble_2", "placement": "street", "pos": [-406, -1631]},
 		{"group": "activity_start", "activity_id": "riot_noble_3", "placement": "street", "pos": [-10, -1578]},
 		{"group": "activity_start", "activity_id": "coin_race_docks_1", "placement": "rooftop", "pos": [1165, 230], "floors": 4, "flat": true},
-		{"group": "activity_start", "activity_id": "coin_race_docks_2", "placement": "rooftop", "pos": [512, -19], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "coin_race_docks_2", "placement": "rooftop", "pos": [995, -672], "floors": 4, "flat": true},
 		{"group": "activity_start", "activity_id": "coin_race_docks_3", "placement": "rooftop", "pos": [427, 918], "floors": 4, "flat": true},
 		{"group": "activity_start", "activity_id": "pursuit_docks_1", "placement": "rooftop", "pos": [609, 107], "floors": 4, "flat": true},
 		{"group": "activity_start", "activity_id": "pursuit_docks_2", "placement": "rooftop", "pos": [285, 837], "floors": 4, "flat": true},

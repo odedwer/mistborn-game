@@ -147,6 +147,8 @@ emissives and street lights dim by day. A full night reproduces
 - **Saves** store the raw clock (`time_of_day`).
 - **Waiting.** At a discovered safehouse, Interact waits until nightfall (or
   morning) under a fade (`FastTravelManager.wait_at_safehouse`).
+- **HUD.** A dim sun/moon glyph and clock sits bottom-right
+  (`TimeOfDayIndicator`); the map tab shows the phase and time.
 - **Debug.** `--time=<hour>` on the command line; in debug builds F7 toggles
   day/night and F8 skips an hour.
 
@@ -155,7 +157,12 @@ Activity geometry is validated, not hand-eyeballed: `ActivityValidator`
 an activity and checks every ring sphere, chase-path leg and spawn ring against
 their collision boxes; `tools/gen_activities.gd` uses the same checks to author
 and repair activity data, and `tests/test_activity_validation.gd` enforces it
-(at least 3 valid activities of each type per major district).
+(at least 3 valid activities of each type per major district, market included).
+Coin races are also checked for reachability: every leg is sampled along a
+steel-jump arc and must stay within 22 m of an anchored metal (lamp posts,
+rooftop ironwork, balconies, bars) the whole way, the same budget
+`tests/test_traversal.gd` holds the story route to, and legs are capped at
+45 m and a 20 m climb. Pursuits are still checked for clearance and step-up only.
 
 ## Fast travel
 

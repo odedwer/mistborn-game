@@ -5,6 +5,7 @@ extends CanvasLayer
 var _root: Control
 var _tabs: TabContainer
 var _map: MapView
+var _time_label: Label
 var _fast_travel_list: VBoxContainer
 var _journal_list: VBoxContainer
 var _skills_list: VBoxContainer
@@ -113,6 +114,14 @@ func _build_ui() -> void:
 	add_child(_slot_popup)
 
 
+## The map tab's time line, e.g. "Night, 22:40" (plus why, if pinned).
+static func map_time_text() -> String:
+	var t := "%s, %s" % [TimeOfDay.phase_name(), TimeOfDay.clock_text()]
+	if TimeOfDay.is_forced():
+		t += " (clock paused)"
+	return t
+
+
 ## The map plus a "Fast Travel" list of unlocked crew safehouses beside it.
 func _build_map_tab() -> Control:
 	var row := HBoxContainer.new()
@@ -129,6 +138,9 @@ func _build_map_tab() -> Control:
 	var side := VBoxContainer.new()
 	side.custom_minimum_size = Vector2(230, 700)
 	side.add_theme_constant_override("separation", 6)
+	side.add_child(UIHelpers.heading_label("Time"))
+	_time_label = UIHelpers.dim_label("")
+	side.add_child(_time_label)
 	side.add_child(UIHelpers.heading_label("Fast Travel"))
 	_fast_travel_list = VBoxContainer.new()
 	_fast_travel_list.add_theme_constant_override("separation", 4)
@@ -282,6 +294,8 @@ func _on_buy_mastery(id: StringName) -> void:
 
 
 func _refresh_map() -> void:
+	if _time_label != null:
+		_time_label.text = map_time_text()
 	var player := get_tree().get_first_node_in_group("player")
 	if player is Node3D:
 		_map.player_world_position = (player as Node3D).global_position

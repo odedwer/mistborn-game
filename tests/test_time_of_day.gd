@@ -13,7 +13,7 @@ func before_each() -> void:
 func after_each() -> void:
 	GameState.reset_run()
 	for slot in [22]:
-		var p := "user://saves/slot_%d.json" % slot
+		var p := GameState.slot_path(slot)
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
 
@@ -249,3 +249,27 @@ func test_driver_day_lighting_and_exact_night() -> void:
 	assert_true(lamp.visible)
 	assert_almost(lamp.light_energy, 3.0)
 	host.queue_free()
+
+
+func test_hud_clock_and_map_time() -> void:
+	TimeOfDay.set_hour(14.5)
+	assert_eq(TimeOfDay.clock_text(), "14:30")
+	assert_eq(TimeOfDay.phase_name(), "Day")
+	TimeOfDay.set_hour(19.2)
+	assert_eq(TimeOfDay.phase_name(), "Dusk")
+	TimeOfDay.set_hour(5.5)
+	assert_eq(TimeOfDay.phase_name(), "Dawn")
+	TimeOfDay.set_hour(23.0)
+	assert_eq(TimeOfDay.phase_name(), "Night")
+	var clock := TimeOfDayIndicator.new()
+	add_child(clock)
+	assert_eq(clock.text(), "23:00")
+	var hud: Node = (load("res://src/ui/hud.tscn") as PackedScene).instantiate()
+	add_child(hud)
+	assert_true(hud.find_child("TimeOfDay", true, false) is TimeOfDayIndicator, "HUD shows the clock")
+	var pause_menu: GDScript = load("res://src/ui/pause_menu.gd")
+	assert_eq(pause_menu.map_time_text(), "Night, 23:00")
+	TimeOfDay.force_phase(&"mission", TimeOfDay.Phase.NIGHT)
+	assert_true(str(pause_menu.map_time_text()).ends_with("(clock paused)"))
+	hud.queue_free()
+	clock.queue_free()

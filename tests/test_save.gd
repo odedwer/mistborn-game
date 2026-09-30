@@ -36,7 +36,7 @@ func test_save_load_roundtrip() -> void:
 	assert_eq(GameState.stat_deaths, 1)
 	assert_true(GameState.completed_missions.has(&"tutorial"))
 
-	DirAccess.remove_absolute("user://saves/slot_9.json")
+	DirAccess.remove_absolute(GameState.slot_path(9))
 
 
 func test_load_missing_slot_returns_false() -> void:
@@ -46,7 +46,7 @@ func test_load_missing_slot_returns_false() -> void:
 func test_has_save_reflects_disk_state() -> void:
 	GameState.save_game(8)
 	assert_true(GameState.has_save(8))
-	DirAccess.remove_absolute("user://saves/slot_8.json")
+	DirAccess.remove_absolute(GameState.slot_path(8))
 	assert_false(GameState.has_save(8))
 
 
@@ -55,14 +55,21 @@ func test_latest_slot_picks_most_recent() -> void:
 	await get_tree().create_timer(1.1).timeout
 	GameState.save_game(7)
 	assert_eq(GameState.latest_slot(), 7)
-	DirAccess.remove_absolute("user://saves/slot_6.json")
-	DirAccess.remove_absolute("user://saves/slot_7.json")
+	DirAccess.remove_absolute(GameState.slot_path(6))
+	DirAccess.remove_absolute(GameState.slot_path(7))
 
 
 func test_save_version_is_stamped() -> void:
 	GameState.save_game(5)
-	var f := FileAccess.open("user://saves/slot_5.json", FileAccess.READ)
+	var f := FileAccess.open(GameState.slot_path(5), FileAccess.READ)
 	var parsed = JSON.parse_string(f.get_as_text())
 	f.close()
 	assert_eq(int(parsed.get("version", -1)), GameState.SAVE_VERSION)
-	DirAccess.remove_absolute("user://saves/slot_5.json")
+	DirAccess.remove_absolute(GameState.slot_path(5))
+
+
+func test_tests_use_a_private_save_dir() -> void:
+	# The runner isolates each run (parallel worktrees share user://).
+	assert_true(GameState.save_dir.begins_with("user://test_runs/"), GameState.save_dir)
+	assert_true(GameSettings.settings_path.begins_with("user://test_runs/"))
+	assert_true(GameState.slot_path(3).begins_with(GameState.save_dir))

@@ -37,7 +37,7 @@ func after_each() -> void:
 	Engine.time_scale = 1.0
 	GameState.reset_run()
 	for slot: int in [GameState.AUTOSAVE_SLOT]:
-		var path := "user://saves/slot_%d.json" % slot
+		var path := GameState.slot_path(slot)
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
 

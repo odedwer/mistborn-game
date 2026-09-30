@@ -30,6 +30,7 @@ var _show_fps := false
 var _wheel: Control
 var _wheel_open := false
 var _steel_locked := false
+var _clock: TimeOfDayIndicator
 
 
 func _ready() -> void:
@@ -192,6 +193,13 @@ func _build_ui() -> void:
 	_fps_label.position = Vector2(-120, 60)
 	_fps_label.visible = false
 	root.add_child(_fps_label)
+
+	# Time of day: small sun/moon glyph and clock, bottom-right, dim.
+	_clock = TimeOfDayIndicator.new()
+	_clock.name = "TimeOfDay"
+	_clock.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_clock.position = Vector2(-120, -46)
+	root.add_child(_clock)
 
 	# Metal wheel (hold Tab).
 	_wheel = _make_wheel()

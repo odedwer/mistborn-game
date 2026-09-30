@@ -417,6 +417,55 @@ def gen_obsidian(size, seed):
     return albedo, normal, np.clip(rough, 0.03, 0.35), ao
 
 
+def gen_ashlar(size, seed):
+    """Dressed, coursed sandstone blocks for merchant/noble facades: 8 courses
+    per tile, blocks of varying length (2-5 per course), thin recessed joints,
+    a tooled face and soot. Maps to a 2.4 m tile -> 0.3 m courses."""
+    rows = 8
+    xs, ys = periodic_coords(size)
+    rng = np.random.default_rng(seed)
+    row = np.floor(ys * rows).astype(int) % rows
+    # Per-course block boundaries (in 0..1, periodic), varied lengths.
+    local_x = np.zeros_like(xs)
+    block_id = np.zeros_like(xs)
+    for r in range(rows):
+        n = int(rng.integers(3, 6))
+        cuts = np.sort(rng.uniform(0, 1, n))
+        # keep blocks at least ~1/9 of the tile long
+        cuts = np.sort(np.concatenate([[cuts[0]], cuts[1:][np.diff(cuts) > 0.11]]))
+        m = row == r
+        x = xs[m]
+        idx = np.searchsorted(cuts, x, side="right") % len(cuts)
+        start = cuts[(idx - 1) % len(cuts)]
+        end = cuts[idx]
+        span = (end - start) % 1.0
+        span[span == 0] = 1.0
+        local_x[m] = ((x - start) % 1.0) / span
+        block_id[m] = r * 31 + idx
+        # edge distance in tile units along x
+        local_x[m] = np.minimum((x - start) % 1.0, (end - x) % 1.0) * rows
+    local_y = (ys * rows) % 1.0
+    edge = np.minimum(local_x, np.minimum(local_y, 1 - local_y))
+    joint_w = 0.05
+    joint = np.clip(1 - edge / joint_w, 0, 1)
+    per_block = (np.sin(block_id * 12.9898 + 3.1) * 43758.5453) % 1.0
+    noise = fbm(size, seed + 5, octaves=(2.6, 2.0, 1.5), weights=(0.5, 0.3, 0.2))
+    tool = fbm(size, seed + 6, octaves=(1.4, 1.1), weights=(0.6, 0.4))
+    shade = 0.55 + per_block * 0.14 + (noise - 0.5) * 0.12 + (tool - 0.5) * 0.05
+    stone = tint(np.clip(shade, 0.2, 0.95), (0.36, 0.33, 0.29), (0.66, 0.61, 0.54))
+    albedo = lerp(stone, np.array([0.16, 0.15, 0.14]), joint[..., None])
+    albedo = add_color_variation(albedo, size, seed, 0.04)
+    albedo = add_soot(albedo, size, seed, 0.3)
+    # Slightly pillowed block faces, recessed joints.
+    bevel = np.clip(edge / 0.18, 0, 1)
+    height = normalize01(bevel * 0.8 + (noise - 0.5) * 0.12 + per_block * 0.05)
+    albedo = ash_dust_upward(albedo, height, size, seed, 0.12)
+    normal = height_to_normal(height, strength=3.5)
+    rough = 0.78 + joint * 0.15 + (noise - 0.5) * 0.06
+    ao = ao_from_height(height, 4)
+    return albedo, normal, np.clip(rough, 0.4, 1.0), ao
+
+
 MATERIALS = {
     "stone_wall": gen_stone_wall,
     "brick_soot": gen_brick_soot,
@@ -428,6 +477,7 @@ MATERIALS = {
     "cloth_mistcloak": gen_cloth_mistcloak,
     "leather": gen_leather,
     "obsidian": gen_obsidian,
+    "ashlar": gen_ashlar,
 }
 
 BASE_SEED = 20260925  # today's date -> deterministic, memorable seed

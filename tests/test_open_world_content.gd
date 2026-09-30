@@ -137,4 +137,4 @@ func test_discovered_safehouses_round_trip_through_save_load() -> void:
 	assert_false(GameState.is_safehouse_unlocked(&"safehouse_docks"))
 	assert_true(GameState.load_game(22))
 	assert_true(GameState.is_safehouse_unlocked(&"safehouse_docks"))
-	DirAccess.remove_absolute("user://saves/slot_22.json")
+	DirAccess.remove_absolute(GameState.slot_path(22))

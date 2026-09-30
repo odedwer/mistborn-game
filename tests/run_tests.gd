@@ -18,6 +18,13 @@ func _run() -> void:
 			if filter == "" or f.contains(filter):
 				files.append(f)
 	files.sort()
+	# Private per-run folder for saves and settings: parallel runs (other
+	# worktrees) share user://, and must never touch each other's slots or
+	# the player's own saves.
+	var run_dir := "user://test_runs/%d_%d" % [OS.get_process_id(), Time.get_ticks_usec()]
+	# Autoloads by node: this SceneTree script compiles before they exist.
+	root.get_node("GameState").call("use_save_dir", run_dir + "/saves")
+	root.get_node("GameSettings").set("settings_path", run_dir + "/settings.cfg")
 	var passed := 0
 	var failed := 0
 	for f in files:
@@ -46,4 +53,17 @@ func _run() -> void:
 			tc.queue_free()
 			await process_frame
 	print("\n%d passed, %d failed" % [passed, failed])
+	_remove_tree(run_dir)
+	DirAccess.remove_absolute("user://test_runs")  # only succeeds once empty
 	quit(failed)
+
+
+## Deletes `dir` and everything under it.
+static func _remove_tree(dir: String) -> void:
+	if not DirAccess.dir_exists_absolute(dir):
+		return
+	for sub in DirAccess.get_directories_at(dir):
+		_remove_tree(dir + "/" + sub)
+	for f in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(dir + "/" + f)
+	DirAccess.remove_absolute(dir)

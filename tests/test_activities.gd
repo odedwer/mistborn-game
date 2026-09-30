@@ -13,8 +13,8 @@ func before_each() -> void:
 
 func after_each() -> void:
 	_mgr.queue_free()
-	if FileAccess.file_exists("user://saves/slot_99.json"):
-		DirAccess.remove_absolute("user://saves/slot_99.json")
+	if FileAccess.file_exists(GameState.slot_path(99)):
+		DirAccess.remove_absolute(GameState.slot_path(99))
 
 
 func _fake_player() -> Node3D:

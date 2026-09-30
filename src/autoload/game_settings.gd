@@ -14,6 +14,9 @@ extends Node
 ## `set_quality(level: int)`.
 
 const SETTINGS_PATH := "user://settings.cfg"
+## Where `save`/`load` go. The test runner redirects it into its per-run
+## folder so tests never overwrite the player's real settings.
+var settings_path := SETTINGS_PATH
 const SAVE_VERSION := 1
 
 enum Preset { LOW, MEDIUM, HIGH, ULTRA, CUSTOM }
@@ -238,12 +241,12 @@ func save_settings() -> void:
 	cfg.set_value("accessibility", "vibration_enabled", vibration_enabled)
 	cfg.set_value("accessibility", "stick_deadzone", stick_deadzone)
 
-	cfg.save(SETTINGS_PATH)
+	cfg.save(settings_path)
 
 
 func load_settings() -> void:
 	var cfg := ConfigFile.new()
-	var err := cfg.load(SETTINGS_PATH)
+	var err := cfg.load(settings_path)
 	if err != OK:
 		preset = detect_default_preset()
 		set_preset(preset)

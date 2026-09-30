@@ -196,7 +196,7 @@ static func _cornice(data: ChunkBuildData, lot: ChunkLayout.Lot, dark: Color) ->
 	var r := lot.rect
 	var h := lot.height
 	var flat := lot.roof == ChunkLayout.Roof.FLAT
-	# A bold crown (0.45 m tall, 0.6 m deep): on flat roofs it laps the
+	# A bold crown (0.45 m tall, 1.1 m deep): on flat roofs it laps the
 	# parapet's foot; on gables it swallows the plain eaves band.
 	var crown_hi := h + 0.1 if flat else h
 	var crown_lo := crown_hi - 0.45
@@ -214,16 +214,28 @@ static func _cornice(data: ChunkBuildData, lot: ChunkLayout.Lot, dark: Color) ->
 		var lo := Vector2(r.position.x - (0.0 if sh & ChunkLayout.FACE_W else d), r.position.y - (0.0 if sh & ChunkLayout.FACE_N else d))
 		var hi := Vector2(r.end.x + (0.0 if sh & ChunkLayout.FACE_E else d), r.end.y + (0.0 if sh & ChunkLayout.FACE_S else d))
 		return [lo, hi]
-	var f: Array = grow.call(0.1)
-	trim.add_banded_box(Vector3(f[0].x, frieze_lo, f[0].y), Vector3(f[1].x, crown_lo, f[1].y), crown_lo,
-			dark * 0.9, dark, dark, dark, sh, false)
-	var c: Array = grow.call(0.6)
-	var lo := Vector3(c[0].x, crown_lo, c[0].y)
+	# Pale dressed stone (ashlar material, light vertex colour), so the cornice
+	# reads as a bright moulding against the sooty wall rather than a dark
+	# line: a frieze, a bed moulding and a deep corona (1.1 m) whose shaded
+	# soffit gives the strong shadow line under the eaves.
+	var stone := data.mb(M.ASHLAR)
+	var pale := Color(0.95, 0.92, 0.86) * clampf(0.75 + lot.tint * 0.35, 0.8, 1.05)
+	var f: Array = grow.call(0.12)
+	stone.add_banded_box(Vector3(f[0].x, frieze_lo, f[0].y), Vector3(f[1].x, crown_lo, f[1].y), crown_lo,
+			pale * 0.7, pale * 0.85, pale * 0.85, pale, sh, false)
+	var bed_hi := crown_lo + 0.14
+	var b: Array = grow.call(0.38)
+	stone.add_banded_box(Vector3(b[0].x, crown_lo, b[0].y), Vector3(b[1].x, bed_hi, b[1].y), bed_hi,
+			pale * 0.75, pale * 0.9, pale * 0.9, pale, sh, false)
+	trim.add_quad(Vector3(b[0].x, crown_lo, b[0].y), Vector3(b[1].x, crown_lo, b[0].y), Vector3(b[1].x, crown_lo, b[1].y),
+			Vector3(b[0].x, crown_lo, b[1].y), Vector3.DOWN, dark * 0.5, dark * 0.5)
+	var c: Array = grow.call(1.1)
+	var lo := Vector3(c[0].x, bed_hi, c[0].y)
 	var hi := Vector3(c[1].x, crown_hi, c[1].y)
-	trim.add_banded_box(lo, hi, crown_lo + 0.12, dark * 0.5, dark * 0.95, dark * 1.1, dark * 0.8, sh, true)
-	# Soffit: the underside of the overhang, seen from the street.
+	stone.add_banded_box(lo, hi, bed_hi + 0.1, pale * 0.85, pale, pale, pale * 0.9, sh, true)
+	# Soffit: the underside of the corona, seen from the street.
 	trim.add_quad(Vector3(lo.x, lo.y, lo.z), Vector3(hi.x, lo.y, lo.z), Vector3(hi.x, lo.y, hi.z),
-			Vector3(lo.x, lo.y, hi.z), Vector3.DOWN, dark * 0.4, dark * 0.4)
+			Vector3(lo.x, lo.y, hi.z), Vector3.DOWN, dark * 0.45, dark * 0.45)
 
 
 static func _chimney(data: ChunkBuildData, rng: RandomNumberGenerator, x: float, z: float,
