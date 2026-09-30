@@ -1,7 +1,7 @@
 {
  "name": "skaa_man",
  "style": "skaa",
- "tris": 4272,
+ "tris": 4428,
  "height": 1.7560243627384668,
  "garments": {
   "cap": 288,
@@ -9,7 +9,7 @@
   "sack": 110,
   "scarf": 24
  },
- "tris_max": 4870,
+ "tris_max": 5026,
  "materials": [
   "Cloth"
  ],

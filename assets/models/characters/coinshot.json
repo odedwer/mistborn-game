@@ -1,10 +1,10 @@
 {
  "name": "coinshot",
  "style": "coinshot",
- "tris": 4916,
+ "tris": 5072,
  "height": 1.8165781309927678,
  "garments": {},
- "tris_max": 4916,
+ "tris_max": 5072,
  "materials": [
   "Cloak",
   "Cloth",

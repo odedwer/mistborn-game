@@ -1,10 +1,10 @@
 {
  "name": "guard",
  "style": "guard",
- "tris": 5074,
+ "tris": 5230,
  "height": 1.804543089902425,
  "garments": {},
- "tris_max": 5074,
+ "tris_max": 5230,
  "materials": [
   "Cloth",
   "Glow",

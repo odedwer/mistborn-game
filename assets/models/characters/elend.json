@@ -1,10 +1,10 @@
 {
  "name": "elend",
  "style": "elend",
- "tris": 4364,
+ "tris": 4520,
  "height": 1.836762332448243,
  "garments": {},
- "tris_max": 4364,
+ "tris_max": 4520,
  "materials": [
   "Cloth"
  ],
