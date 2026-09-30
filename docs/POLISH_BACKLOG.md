@@ -65,3 +65,15 @@ Follow-ups:
 - Walled keep gardens only test-covered; take a higher, wider top-down shot.
 - Market district is below 3 activities per type; ring-path reachability not validated.
 - Noble chunk gen went 8.9 -> 16.6 ms on the worker thread; watch it against the streaming budget.
+
+## Review of art pass 5
+
+Merged: face rings levelled (forehead crease gone), readable eyes/brows/lips/nostrils, hair clears the scalp, beards open at the mouth, Marsh shaved; main-menu band traced to the horizon-glow gradient stop order and removed. 281 tests green. Reviewed p5_after_faces_crew_34 and p5_after_menu_720_gl.
+
+Follow-ups:
+- Faces now read clearly at 3/4; the menu at 720p shows no band.
+- Short dark hair (Dockson, Breeze, Ham) reads as a smooth helmet/cap; needs strand breakup (a noise-driven alpha fringe at the hairline or chunkier clumps).
+- Spook's cap is oversized and blocky; scale it down about 35% and add a brim.
+- Clubs' grey side fringe reads like a flat patch stuck to the scalp.
+- Strong specular hotspot on Breeze's and Dockson's chest fabric; raise the roughness.
+- Hazekiller hood opening is ragged; faces are flat in profile (the nose and brow ridge need depth).
