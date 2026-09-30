@@ -101,3 +101,15 @@ Follow-ups:
 - Skin has fine white speckle/grain across every face (a noise texture or sparkle at close range); make it subtler or tint it to the skin tone.
 - Vin, the coinshot and Breeze share the same black helmet-like hair silhouette; Vin needs her own short, choppier style.
 - Lips vanish in profile; pale shirts and skin are too bright under studio light (check against the in-game night lighting before changing).
+
+## Review of world pass 4
+
+Merged: test saves/settings isolated per run under `user://test_runs/`, a real coursed ashlar texture, formal keep gardens (cross walks, octagonal fountain plaza, iron statue anchor, hedged beds), a three-step pale cornice, a HUD/map time-of-day readout, and coin-race reachability (every leg within 22 m of a Push anchor; 9 races re-authored). 295 tests green. Reviewed p4_keep_garden_oblique, p4_merchant_avenue_day and p4_noble_facade_day.
+
+Follow-ups:
+- The keep garden now reads as a proper formal parterre. The noble ashlar reads as stone.
+- At street level the merchant ashlar blocks look oversized (roughly 0.6 × 0.3 m) and flat, closer to painted siding; halve the tile or add edge bevel/colour variation per block.
+- The HUD clock is only test-covered; take an in-game HUD screenshot.
+- Keep curtain-wall crenellations read as a jagged zig-zag from above; use regular merlons.
+- Rooftop pursuits are only checked for clearance and step height, not jump reachability.
+- Still open from earlier: the "Trying to cast a freed object" error in the SceneTransition tests, and a fast open-world preview harness (Keep Venture courtyard never screenshotted).
