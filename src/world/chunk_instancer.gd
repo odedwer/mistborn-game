@@ -17,7 +17,7 @@ const INSTANCE_RANGE := {
 	&"lamp_post": 0.0, &"wall_lantern": 170.0, &"window_bars": 90.0, &"chimney_cap": 170.0,
 	&"weathervane": 220.0, &"lightning_rod": 260.0, &"bollard": 130.0, &"stall": 160.0, &"well": 200.0,
 	# Keep gardens are seen from rooftops and from the air: keep them in view.
-	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0,
+	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0, &"carriage": 200.0,
 }
 const DETAIL_RANGE := 150.0
 const WINDOW_RANGE := 420.0

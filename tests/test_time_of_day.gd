@@ -273,3 +273,25 @@ func test_hud_clock_and_map_time() -> void:
 	assert_true(str(pause_menu.map_time_text()).ends_with("(clock paused)"))
 	hud.queue_free()
 	clock.queue_free()
+
+
+func test_night_moon_fill_open_world_only() -> void:
+	var host := Node3D.new()
+	add_child(host)
+	var world_env := EnvironmentBuilder.build(host, true)
+	var fill: DirectionalLight3D = world_env["fill"]
+	assert_true(fill != null, "the open world gets a moon fill")
+	assert_false(fill.shadow_enabled, "fill is shadowless")
+	var drv := DayNightDriver.new()
+	host.add_child(drv)
+	drv.setup(world_env["environment"], world_env["moon"], null, null, fill)
+	TimeOfDay.set_hour(23.0)
+	assert_almost(fill.light_energy, EnvironmentBuilder.FILL_ENERGY)
+	assert_true(fill.visible)
+	TimeOfDay.set_hour(12.0)
+	assert_almost(fill.light_energy, 0.0)
+	assert_false(fill.visible, "no moon fill by day")
+	# Mission scenes keep their authored night: no fill.
+	var mission_env := EnvironmentBuilder.build(host)
+	assert_eq(mission_env["fill"], null)
+	host.queue_free()

@@ -94,6 +94,20 @@ static func _limb(b: WorldMeshBuilder, a: Vector3, e: Vector3, r0: float, r1: fl
 		b.add_quad(a + o0 * r0, a + o1 * r0, e + o1 * r1, e + o0 * r1, nm, col, col * 0.85)
 
 
+## An upright disc (a wheel) facing +-X: `sides`-gon of `radius`, `width` thick.
+static func _prism_x(b: WorldMeshBuilder, center: Vector3, radius: float, width: float, sides: int, col: Color) -> void:
+	for i in sides:
+		var a0 := TAU * float(i) / float(sides)
+		var a1 := TAU * float(i + 1) / float(sides)
+		var p0 := Vector3(0, sin(a0), cos(a0)) * radius
+		var p1 := Vector3(0, sin(a1), cos(a1)) * radius
+		var h := Vector3(width * 0.5, 0, 0)
+		var n := Vector3(0, sin((a0 + a1) * 0.5), cos((a0 + a1) * 0.5))
+		b.add_quad(center + p1 - h, center + p0 - h, center + p0 + h, center + p1 + h, n, col, col)
+		b.add_tri(center + h, center + p0 + h, center + p1 + h, col)
+		b.add_tri(center - h, center + p1 - h, center + p0 - h, col)
+
+
 static func _box_c(b: WorldMeshBuilder, center: Vector3, size: Vector3, col: Color) -> void:
 	var h := size * 0.5
 	b.add_box(center - h, center + h, col, col, col, true)
@@ -220,6 +234,21 @@ static func _build(kind: StringName) -> Mesh:
 			# A trimmed, half-dead garden hedge segment (Ashmount soot, not lush).
 			_box_c(stone, Vector3.ZERO, Vector3(1.8, 0.7, 0.5), Color(0.28, 0.3, 0.2))
 			_box_c(stone, Vector3(0, 0.42, 0), Vector3(1.7, 0.14, 0.42), Color(0.32, 0.34, 0.22))
+		&"carriage":
+			# A closed noble coach, long axis along z: body, roof, four
+			# iron-rimmed wheels, driver's bench and shafts.
+			var body := Color(0.16, 0.12, 0.1)
+			_box_c(wood, Vector3(0, 1.45, 0), Vector3(1.6, 1.5, 2.4), body)
+			_box_c(wood, Vector3(0, 2.26, 0), Vector3(1.75, 0.12, 2.6), body * 0.8)
+			_box_c(wood, Vector3(0, 1.0, 1.55), Vector3(1.4, 0.2, 0.7), body)
+			_box_c(iron, Vector3(0, 0.75, 0), Vector3(0.12, 0.12, 3.2), white)
+			for wz: float in [-1.0, 1.1]:
+				for wx: float in [-0.88, 0.88]:
+					_prism_x(iron, Vector3(wx, 0.62, wz), 0.62, 0.08, 12, white)
+			for sx: float in [-0.5, 0.5]:
+				_box_c(wood, Vector3(sx, 0.7, 2.6), Vector3(0.07, 0.07, 1.8), body * 1.4)
+			_box_c(glass, Vector3(0.81, 1.6, 0), Vector3(0.02, 0.5, 0.7), white)
+			_box_c(glass, Vector3(-0.81, 1.6, 0), Vector3(0.02, 0.5, 0.7), white)
 		&"topiary":
 			# A clipped, soot-dulled box topiary: a squat stack in a stone collar.
 			_prism(stone, Vector3.ZERO, 0.32, 0.18, 8, Color(0.45, 0.43, 0.4))

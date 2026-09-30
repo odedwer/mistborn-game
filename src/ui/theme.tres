@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=9 format=3]
+[gd_resource type="Theme" load_steps=10 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/EBGaramond.ttf" id="1"]
 [ext_resource type="FontFile" path="res://assets/fonts/Cinzel.ttf" id="2"]
@@ -79,8 +79,12 @@ content_margin_top = 18.0
 content_margin_right = 22.0
 content_margin_bottom = 18.0
 
+[sub_resource type="FontVariation" id="FontVariation_body"]
+base_font = ExtResource("1")
+spacing_glyph = 1
+
 [resource]
-default_font = ExtResource("1")
+default_font = SubResource("FontVariation_body")
 default_font_size = 22
 Button/styles/normal = SubResource("StyleBoxFlat_btn_normal")
 Button/styles/hover = SubResource("StyleBoxFlat_btn_hover")
@@ -91,10 +95,10 @@ Button/colors/font_color = Color(0.85, 0.83, 0.78, 1)
 Button/colors/font_hover_color = Color(1, 0.95, 0.85, 1)
 Button/colors/font_pressed_color = Color(1, 0.9, 0.6, 1)
 Button/colors/font_disabled_color = Color(0.5, 0.48, 0.45, 1)
-Button/fonts/font = ExtResource("1")
+Button/fonts/font = SubResource("FontVariation_body")
 Button/font_sizes/font_size = 24
 Label/colors/font_color = Color(0.85, 0.83, 0.78, 1)
-Label/fonts/font = ExtResource("1")
+Label/fonts/font = SubResource("FontVariation_body")
 Label/font_sizes/font_size = 20
 LineEdit/styles/normal = SubResource("StyleBoxFlat_panel")
 LineEdit/styles/focus = SubResource("StyleBoxFlat_focus")
@@ -122,5 +126,5 @@ HeadingLabel/font_sizes/font_size = 26
 HeadingLabel/colors/font_color = Color(0.8, 0.66, 0.36, 1)
 DimLabel/base_type = &"Label"
 DimLabel/colors/font_color = Color(0.55, 0.53, 0.5, 1)
-DimLabel/fonts/font = ExtResource("1")
+DimLabel/fonts/font = SubResource("FontVariation_body")
 DimLabel/font_sizes/font_size = 17

@@ -41,6 +41,7 @@ var far_lod: FarLod
 var day_night: DayNightDriver
 var environment: Environment
 var moon: DirectionalLight3D
+var moon_fill: DirectionalLight3D
 var units_root: Node3D
 ## Wall-clock time spent in _ready (ms).
 var generation_time_ms := 0.0
@@ -69,9 +70,10 @@ func _ready() -> void:
 		marker_index = MarkerIndex.new()
 
 	if build_environment:
-		var env := EnvironmentBuilder.build(self)
+		var env := EnvironmentBuilder.build(self, true)
 		environment = env["environment"]
 		moon = env["moon"]
+		moon_fill = env["fill"]
 		(env["world_env"] as Node).add_to_group(&"world_environment")
 	mist = MistController.new()
 	mist.quality = mist_quality
@@ -102,7 +104,7 @@ func _ready() -> void:
 	if environment != null:
 		day_night = DayNightDriver.new()
 		add_child(day_night)
-		day_night.setup(environment, moon, mist, far_lod)
+		day_night.setup(environment, moon, mist, far_lod, moon_fill)
 
 	_initial_phase = true
 	streamer.load_now(spawn_position(), initial_radius)

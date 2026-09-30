@@ -59,7 +59,8 @@ static func tower(data: ChunkBuildData, center: Vector2, half: float, height: fl
 ## Crenellated wall segment (axis-aligned box) with merlons.
 static func wall(data: ChunkBuildData, lo: Vector3, hi: Vector3) -> void:
 	var c := STONE_C * 0.85
-	data.mb(M.KEEP_STONE).add_banded_box(lo, hi, 2.5, c * 0.4, c, c * 0.8, c * 0.7, 0, true)
+	# Dressed ashlar curtain walls (the old rubble stone read as crazy paving).
+	data.mb(M.ASHLAR).add_banded_box(lo, hi, 2.5, c * 0.45, c, c * 0.85, c * 0.75, 0, true)
 	data.add_box_shape_lohi(lo, hi)
 	data.add_occluder_box(lo + Vector3(0.2, 0, 0.2), hi - Vector3(0.2, 0.5, 0.2))
 	data.add_nav_box(lo, hi, true)
@@ -205,17 +206,19 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	_gatehouse(data, o, rng, seed_value)
 
 	# --- Courtyard furniture -------------------------------------------------
-	data.add_instance(&"well", Transform3D(Basis(), Vector3(ox, 0, oz - 178)))
-	data.add_box_shape(Vector3(ox, 0.45, oz - 178), Vector3(2.2, 0.9, 2.2))
-	data.add_nav_box(Vector3(ox - 1.1, 0, oz - 179.1), Vector3(ox + 1.1, 0.9, oz - 176.9), false)
+	# A small fountain where the well stood (same Push anchor spot and height,
+	# footprint kept clear of the keep_courtyard objective 3 m south of it).
+	_courtyard_fountain(data, Vector3(ox, 0, oz - 178))
 	data.add_metal(Vector3(ox, 2.2, oz - 178), 30.0)
+	_courtyard_dressing(data, o)
 	_lamp(data, Vector3(ox - 20, 0, oz - 158), Vector2(1, 0), true, true)
 	_lamp(data, Vector3(ox + 20, 0, oz - 158), Vector2(-1, 0), true)
 	_lamp(data, Vector3(ox - 20, 0, oz - 192), Vector2(1, 0), true)
 	_lamp(data, Vector3(ox + 20, 0, oz - 192), Vector2(-1, 0), true, true)
 	_static_crates(data, Vector3(ox - 16, 0, oz - 172), 3, rng)
 	_static_crates(data, Vector3(ox + 14, 0, oz - 183), 3, rng)
-	_static_crates(data, Vector3(ox - 8, 0, oz - 195), 2, rng)
+	# Clear of the guards' patrol loop (z = -196).
+	_static_crates(data, Vector3(ox - 9, 0, oz - 190.5), 2, rng)
 	_static_crates(data, Vector3(ox + 22, 0, oz - 152), 2, rng)
 	for p: Vector3 in [Vector3(-12, 0, -165), Vector3(10, 0, -168), Vector3(-24, 0, -186), Vector3(24, 0, -175), Vector3(4, 0, -196)]:
 		var kind := &"barrel" if rng.randf() < 0.5 else &"crate"
@@ -285,6 +288,79 @@ static func build_venture(data: ChunkBuildData, lm: CityPlan.Landmark, seed_valu
 	data.add_marker(&"pickup_spawn", o + Vector3(-9.0, 1.35, -143.2), {"pickup_kind": &"duralumin"})
 	data.add_marker(&"pickup_spawn", o + Vector3(-27, 0.3, -149), {"pickup_kind": &"vial"})
 	data.add_marker(&"pickup_spawn", o + Vector3(27, 0.3, -149), {"pickup_kind": &"health"})
+
+
+## Octagonal basin (r 1.7 m), dark water, a pedestal and a small iron figure.
+static func _courtyard_fountain(data: ChunkBuildData, c: Vector3) -> void:
+	var st := data.mb(M.ASHLAR)
+	var col := STONE_C
+	var r := 1.7
+	for k in 8:
+		var a := TAU * (float(k) + 0.5) / 8.0
+		var mid := c + Vector3(sin(a), 0.0, cos(a)) * r
+		st.add_obox(mid + Vector3(0, 0.32, 0), Vector3(0.74, 0.32, 0.18), a, col * 0.7, col)
+	var wm := data.mb(M.WATER)
+	for k in 8:
+		var a0 := TAU * float(k) / 8.0
+		var a1 := TAU * float(k + 1) / 8.0
+		var w0 := c + Vector3(0, 0.45, 0)
+		wm.add_tri(w0, w0 + Vector3(sin(a0), 0, cos(a0)) * r, w0 + Vector3(sin(a1), 0, cos(a1)) * r, Color(1, 1, 1))
+	st.add_box(c + Vector3(-0.35, 0.0, -0.35), c + Vector3(0.35, 1.2, 0.35), col * 0.7, col, col)
+	data.add_instance(&"statue", Transform3D(Basis().scaled(Vector3.ONE * 0.55), c + Vector3(0, 1.2, 0)))
+	data.add_box_shape(c + Vector3(0, 0.32, 0), Vector3(r * 2.0, 0.64, r * 2.0))
+	data.add_box_shape(c + Vector3(0, 0.9, 0), Vector3(0.7, 1.8, 0.7))
+	data.add_nav_box(c - Vector3(r, 0, r), c + Vector3(r, 0.64, r), false)
+
+
+## Keep Venture's yard: ash-dead planters along the hall and the gate wall,
+## sentry booths inside the gate, a parked carriage against the west wall and
+## house banners hung between the hall's buttresses. Everything is placed
+## off the guards' patrol loop (x = +-22, z = -156/-196), their short gate and
+## door beats, the lamps, crates and weapon racks, and the objective markers.
+static func _courtyard_dressing(data: ChunkBuildData, o: Vector3) -> void:
+	# Planters: hall front and inside the gate wall.
+	for p: Vector3 in [Vector3(-10, 0, -202.8), Vector3(10, 0, -202.8), Vector3(-16.5, 0, -202.8), Vector3(16.5, 0, -202.8),
+			Vector3(-14, 0, -147.6), Vector3(14, 0, -147.6), Vector3(-21.5, 0, -147.6), Vector3(26.5, 0, -160)]:
+		data.add_instance(&"ash_planter", Transform3D(Basis(), o + p))
+		data.add_box_shape(o + p + Vector3(0, 0.3, 0), Vector3(0.9, 0.6, 0.9))
+	# Sentry booths flanking the gate passage.
+	var wood := data.mb(M.WOOD)
+	var wc := Color(0.5, 0.45, 0.4)
+	for sx: float in [-1.0, 1.0]:
+		var b := o + Vector3(12.8 * sx, 0, -149.4)
+		var lo := b + Vector3(-0.8, 0, -0.8)
+		var hi := b + Vector3(0.8, 2.5, 0.8)
+		# Back and sides, open to the courtyard (-z).
+		wood.add_box(Vector3(lo.x, 0, hi.z - 0.1), Vector3(hi.x, 2.5, hi.z), wc * 0.7, wc, wc)
+		wood.add_box(Vector3(lo.x, 0, lo.z), Vector3(lo.x + 0.1, 2.5, hi.z), wc * 0.7, wc, wc)
+		wood.add_box(Vector3(hi.x - 0.1, 0, lo.z), Vector3(hi.x, 2.5, hi.z), wc * 0.7, wc, wc)
+		data.mb(M.SLATE).add_pyramid(b + Vector3(0, 2.5, 0), 1.05, 0.7, Color(0.7, 0.72, 0.78))
+		data.add_box_shape_lohi(Vector3(lo.x, 0, hi.z - 0.1), Vector3(hi.x, 2.5, hi.z))
+		data.add_box_shape_lohi(Vector3(lo.x, 0, lo.z), Vector3(lo.x + 0.1, 2.5, hi.z))
+		data.add_box_shape_lohi(Vector3(hi.x - 0.1, 0, lo.z), Vector3(hi.x, 2.5, hi.z))
+		data.add_nav_box(lo, hi, false)
+		data.add_instance(&"wall_lantern", Transform3D(Basis.looking_at(Vector3.FORWARD), b + Vector3(0.9 * -sx, 2.2, -0.85)))
+	# A noble carriage parked along the west wall (static; its wheel rims and
+	# fittings are iron, so it is a Push/Pull anchor).
+	var cp := o + Vector3(-26.4, 0, -171.0)
+	data.add_instance(&"carriage", Transform3D(Basis(), cp))
+	data.add_box_shape(cp + Vector3(0, 1.2, 0), Vector3(1.9, 2.4, 3.6))
+	data.add_nav_box(cp + Vector3(-0.95, 0, -2.6), cp + Vector3(0.95, 2.4, 2.6), false)
+	data.add_metal(cp + Vector3(0, 0.7, 1.2), 60.0)
+	# House banners between the hall's buttresses (crimson with a gold band).
+	var ban := data.mb(M.BANNER)
+	var cloth := Color(0.42, 0.06, 0.07)
+	var gold := Color(0.62, 0.48, 0.18)
+	for x: float in [-16.8, -8.4, 8.4, 16.8]:
+		var z := o.z - 204.7
+		var x0 := o.x + x - 1.1
+		var x1 := o.x + x + 1.1
+		ban.add_quad(Vector3(x0, 8.6, z), Vector3(x1, 8.6, z), Vector3(x1, 16.5, z), Vector3(x0, 16.5, z), Vector3.BACK, cloth * 0.8, cloth)
+		ban.add_quad(Vector3(x0, 15.6, z + 0.02), Vector3(x1, 15.6, z + 0.02), Vector3(x1, 16.0, z + 0.02), Vector3(x0, 16.0, z + 0.02), Vector3.BACK, gold, gold)
+		# Swallow-tail hem.
+		ban.add_tri(Vector3(x0, 8.6, z), Vector3(o.x + x, 9.4, z), Vector3(x0, 7.6, z), cloth * 0.75)
+		ban.add_tri(Vector3(o.x + x, 9.4, z), Vector3(x1, 8.6, z), Vector3(x1, 7.6, z), cloth * 0.75)
+		data.mb(M.IRON).add_box(Vector3(x0 - 0.15, 16.5, z - 0.05), Vector3(x1 + 0.15, 16.62, z + 0.1), Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1))
 
 
 static func _gatehouse(data: ChunkBuildData, o: Vector3, rng: RandomNumberGenerator, seed_value: int) -> void:
