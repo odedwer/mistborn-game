@@ -114,8 +114,14 @@ def build_mesh(name, m, arm_obj, matmap):
         for k in range(poly.loop_total):
             uvs += list(m.face_uv[fi][k])
             cols += list(m.face_col[fi][k])
-    uv.data.foreach_set("uv", uvs)
-    col.data.foreach_set("color", cols)
+    # Re-fetch both layers by name: adding the colour attribute reallocates the
+    # mesh's attribute storage, so the `uv` handle from uv_layers.new() above
+    # is stale. Writing through it silently did nothing, and every GLB shipped
+    # Blender's default 0/1 per-face UVs. The shader's metre-scale detail noise
+    # then ran at about one cell per pixel: the fine white speckle on all skin
+    # and cloth.
+    me.uv_layers["UVMap"].data.foreach_set("uv", uvs)
+    me.color_attributes["Col"].data.foreach_set("color", cols)
     me.color_attributes.active_color = col
     me.update()
     obj = bpy.data.objects.new(name, me)

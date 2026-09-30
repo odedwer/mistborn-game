@@ -19,6 +19,12 @@ MAT_NAMES = ["Cloth", "Cloak", "Metal", "Gloss", "Glow"]
 DYE_ALPHA = {0: 1.0, 1: 0.75, 2: 0.5, 3: 0.25}
 
 
+# UV scale for skin surfaces (head, neck). The shared character shader adds a
+# ~1 cm cloth weave; on skin at a third of the scale it reads as soft
+# mottling rather than a fabric grid.
+SKIN_UV = 0.3
+
+
 def dyed(col, slot):
     """Returns `col` tagged with dye slot 1..3 (0 = not dyeable)."""
     return (col[0], col[1], col[2], DYE_ALPHA[slot])
@@ -144,7 +150,7 @@ class Body:
         r *= s * self.P["neck"]
         cs = [v3(0, -0.01 * s, bot * H), v3(0, -0.006 * s, 0.86 * H), v3(0, 0.0, top * H)]
         tube(self.m, cs, [(r * 1.15, r * 1.05), (r, r * 0.95), (r * 0.95, r * 0.95)], n=10,
-             color=color, weights=self.W(["UpperChest", "Neck", "Head"], {"UpperChest": 0.5}))
+             color=color, weights=self.W(["UpperChest", "Neck", "Head"], {"UpperChest": 0.5}), uv_scale=SKIN_UV)
 
     def head(self, skin, *, hair=None, brow=None, lips=None, eye=(0.12, 0.09, 0.08, 1),
              ears=True, jaw=1.0, n=20, gaunt=0.0, eyes=True, tattoo=None, tattoo_rank=1, bald_top=None,
@@ -267,7 +273,7 @@ class Body:
         # across the face just above the eyes, running back to the temples.
         level = [(v3(1, 0, 0), v3(0, 1, 0))] * len(centers)
         head_rings = tube(self.m, centers, radii, n=n, ex=2.1, color=color, shape=shape, weights=hw, cap1=0.004 * s,
-                          cap0=0.004 * s, frames=level)
+                          cap0=0.004 * s, frames=level, uv_scale=SKIN_UV)
         # the skin's actual vertex columns (front/back/sides), for shells that must clear it
         cols = {}
         for key, want in (("x+", 0.0), ("y+", 90.0), ("x-", 180.0), ("y-", 270.0)):
