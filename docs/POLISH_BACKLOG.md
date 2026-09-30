@@ -138,3 +138,18 @@ Follow-ups:
 - Ears finally read as ears; the shirt V is crisp with no streak; Vin's silhouette is no longer a helmet.
 - The hair cut-outs around the ears are square windows (clearly visible on the coinshot, thug and guard in profile). Round the cut, or feather it with a sideburn wedge.
 - Breeze's gold waistcoat still has a hot orange glow blob at the chest (the emission or metallic-ish dye on the waistcoat).
+
+## Review of world pass 6
+
+Merged:
+- **CrowdMember flake root-caused.** Riot activity members took their home in `_ready` before being moved to their spawn point, so home was the world origin and they walked off roofs. Home is now taken on the first physics frame, with a 10 m drop-reset. `test_story_sweep` passed 10/10 and there's a new `test_crowd_member`.
+- **Font.** "steel" rendered as "sted" because EB Garamond's tight "el" at ~12 px looked like a "d". The fix is 1 px glyph spacing in the theme, plus `tools/font_check.gd`.
+- **Night.** An open-world night fill light was added and night ambient raised from 1.8 to 3.0; mission scenes are unchanged.
+- **Keep Venture courtyard.** Dressed with a fountain anchor, banners, a carriage, sentry booths, planters and ashlar curtain walls, with a new mission-safety test.
+
+301 tests green. Reviewed p6w_hud_night and p6w_keep_venture_courtyard_day.
+
+Follow-ups:
+- The dialogue now reads "steel" correctly. At night the player, the roof walk and the city read; the foreground chimneys are still near-black silhouettes, which is acceptable.
+- Night values were tuned only on opengl3, so take one Vulkan night shot to confirm Forward+ isn't over-bright.
+- **Courtyard** still reads as a vast empty plaza: the planters and booths are invisible at this scale and the props are tiny. It needs mid-scale structure: a paved central carriage loop, hedged lawns or low walls breaking up the space, lamp posts along the approach, and guard figures. The keep facade still uses the busy crazy-paving stone rather than ashlar. A large dark shadow shape fills the foreground (gatehouse or camera placement?).
