@@ -189,7 +189,9 @@ def build_vin():
     b.torso(t, band(shirt, [(0, 0.555 * H, pants), (0.588 * H, 0.606 * H, belt)]))
     b.neck(skin, r=0.046)
     b.head(skin, brow=hexcol("3a2a22"), lips=hexcol("a86e66"), jaw=0.9)
-    b.hair_shell(hair, puff=1.05, jag=0.02, back_z=b.head_lm["chin_z"] + 0.03 * b.s, spikes=9)
+    # her own short, choppy cut (not the smooth cap the coinshot/Breeze share)
+    b.hair_shell(hair, puff=1.03, jag=0.0, back_z=b.head_lm["chin_z"] + 0.045 * b.s, style="choppy", clumps=0.9,
+                 seed=1.7)
     for side in (1, -1):
         b.arm(side, color=shirt, radii_scale=0.95)
         b.hand(side, skin, scale=0.95)

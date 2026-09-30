@@ -497,6 +497,58 @@ class Body:
             self._hair_tail(base_color, bz, s)
         elif style == "bun":
             self._hair_bun(base_color, top_z, s)
+        elif style == "choppy":
+            self._choppy_locks(base_color, centers, radii, rings_z, fz, seed)
+
+    def _choppy_locks(self, color, centers, radii, rings_z, fz, seed):
+        """Short, choppy cut: uneven locks break the cap's outline.
+
+        A swept fringe of uneven strands over the forehead (kept above the
+        brows), a ragged nape and side hem of flared locks, and a few tufts
+        sticking up at the crown. Each lock is a flattened, tapering strand
+        laid on the cap surface.
+        """
+        lm = self.head_lm
+        s = lm["s"]
+        rng = np.random.default_rng(int(seed * 1000) + 7)
+        base = np.array(color[:3], dtype=float)
+
+        def surf(z, th, out=1.0):
+            zc = min(max(z, rings_z[0]), rings_z[-1])
+            c = np.array([0.0, np.interp(zc, rings_z, [p[1] for p in centers]), z])
+            a = math.radians(th)
+            rx = np.interp(zc, rings_z, [r[0] for r in radii])
+            ry = np.interp(zc, rings_z, [r[2] if math.sin(a) >= 0 else r[3] for r in radii])
+            return c + np.array([math.cos(a) * rx * out, math.sin(a) * ry * out, 0.0])
+
+        def lock(z, th, down, length, width, sweep=0.0, flare=0.0, lift=0.0):
+            a = math.radians(th)
+            nrm = np.array([math.cos(a), math.sin(a), 0.0])
+            tang = np.array([-math.sin(a), math.cos(a), 0.0])
+            p0 = surf(z, th, 0.96)
+            d = np.array([0.0, 0.0, -down]) + tang * sweep + nrm * flare
+            d = d / np.linalg.norm(d)
+            pts = [p0 + d * length * s * t + nrm * (lift * s * t * t + 0.004 * s) for t in (0.0, 0.35, 0.7, 1.0)]
+            k = 0.8 + 0.4 * rng.random()
+            col = tuple(np.clip(base * k, 0, 1)) + (1.0,)
+            tube(self.m, pts, [(width * s, 0.004 * s), (width * 0.85 * s, 0.0035 * s), (width * 0.5 * s, 0.0025 * s),
+                               (0.0012 * s, 0.001 * s)],
+                 n=5, hint=tuple(nrm), color=col, weights={"Head": 1.0})
+
+        # fringe: swept strands, longest on the sweep side, tips above the brows
+        max_len = (fz + 0.012 * s - (lm["brow_z"] + 0.004 * s)) / s
+        for j, th in enumerate(np.linspace(58, 122, 7)):
+            ln = max_len * (0.55 + 0.45 * (j / 6.0)) * (0.8 + 0.25 * rng.random())
+            lock(fz + 0.012 * s, th, 1.0, max(ln, 0.012), 0.011, sweep=-0.45, lift=0.004)
+        # ragged hem round the sides and nape, flared out a little
+        for th in np.linspace(150, 390, 13):
+            ln = 0.014 + 0.018 * rng.random()
+            lock(rings_z[1], th, 1.0, ln, 0.017, sweep=0.2 * (rng.random() - 0.5), flare=0.25)
+        # crown tufts: short, broad and lying back along the head (upright
+        # ones read as horns)
+        for th in (215.0, 260.0, 305.0):
+            z = rings_z[-4]
+            lock(z, th + 15 * (rng.random() - 0.5), 0.35, 0.02 + 0.008 * rng.random(), 0.016, flare=0.35)
 
     def _back_point(self, z, s, push=1.0):
         """A point on the back surface of the head profile at height `z`."""
