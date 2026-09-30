@@ -451,3 +451,126 @@ static func _garden(data: ChunkBuildData, cx: float, cz: float, half: float) -> 
 		var p := Vector3(cx + sx, 0.0, cz + half + 2.5)
 		data.add_instance(&"ash_planter", Transform3D(Basis(), p))
 		data.add_box_shape(p + Vector3(0.0, 0.3, 0.0), Vector3(0.9, 0.6, 0.9))
+	_parterre(data, cx, cz, half)
+
+
+## The garden proper, laid out in the free ground around the hall (see
+## `build_generic`: the hall spans x in cx +- 0.45 half and z from
+## cz - 0.55 half to cz + 0.15 half). South forecourt: a flagged walk from the
+## gate to the hall steps, crossed by a second walk at a paved plaza
+## with a fountain and an iron statue (a Push/Pull anchor), and four box-edged
+## parterre beds of dark soil with clipped topiary. East/west lawns: a
+## walk and a row of beds. All deterministic (no RNG), a few dozen quads and
+## boxes, instanced topiary.
+static func _parterre(data: ChunkBuildData, cx: float, cz: float, half: float) -> void:
+	# Pale flagged walks (keep stone) so they read against the dark cobbles.
+	var gravel := data.mb(M.KEEP_STONE)
+	var gc := Color(0.9, 0.87, 0.82)
+	var soil := data.mb(M.GROUND_DARK)
+	var sc := Color(0.55, 0.5, 0.45)
+	var box := data.mb(M.STONE)
+	var hc := Color(0.26, 0.29, 0.19)
+	var hc_top := Color(0.31, 0.34, 0.22)
+	var inner := half - 2.0 - 1.6   # inside the hedge line
+	var z_hall := cz + half * 0.15 + 1.0
+	var z_wall := cz + inner
+	var zc := (z_hall + z_wall) * 0.5
+	var ground := func(b: WorldMeshBuilder, x0: float, z0: float, x1: float, z1: float, y: float, c: Color) -> void:
+		b.add_quad(Vector3(x0, y, z1), Vector3(x1, y, z1), Vector3(x1, y, z0), Vector3(x0, y, z0), Vector3.UP, c, c)
+	# Gravel walks: gate -> hall, and across the forecourt.
+	ground.call(gravel, cx - 2.2, z_hall, cx + 2.2, cz + half, 0.03, gc)
+	ground.call(gravel, cx - inner, zc - 1.8, cx - 7.0, zc + 1.8, 0.03, gc)
+	ground.call(gravel, cx + 7.0, zc - 1.8, cx + inner, zc + 1.8, 0.03, gc)
+	# Round-ish plaza (an octagon of quads) around the fountain.
+	var pr := 7.0
+	for k in 8:
+		var a0 := TAU * float(k) / 8.0
+		var a1 := TAU * float(k + 1) / 8.0
+		var c0 := Vector3(cx, 0.035, zc)
+		gravel.add_tri(c0, c0 + Vector3(sin(a0), 0, cos(a0)) * pr, c0 + Vector3(sin(a1), 0, cos(a1)) * pr, gc)
+	_fountain(data, Vector3(cx, 0.0, zc))
+	# Four forecourt beds, one per quadrant between the walks.
+	var bx0 := cx + 3.5
+	var bx1 := cx + inner - 1.0
+	# Beds stop short of the fountain plaza (radius `pr`) along z.
+	var bz_n0 := z_hall + 1.5
+	var bz_n1 := zc - pr - 1.0
+	var bz_s0 := zc + pr + 1.0
+	var bz_s1 := z_wall - 1.0
+	for sx: float in [-1.0, 1.0]:
+		for zr: Array in [[bz_n0, bz_n1], [bz_s0, bz_s1]]:
+			var xa := cx + sx * (bx0 - cx)
+			var xb := cx + sx * (bx1 - cx)
+			_bed(data, Rect2(Vector2(minf(xa, xb), zr[0]), Vector2(absf(xb - xa), zr[1] - zr[0])), soil, sc, box, hc, hc_top)
+	# East/west lawns beside the hall: a gravel walk and a row of beds.
+	var z_n := cz - half * 0.55
+	var hall_x := half * 0.45 + 1.5
+	for sx: float in [-1.0, 1.0]:
+		var xa := cx + sx * hall_x
+		var xb := cx + sx * inner
+		var x0 := minf(xa, xb)
+		var x1 := maxf(xa, xb)
+		if x1 - x0 < 8.0:
+			continue
+		var xm := (x0 + x1) * 0.5
+		ground.call(gravel, xm - 1.5, z_n, xm + 1.5, z_hall, 0.03, gc)
+		var zz := z_n + 1.0
+		while zz + 7.0 < z_hall - 1.0:
+			_bed(data, Rect2(Vector2(x0 + 1.0, zz), Vector2(xm - 2.5 - x0 - 1.0, 6.0)), soil, sc, box, hc, hc_top)
+			_bed(data, Rect2(Vector2(xm + 2.5, zz), Vector2(x1 - 1.0 - xm - 2.5, 6.0)), soil, sc, box, hc, hc_top)
+			zz += 8.0
+
+
+## One parterre bed: dark soil edged with a clipped box hedge (0.45 m, one
+## low collision box per side) and topiary (instanced ash planters) in a grid.
+static func _bed(data: ChunkBuildData, r: Rect2, soil: WorldMeshBuilder, sc: Color, box: WorldMeshBuilder,
+		hc: Color, hc_top: Color) -> void:
+	if r.size.x < 3.0 or r.size.y < 3.0:
+		return
+	var y := 0.04
+	soil.add_quad(Vector3(r.position.x, y, r.end.y), Vector3(r.end.x, y, r.end.y), Vector3(r.end.x, y, r.position.y),
+			Vector3(r.position.x, y, r.position.y), Vector3.UP, sc, sc)
+	var t := 0.35
+	var h := 0.45
+	var sides := [
+		[Vector3(r.position.x, 0, r.position.y), Vector3(r.end.x, h, r.position.y + t)],
+		[Vector3(r.position.x, 0, r.end.y - t), Vector3(r.end.x, h, r.end.y)],
+		[Vector3(r.position.x, 0, r.position.y + t), Vector3(r.position.x + t, h, r.end.y - t)],
+		[Vector3(r.end.x - t, 0, r.position.y + t), Vector3(r.end.x, h, r.end.y - t)],
+	]
+	for sd: Array in sides:
+		box.add_box(sd[0], sd[1], hc * 0.8, hc, hc_top)
+		data.add_box_shape_lohi(sd[0], sd[1])
+	# Topiary on a ~3 m grid, inset from the edging.
+	var nx := maxi(1, int(r.size.x / 3.0))
+	var nz := maxi(1, int(r.size.y / 3.0))
+	for i in nx:
+		for j in nz:
+			var p := Vector3(r.position.x + r.size.x * (float(i) + 0.5) / float(nx), 0.0,
+					r.position.y + r.size.y * (float(j) + 0.5) / float(nz))
+			data.add_instance(&"topiary", Transform3D(Basis(), p))
+
+
+## Octagonal stone basin with dark water, a pedestal and an iron statue.
+static func _fountain(data: ChunkBuildData, c: Vector3) -> void:
+	var st := data.mb(M.KEEP_STONE)
+	var col := STONE_C
+	var r := 3.6
+	for k in 8:
+		var a := TAU * (float(k) + 0.5) / 8.0
+		var mid := c + Vector3(sin(a), 0.0, cos(a)) * r
+		st.add_obox(mid + Vector3(0, 0.35, 0), Vector3(1.55, 0.35, 0.3), a, col * 0.7, col)
+	# Water surface and basin floor.
+	var wm := data.mb(M.WATER)
+	var wc := Color(1, 1, 1)
+	for k in 8:
+		var a0 := TAU * float(k) / 8.0
+		var a1 := TAU * float(k + 1) / 8.0
+		var w0 := c + Vector3(0, 0.45, 0)
+		wm.add_tri(w0, w0 + Vector3(sin(a0), 0, cos(a0)) * r, w0 + Vector3(sin(a1), 0, cos(a1)) * r, wc)
+	data.add_box_shape(c + Vector3(0, 0.35, 0), Vector3(r * 2.0, 0.7, r * 2.0))
+	# Pedestal and statue (iron: a Push/Pull anchor in the middle of the garden).
+	st.add_box(c + Vector3(-0.7, 0.0, -0.7), c + Vector3(0.7, 2.0, 0.7), col * 0.7, col, col)
+	data.add_box_shape(c + Vector3(0, 1.0, 0), Vector3(1.4, 2.0, 1.4))
+	data.add_instance(&"statue", Transform3D(Basis(), c + Vector3(0, 2.0, 0)))
+	data.add_metal(c + Vector3(0, 3.2, 0), 120.0)

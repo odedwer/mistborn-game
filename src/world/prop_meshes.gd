@@ -220,6 +220,19 @@ static func _build(kind: StringName) -> Mesh:
 			# A trimmed, half-dead garden hedge segment (Ashmount soot, not lush).
 			_box_c(stone, Vector3.ZERO, Vector3(1.8, 0.7, 0.5), Color(0.28, 0.3, 0.2))
 			_box_c(stone, Vector3(0, 0.42, 0), Vector3(1.7, 0.14, 0.42), Color(0.32, 0.34, 0.22))
+		&"topiary":
+			# A clipped, soot-dulled box topiary: a squat stack in a stone collar.
+			_prism(stone, Vector3.ZERO, 0.32, 0.18, 8, Color(0.45, 0.43, 0.4))
+			_prism(stone, Vector3(0, 0.18, 0), 0.42, 0.55, 8, Color(0.25, 0.28, 0.18))
+			_prism(stone, Vector3(0, 0.73, 0), 0.3, 0.4, 8, Color(0.28, 0.31, 0.2))
+		&"statue":
+			# A cast-iron figure on a plinth cap: robed body, head, raised arm.
+			_prism(stone, Vector3.ZERO, 0.6, 0.2, 8, Color(0.5, 0.48, 0.45))
+			_prism(iron, Vector3(0, 0.2, 0), 0.38, 1.3, 8, white)
+			_prism(iron, Vector3(0, 1.5, 0), 0.26, 0.35, 8, white)
+			_prism(iron, Vector3(0, 1.85, 0), 0.16, 0.28, 8, white)
+			_limb(iron, Vector3(0.25, 1.4, 0), Vector3(0.55, 2.3, 0.1), 0.08, 0.06, white)
+			_limb(iron, Vector3(-0.25, 1.4, 0), Vector3(-0.4, 0.9, 0.15), 0.08, 0.06, white)
 		&"ash_planter":
 			# A stone urn holding bare, ash-dead twigs — no living greenery this
 			# close to the Ashmounts.
