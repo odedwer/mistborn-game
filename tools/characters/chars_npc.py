@@ -14,7 +14,7 @@ import numpy as np
 from anim import Rig, base_params
 from body import CLOAK, CLOTH, GLOSS, METAL, Body, dyed, side_name
 from chars import band, dagger, torso_table
-from meshkit import box, hexcol, lerp, norm, smoothstep, tube, v3
+from meshkit import box, hexcol, lerp, norm, ribbon, smoothstep, tube, v3
 
 
 # ----------------------------------------------------------------- utilities
@@ -198,6 +198,57 @@ def torso_front_y(b: Body, table, z):
     yc = np.interp(zf, rows[:, 0], rows[:, 4])
     rf = np.interp(zf, rows[:, 0], rows[:, 2])
     return (yc + rf * b.P["width"]) * b.s
+
+
+def torso_surface(b: Body, rings, x, z, lift=0.004):
+    """Point on the front of a built torso (its actual rings) at lateral x, height z.
+
+    Uses the built vertices rather than the nominal table: the torso's rings
+    tilt with its curved centre line, so the table under-reads the chest by
+    several mm and a panel laid on it vanished inside the body.
+    """
+    V = b.m.verts
+    zs, ys = [], []
+    for ring in rings:
+        pts = sorted((V[r[0]] for r in ring if V[r[0]][1] > 0), key=lambda p: p[0])
+        if len(pts) < 2:
+            continue
+        px = [p[0] for p in pts]
+        zs.append(float(np.mean([p[2] for p in pts])))
+        ys.append(float(np.interp(x, px, [p[1] for p in pts])))
+    order = np.argsort(zs)
+    y = np.interp(z, np.array(zs)[order], np.array(ys)[order])
+    return v3(x, y + lift, z)
+
+
+def shirt_v(b: Body, rings, col, *, z_point=0.72, z_top=0.815, half_w=0.05):
+    """Shirt front showing in a coat/waistcoat V, as its own panel on the chest.
+
+    Painting the V into the torso's vertex colours smeared it: the narrow
+    bottom of the V covered one column, and the pale colour blended over the
+    whole row below into a pale streak down the chest. A separate panel has
+    crisp edges. It is shaded darker towards the lapels with soft horizontal
+    pleats (no glossy pale strip).
+    """
+    s, H = b.s, b.H
+    zs = np.linspace(z_point * H, z_top * H, 7)
+    fr = [-1.0, -0.5, 0.0, 0.5, 1.0]
+    W = b.W(["Chest", "UpperChest", "Neck"], {"Neck": 0.3})
+    base = np.array(col[:3], dtype=float)
+    for a, c in zip(fr[:-1], fr[1:]):
+        edge = max(abs(a), abs(c))
+        left, right = [], []
+        for z in zs:
+            w = 0.003 * s + half_w * s * (z - zs[0]) / (zs[-1] - zs[0])
+            left.append(torso_surface(b, rings, a * w, z))
+            right.append(torso_surface(b, rings, c * w, z))
+
+        def rc(i, edge=edge):
+            pleat = 0.93 + 0.07 * math.cos(i * 2.2)
+            k = (1.0 - 0.35 * edge ** 2) * pleat
+            return tuple(base * k) + (1.0,)
+
+        ribbon(b.m, left, right, color=rc, weights=W, normal_hint=(0, 1, 0))
 
 
 def headscarf(b: Body, col):
@@ -415,8 +466,6 @@ def build_dockson():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 6 + 60 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
-            return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 24 and p[2] > 0.6 * H:
             return vest
         if 0.585 * H < p[2] < 0.608 * H:
@@ -425,7 +474,7 @@ def build_dockson():
 
     # more columns so the narrow shirt front stays a crisp strip instead of
     # blending across 18-degree faces into a glare-like streak down the chest
-    b.torso(t, tcol, n=32)
+    trings = b.torso(t, tcol, n=32)
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2e2016"), lips=hexcol("8a5c4e"), jaw=1.1)
     b.hair_shell(hair, puff=1.0, jag=0.004, back_z=b.head_lm["chin_z"] + 0.05 * s, fringe_z=b.head_lm["brow_z"] + 0.035 * s,
@@ -439,6 +488,7 @@ def build_dockson():
     # knee-length practical coat, open at the front
     b.skirt(0.6 * H, 0.3 * H, (0.165 * s, 0.1 * s, 0.108 * s), (0.2 * s, 0.15 * s, 0.17 * s), coat, rows=6,
             arc=(104, 436), leg_share=0.6)
+    shirt_v(b, trings, shirt, half_w=0.045)
     collar(b, coat, h=0.04, r=(0.085, 0.078, 0.085))
     # satchel on the left hip
     tube(b.m, [v3(-0.17 * s, 0.02 * s, 0.575 * H), v3(-0.18 * s, 0.02 * s, 0.5 * H)], [(0.025 * s, 0.07 * s), (0.028 * s, 0.075 * s)],
@@ -457,21 +507,9 @@ def build_breeze():
     H, s = b.H, b.s
     t = torso_table(hips=1.08, waist=1.14, chest=1.06, shoulders=0.98, depth=1.1, belly=0.045)
 
-    def shirt_col(p, th, half):
-        """Fabric shading: shadowed where the waistcoat overlaps, soft pleats."""
-        edge = min(abs(th - 90) / max(half, 1e-3), 1.0)
-        pleat = 0.9 + 0.1 * math.cos(p[2] / (0.011 * s) * math.pi)
-        k = (1.0 - 0.3 * edge ** 2) * pleat
-        return tuple(np.array(shirt[:3]) * k) + (1.0,)
-
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        half = 6 + 60 * max(p[2] / H - 0.72, 0.0)
-        if abs(th - 90) < half and p[2] > 0.72 * H:
-            return shirt_col(p, th, half)  # a V opening spanning several columns
-        if abs(th - 90) < half + 8 and p[2] > 0.72 * H:
-            return tuple(np.array(vest[:3]) * 0.55) + (1.0,)  # shadowed lapel edge
         if abs(th - 90) < 30 and p[2] > 0.56 * H:
             # waistcoat (its buttons are real studs below: painted onto the
             # single centre column they smeared into one bright gold streak)
@@ -480,7 +518,7 @@ def build_breeze():
 
     # more columns so the narrow shirt/waistcoat front stays crisp instead of
     # blending across 18-degree faces into a glare-like streak down the chest
-    b.torso(t, tcol, n=32)
+    trings = b.torso(t, tcol, n=32)
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2a1e18"), lips=hexcol("b0746a"), jaw=1.08)
     b.hair_shell(hair, puff=1.04, jag=0.0, back_z=b.head_lm["chin_z"] + 0.055 * s, fringe_z=b.head_lm["brow_z"] + 0.04 * s,
@@ -496,6 +534,7 @@ def build_breeze():
     tube(b.m, [v3(0, 0.06 * s, 0.815 * H), v3(0, 0.08 * s, 0.79 * H), v3(0, 0.1 * s, 0.75 * H)],
          [(0.03 * s, 0.018 * s), (0.028 * s, 0.02 * s), (0.012 * s, 0.01 * s)], n=6, hint=(0, 1, 0),
          color=linen_hi, weights=b.W(["UpperChest", "Neck"]), cap1=0.006 * s)
+    shirt_v(b, trings, shirt, half_w=0.05)
     collar(b, coat, h=0.045, r=(0.08, 0.075, 0.08))
     # tailcoat tails at the back
     b.skirt(0.6 * H, 0.33 * H, (0.17 * s, 0.11 * s, 0.12 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,
