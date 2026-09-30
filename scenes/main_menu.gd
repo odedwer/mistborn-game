@@ -82,15 +82,23 @@ func _build_horizon_glow(world: Node3D) -> void:
 	tex.fill = GradientTexture2D.FILL_LINEAR
 	tex.fill_from = Vector2(0.5, 0.0)
 	tex.fill_to = Vector2(0.5, 1.0)
+	# Offsets and colours are set together: the old code called set_color(1)
+	# after the add_point()s, but points are kept sorted by offset, so index 1
+	# was the 0.3 stop and the default end stop stayed opaque WHITE. That
+	# white strip along the plane's bottom edge (dimmed by fog) was the faint
+	# lighter band with a hard edge at y~610 (720p) across the menu.
 	var grad := Gradient.new()
-	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
-	grad.add_point(0.3, Color(0.55, 0.14, 0.04, 0.0))
-	grad.add_point(0.42, Color(0.85, 0.24, 0.06, 0.55))
-	grad.add_point(0.5, Color(1.0, 0.42, 0.1, 0.8))
-	grad.add_point(0.58, Color(0.85, 0.24, 0.06, 0.55))
-	grad.add_point(0.72, Color(0.5, 0.14, 0.05, 0.15))
-	grad.add_point(0.85, Color(0.25, 0.08, 0.03, 0.0))
-	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))
+	grad.offsets = PackedFloat32Array([0.0, 0.3, 0.42, 0.5, 0.58, 0.72, 0.85, 1.0])
+	grad.colors = PackedColorArray([
+		Color(0.0, 0.0, 0.0, 0.0),
+		Color(0.55, 0.14, 0.04, 0.0),
+		Color(0.85, 0.24, 0.06, 0.55),
+		Color(1.0, 0.42, 0.1, 0.8),
+		Color(0.85, 0.24, 0.06, 0.55),
+		Color(0.5, 0.14, 0.05, 0.15),
+		Color(0.25, 0.08, 0.03, 0.0),
+		Color(0.0, 0.0, 0.0, 0.0),
+	])
 	tex.gradient = grad
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = tex
@@ -250,9 +258,9 @@ func _soft_circle_texture() -> GradientTexture2D:
 	tex.fill_from = Vector2(0.5, 0.5)
 	tex.fill_to = Vector2(1.0, 0.5)
 	var grad := Gradient.new()
-	grad.set_color(0, Color(1, 1, 1, 0.35))
-	grad.add_point(0.6, Color(1, 1, 1, 0.12))
-	grad.set_color(1, Color(1, 1, 1, 0.0))
+	# (same sorted-index trap as the glow: set offsets and colours together)
+	grad.offsets = PackedFloat32Array([0.0, 0.6, 1.0])
+	grad.colors = PackedColorArray([Color(1, 1, 1, 0.35), Color(1, 1, 1, 0.12), Color(1, 1, 1, 0.0)])
 	tex.gradient = grad
 	return tex
 
