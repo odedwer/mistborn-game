@@ -29,6 +29,14 @@ var _stream_ok := true
 ## gap, e.g. a badly-tuned activity spawn radius).
 var _snap_attempts := 0
 const MAX_SNAP_ATTEMPTS := 90  # ~1.5 s at 60 Hz
+## How far below its home ground a member may drop (off a roof edge, into a
+## canal) before it is put back home.
+const FALL_RESET := 10.0
+## Home is taken on the first physics frame, not in `_ready`: callers often
+## add the member to its chunk first and move it to its spawn point after
+## (ActivityManager does), and a home captured in `_ready` was the parent's
+## origin, so the member wandered off toward it and fell out of the world.
+var _home_captured := false
 
 
 ## Crowds are placed around a point that may be mid-air (a roof edge, a
@@ -70,8 +78,6 @@ func _ready() -> void:
 	add_to_group(&"crowd_npc")
 	collision_layer = 1 << 2
 	collision_mask = 1
-	_home = global_position
-	_target = _home
 	_build_visual()
 
 
@@ -108,6 +114,10 @@ func _build_capsule() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _home_captured:
+		_home_captured = true
+		_home = global_position
+		_target = _home
 	if not _grounded_home:
 		_snap_home_to_ground()
 		if not _grounded_home:
@@ -115,8 +125,8 @@ func _physics_process(delta: float) -> void:
 			# geometry that hasn't finished streaming in.
 			velocity = Vector3.ZERO
 			return
-	if global_position.y < _home.y - 40.0:
-		# Fell out of the world (spawned over a gap or unloaded ground): go home.
+	if global_position.y < _home.y - FALL_RESET:
+		# Fell off (a roof edge, a canal, unloaded ground): go home.
 		global_position = _home
 		velocity = Vector3.ZERO
 	if not is_on_floor() and not _ground_loaded():

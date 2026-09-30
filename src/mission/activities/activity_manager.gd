@@ -475,9 +475,12 @@ func _start_crowd_riot(a: ActivityData, start_pos: Vector3) -> void:
 	var radius := float(a.params.get("spawn_radius", 6.0))
 	for i in count:
 		var member := CrowdMember.new()
-		parent.add_child(member)
 		var ang := TAU * float(i) / maxf(float(count), 1.0)
-		member.global_position = start_pos + Vector3(cos(ang), 0.0, sin(ang)) * radius
+		# Placed before entering the tree, so it never spends a frame at the
+		# parent's origin.
+		var at := start_pos + Vector3(cos(ang), 0.0, sin(ang)) * radius
+		member.position = (parent as Node3D).to_local(at) if parent is Node3D else at
+		parent.add_child(member)
 		nodes.append(member)
 	_active[a.id] = {"type": "crowd_riot", "elapsed": 0.0, "nodes": nodes, "meter": meter}
 
