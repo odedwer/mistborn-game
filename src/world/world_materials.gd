@@ -11,6 +11,7 @@ extends RefCounted
 enum Mat {
 	STONE, BRICK, PLASTER, TRIM, SLATE, ROOF_FLAT, WOOD, WINDOW, COBBLE,
 	GROUND_DARK, ASH, WATER, IRON, KEEP_STONE, OBSIDIAN, LANTERN_GLASS, CANAL_WALL, FAR,
+	ASHLAR,
 }
 
 const TEX_DIR := "res://assets/textures/"
@@ -97,6 +98,15 @@ static func _create(id: int) -> Material:
 			return m
 		Mat.FAR:
 			return _shader_mat("far_silhouette.gdshader")
+		Mat.ASHLAR:
+			# Merchant/noble dressed stone. The shared stone texture holds ~5
+			# stones per tile; at the rubble walls' 2.6 m tile (and the plaster's
+			# 3 m crack network) they read as ~1 m cobbles on a grand facade.
+			# 1.2 m wide x 0.7 m tall tiles give ~0.25 x 0.14 m blocks,
+			# stretched along the courses.
+			var m := _triplanar("stone_wall", 1.0, 0.9, Color(1.04, 1.02, 1.0))
+			m.uv1_scale = Vector3(1.0 / 1.2, 1.0 / 0.7, 1.0 / 1.2)
+			return m
 	return StandardMaterial3D.new()
 
 

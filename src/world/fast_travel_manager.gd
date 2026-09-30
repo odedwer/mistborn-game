@@ -11,6 +11,10 @@ extends Node
 ## unlocking itself does not depend on the node being alive, since it is
 ## recorded in `GameState` the moment the player enters it once.
 ##
+## Standing at a discovered safehouse, `interact` waits there until nightfall
+## (or, at night, until morning): `wait_at_safehouse` skips the `TimeOfDay`
+## clock under a fade. Not while a mission pins the phase.
+##
 ## `travel_to(id)` (called from the map's fast-travel list) hands off to
 ## `SceneTransition.fast_travel_to`, which fades out, streams the destination
 ## chunk in synchronously, teleports, then fades back in.
@@ -18,6 +22,8 @@ extends Node
 const TRIGGER_RADIUS := 6.0
 
 var _triggers: Array[Area3D] = []
+## Safehouse the player is standing at (&"" = none).
+var near_safehouse: StringName = &""
 
 
 func _ready() -> void:
@@ -71,14 +77,46 @@ func _add_trigger_for_marker(marker: Node) -> void:
 	parent.add_child(area)
 	area.global_position = (marker as Node3D).global_position
 	area.body_entered.connect(_on_entered.bind(sid, sname))
+	area.body_exited.connect(_on_exited.bind(sid))
 	_triggers.append(area)
 
 
 func _on_entered(body: Node, sid: StringName, sname: String) -> void:
 	if not body.is_in_group(&"player"):
 		return
+	near_safehouse = sid
 	if GameState.discover_safehouse(sid):
 		Events.hint_requested.emit("Safehouse discovered: %s — fast travel unlocked." % sname, 3.5)
+	elif not TimeOfDay.is_forced():
+		Events.hint_requested.emit("%s — press Interact to wait until %s." % [sname, "morning" if TimeOfDay.is_night() else "nightfall"], 3.0)
+
+
+func _on_exited(body: Node, sid: StringName) -> void:
+	if body.is_in_group(&"player") and near_safehouse == sid:
+		near_safehouse = &""
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if near_safehouse != &"" and event.is_action_pressed(&"interact") and not SceneTransition.busy:
+		wait_at_safehouse(TimeOfDay.Phase.DAY if TimeOfDay.is_night() else TimeOfDay.Phase.NIGHT)
+
+
+## "Wait until night" (or day): skips the clock to the start of `target`
+## under a fade. Refused while a mission forces the phase. With `fade` false
+## (tests) the clock jumps immediately.
+func wait_at_safehouse(target: int = TimeOfDay.Phase.NIGHT, fade := true) -> bool:
+	if TimeOfDay.is_forced():
+		Events.hint_requested.emit("No time to rest now.", 2.5)
+		return false
+	if TimeOfDay.phase == target:
+		return true
+	var jump := func() -> void: TimeOfDay.wait_until(target)
+	if fade and is_inside_tree():
+		await SceneTransition.fade_through(jump)
+	else:
+		jump.call()
+	Events.hint_requested.emit("You wait at the safehouse until %s (%s)." % ["nightfall" if target == TimeOfDay.Phase.NIGHT else "morning", TimeOfDay.clock_text()], 3.0)
+	return true
 
 
 ## Unlocked safehouses, city-wide (works even if their unit is unloaded), as

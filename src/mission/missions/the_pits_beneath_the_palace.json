@@ -3,6 +3,7 @@
 	"title": "The Pits Beneath the Palace",
 	"act": "3",
 	"chapter": "Below Kredik Shaw",
+	"time_of_day": "night",
 	"prerequisites": [
 		"into_kredik_shaw"
 	],

@@ -120,10 +120,35 @@ ground stream out from under it. Progress and results (`GameState`'s
 lost across an unload — see `tests/test_open_world_content.gd`.
 
 Ambient crowds (`src/world/crowd/crowd_system.gd`) scale per district:
-skaa/docks are mostly skaa pedestrians, noble is majority-obligator (a
-stand-in for "obligator patrols" — there's no day/night cycle to gate a
-literal night-only patrol on), and a couple of `enemy_spawn`/`patrol` guard
-markers reinforce the keep ring. See `CrowdSystem.DENSITY`.
+skaa/docks are mostly skaa pedestrians; the obligator share depends on the
+time of day (noble streets are majority-obligator only at night). Five
+night-only `enemy_spawn`/`patrol` guard markers (`"phase": "night"`) walk the
+keep quarter after dark and go home at dawn. See `CrowdSystem.DENSITY`.
+
+## Time of day
+
+`TimeOfDay` (autoload, `src/autoload/time_of_day.gd`) is the world clock: an
+ash-grey, hazy day and a misty night (one in-game day = 40 real minutes; it
+only runs in the open-world game scene). `DayNightDriver`
+(`src/world/day_night_driver.gd`, a child of `LuthadelWorld`) applies it: the
+directional light is a low, dull sun by day and the authored moon by night,
+the sky shader blends via `day_amount`, `MistController.set_daylight` thins
+the mists to a haze (thick only at night), and window/lantern/far-skyline
+emissives and street lights dim by day. A full night reproduces
+`EnvironmentBuilder`'s authored values exactly.
+
+- **Forced phases.** Story missions with `"time_of_day": "night"` force night
+  while active (`MissionDirector._apply_time_of_day`); interiors force night
+  while the player is inside, so every mission scene keeps its authored
+  lighting. The clock pauses while forced.
+- **Phase-gated content.** Activities (`"phase"` in their JSON, e.g. the noble
+  obligator ambushes), `enemy_spawn` markers (`"phase"` meta) and the crowd's
+  obligator share follow `TimeOfDay.phase_changed`.
+- **Saves** store the raw clock (`time_of_day`).
+- **Waiting.** At a discovered safehouse, Interact waits until nightfall (or
+  morning) under a fade (`FastTravelManager.wait_at_safehouse`).
+- **Debug.** `--time=<hour>` on the command line; in debug builds F7 toggles
+  day/night and F8 skips an hour.
 
 Activity geometry is validated, not hand-eyeballed: `ActivityValidator`
 (`src/mission/activities/activity_validator.gd`) regenerates the chunks around
@@ -150,6 +175,5 @@ fades back in.
 
 - Interiors beyond the gatehouse office, Kredik Shaw's interior and the other keeps' courtyards.
 - Persisting the state of loose props per chunk. They currently reset on reload.
-- A real day/night cycle, so noble obligator patrols (and other time-gated content) can be literal rather than a density skew.
-- Cornices, statues and guild signage beyond the new pilasters/balconies.
+- Statues and guild signage beyond the pilasters, balconies and cornices.
 - HLOD for the mid-range. Chunks currently switch from full detail straight to far-LOD boxes.

@@ -1,0 +1,19 @@
+{
+	"id": "riot_market_2",
+	"params": {
+		"calm_threshold": 25.0,
+		"member_count": 5,
+		"spawn_radius": 3.0,
+		"start_mood": 78.0,
+		"time_limit": 33.0
+	},
+	"rewards": {
+		"coins": 72,
+		"mastery_points": 1,
+		"vials": 1
+	},
+	"start_marker": "riot_market_2",
+	"title": "Stallholders' Unrest",
+	"type": "crowd_riot",
+	"validated": true
+}

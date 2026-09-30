@@ -38,6 +38,12 @@ func _ready() -> void:
 	_add_mission_director()
 	_add_activity_manager()
 	_add_fast_travel_manager()
+	# The world clock runs while the open world is being played.
+	TimeOfDay.clock_running = true
+
+
+func _exit_tree() -> void:
+	TimeOfDay.clock_running = false
 
 
 ## A streamed world chunk loaded: populate its enemies and pickups.

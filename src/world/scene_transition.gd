@@ -145,6 +145,16 @@ func fast_travel_to(world_pos: Vector3) -> bool:
 	return true
 
 
+## Fades to black, runs `action` (e.g. skipping the clock ahead while the
+## player waits at a safehouse), then fades back in.
+func fade_through(action: Callable) -> void:
+	busy = true
+	await _fade_to(1.0)
+	action.call()
+	busy = false
+	await _fade_to(0.0)
+
+
 ## Removes the interior scene and restores the player to the outdoor world at
 ## the transform it had before `enter_interior` (its exact open-world spot).
 func exit_interior() -> void:

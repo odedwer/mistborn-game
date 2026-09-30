@@ -22,12 +22,14 @@ static func wall_colors(lot: ChunkLayout.Lot) -> Array[Color]:
 
 
 static func wall_mat(lot: ChunkLayout.Lot) -> int:
-	match lot.mat:
-		ChunkLayout.WallMat.BRICK:
-			return M.BRICK
-		ChunkLayout.WallMat.PLASTER:
-			return M.PLASTER
-	return M.STONE
+	if lot.mat == ChunkLayout.WallMat.BRICK:
+		return M.BRICK
+	# Merchant/noble stone and render are fine-coursed ashlar (the plaster
+	# texture's crack network read as metre-wide cobbles on grand facades);
+	# the tint still tells render from stone. Elsewhere: rubble and plaster.
+	if bool(lot.style.get("facade_ornament", false)):
+		return M.ASHLAR
+	return M.PLASTER if lot.mat == ChunkLayout.WallMat.PLASTER else M.STONE
 
 
 ## Emits one building into `data`.
@@ -162,15 +164,20 @@ static func _facade_ornament(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: Ra
 		if count < 2:
 			continue
 		var spacing := length / float(count)
-		# Pier half-extents in world space (rv/n are axis-aligned ±X/±Z unit
-		# vectors, so abs() turns them into a proper symmetric AABB regardless
-		# of which cardinal face this is).
-		var half_rv := Vector3(absf(rv.x), 0.0, absf(rv.z)) * 0.09
-		var half_n := Vector3(absf(n.x), 0.0, absf(n.z)) * 0.06
+		var top_y := lot.height - 0.2
+		var cb := dark * 0.75
+		var ct := dark * 0.85
 		for i in range(1, count):
-			var p := o + rv * (spacing * float(i)) + n * 0.05
-			trim.add_box(p - half_rv - half_n, p + half_rv + half_n + Vector3.UP * (lot.height - 0.2),
-					dark * 0.75, dark * 0.85, dark * 0.7)
+			# Only the three faces that can be seen (the back sits on the wall,
+			# the top under the cornice): 40 % fewer quads than a full box.
+			var p := o + rv * (spacing * float(i)) + n * 0.11
+			var l := p - rv * 0.09
+			var r := p + rv * 0.09
+			var lb := l - n * 0.12
+			var rb := r - n * 0.12
+			trim.add_quad(l, r, r + Vector3.UP * top_y, l + Vector3.UP * top_y, n, cb, ct)
+			trim.add_quad(r, rb, rb + Vector3.UP * top_y, r + Vector3.UP * top_y, rv, cb, ct)
+			trim.add_quad(lb, l, l + Vector3.UP * top_y, lb + Vector3.UP * top_y, -rv, cb, ct)
 		# One balcony, front face only, second floor if there is one.
 		if bit == lot.front and lot.floors >= 2 and rng.randf() < 0.7:
 			var y := ChunkLayout.GROUND_FLOOR_H + 0.05
@@ -178,6 +185,45 @@ static func _facade_ornament(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: Ra
 			var bx := Basis(rv, Vector3.UP, n)
 			data.add_instance(&"balcony", Transform3D(bx, bp))
 			data.add_metal(bp + n * 0.76 + Vector3.UP * 0.45, 10.0)
+	_cornice(data, lot, dark)
+
+
+## Merchant/noble cornice: a plain frieze band and a deep, projecting crown
+## moulding (with its soffit, which is what reads from the street) along the
+## eaves. It only projects from free faces, never into a party wall, and it is
+## purely visual (no collision), so traversal is unchanged.
+static func _cornice(data: ChunkBuildData, lot: ChunkLayout.Lot, dark: Color) -> void:
+	var r := lot.rect
+	var h := lot.height
+	var flat := lot.roof == ChunkLayout.Roof.FLAT
+	# A bold crown (0.45 m tall, 0.6 m deep): on flat roofs it laps the
+	# parapet's foot; on gables it swallows the plain eaves band.
+	var crown_hi := h + 0.1 if flat else h
+	var crown_lo := crown_hi - 0.45
+	# Stay clear of the top floor's window heads.
+	var win_top := ChunkLayout.GROUND_FLOOR_H + float(lot.floors - 2) * ChunkLayout.FLOOR_H + 0.8 + 1.6
+	if lot.floors < 2:
+		win_top = 0.95 + 1.75
+	var frieze_lo := maxf(crown_lo - 0.4, win_top + 0.06)
+	if crown_lo - frieze_lo < 0.08 or crown_lo < win_top:
+		return
+	var trim := data.mb(M.TRIM)
+	var sh := lot.shared
+	var grow := func(d: float) -> Array:
+		# Grow only on free faces (bits: 1 = +Z/S, 2 = -Z/N, 4 = +X/E, 8 = -X/W).
+		var lo := Vector2(r.position.x - (0.0 if sh & ChunkLayout.FACE_W else d), r.position.y - (0.0 if sh & ChunkLayout.FACE_N else d))
+		var hi := Vector2(r.end.x + (0.0 if sh & ChunkLayout.FACE_E else d), r.end.y + (0.0 if sh & ChunkLayout.FACE_S else d))
+		return [lo, hi]
+	var f: Array = grow.call(0.1)
+	trim.add_banded_box(Vector3(f[0].x, frieze_lo, f[0].y), Vector3(f[1].x, crown_lo, f[1].y), crown_lo,
+			dark * 0.9, dark, dark, dark, sh, false)
+	var c: Array = grow.call(0.6)
+	var lo := Vector3(c[0].x, crown_lo, c[0].y)
+	var hi := Vector3(c[1].x, crown_hi, c[1].y)
+	trim.add_banded_box(lo, hi, crown_lo + 0.12, dark * 0.5, dark * 0.95, dark * 1.1, dark * 0.8, sh, true)
+	# Soffit: the underside of the overhang, seen from the street.
+	trim.add_quad(Vector3(lo.x, lo.y, lo.z), Vector3(hi.x, lo.y, lo.z), Vector3(hi.x, lo.y, hi.z),
+			Vector3(lo.x, lo.y, hi.z), Vector3.DOWN, dark * 0.4, dark * 0.4)
 
 
 static func _chimney(data: ChunkBuildData, rng: RandomNumberGenerator, x: float, z: float,

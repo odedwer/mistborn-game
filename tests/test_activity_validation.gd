@@ -6,7 +6,7 @@ extends TestCase
 ## but only counted if they pass.
 
 const TARGET := 3
-const DISTRICTS: Array[StringName] = [&"skaa_slums", &"merchant", &"noble", &"docks"]
+const DISTRICTS: Array[StringName] = [&"skaa_slums", &"merchant", &"noble", &"docks", &"market"]
 const TYPES: Array[StringName] = [&"coin_race", &"rooftop_pursuit", &"obligator_ambush", &"crowd_riot"]
 
 static var _plan: CityPlan

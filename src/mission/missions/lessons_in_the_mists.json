@@ -3,6 +3,7 @@
 	"title": "Lessons in the Mists",
 	"act": "1",
 	"chapter": "Kelsier's Training",
+	"time_of_day": "night",
 	"prerequisites": ["mistwalk_to_keep_venture"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

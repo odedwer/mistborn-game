@@ -142,6 +142,21 @@ func _add_mesh(key: String, arrays: Array) -> void:
 		mi.visible = not _landmark_loaded.get(id, false)
 
 
+## Far-skyline lighting (DayNightDriver): lit-window energy and the
+## silhouettes' base albedo (dark at night, a lighter ash-grey by day).
+func set_lighting(window_energy: float, base_color: Color) -> void:
+	if material == null:
+		return
+	var mats: Array[ShaderMaterial] = [material]
+	for id in _landmark_nodes:
+		var mi: MeshInstance3D = _landmark_nodes[id]
+		if is_instance_valid(mi) and mi.material_override is ShaderMaterial:
+			mats.append(mi.material_override as ShaderMaterial)
+	for m in mats:
+		m.set_shader_parameter("window_energy", window_energy)
+		m.set_shader_parameter("base_color", base_color)
+
+
 ## Appends `src` into `dst` with vertex alpha forced to `alpha` (window density).
 static func _merge(dst: WorldMeshBuilder, src: WorldMeshBuilder, alpha: float) -> void:
 	var base := dst.colors.size()

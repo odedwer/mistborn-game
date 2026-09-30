@@ -23,12 +23,15 @@ extends Node3D
 const MODEL_DIR := "res://assets/models/characters/"
 const SKAA_KINDS: Array[StringName] = [&"skaa_man", &"skaa_woman"]
 const OBLIGATOR_KINDS: Array[StringName] = [&"obligator", &"obligator_2"]
-## district type -> [agents per chunk, obligator share]
+## district type -> [agents per chunk, obligator share at night, by day].
+## Obligators walk their patrols at night (the noble quarter is then mostly
+## obligators); by day the streets belong to skaa. The switch follows
+## `TimeOfDay.phase_changed` live, re-dressing the affected pedestrians.
 const DENSITY := {
-	&"skaa_slums": [7, 0.08], &"docks": [6, 0.1], &"market": [8, 0.18], &"merchant": [6, 0.28],
-	&"noble": [4, 0.55],
+	&"skaa_slums": [7, 0.08, 0.04], &"docks": [6, 0.1, 0.05], &"market": [8, 0.18, 0.1],
+	&"merchant": [6, 0.28, 0.12], &"noble": [4, 0.55, 0.15],
 }
-const DEFAULT_DENSITY := [5, 0.12]
+const DEFAULT_DENSITY := [5, 0.12, 0.06]
 
 @export var max_visible := 30
 @export var view_radius := 70.0
@@ -70,10 +73,17 @@ class CrowdAgent:
 	var model: CharacterModel
 	var moving := false
 	var anim_acc := 0.0
+	## Role by phase (set by `populate_unit`; &"" = fixed kind).
+	var night_kind: StringName = &""
+	var day_kind: StringName = &""
 
 
 func _init() -> void:
 	name = "Crowd"
+
+
+func _ready() -> void:
+	TimeOfDay.phase_changed.connect(_on_phase_changed)
 
 
 ## Hooks up a LuthadelWorld: populates loaded chunks now and streamed ones later.
@@ -110,13 +120,40 @@ func populate_unit(root: Node3D, coord: Vector2i) -> int:
 	var count := int(dens[0])
 	for i in count:
 		var lane: Array = lanes[rng.randi() % lanes.size()]
-		var kind: StringName
-		if rng.randf() < float(dens[1]):
-			kind = OBLIGATOR_KINDS[rng.randi() % OBLIGATOR_KINDS.size()]
-		else:
-			kind = SKAA_KINDS[rng.randi() % SKAA_KINDS.size()]
-		spawn_agent(root, lane[0], lane[1], kind, rng.randi(), rng.randf())
+		var roll := rng.randf()
+		var pick := rng.randi()
+		var night_kind := OBLIGATOR_KINDS[pick % OBLIGATOR_KINDS.size()] if roll < float(dens[1]) else SKAA_KINDS[pick % SKAA_KINDS.size()]
+		var day_kind := OBLIGATOR_KINDS[pick % OBLIGATOR_KINDS.size()] if roll < float(dens[2]) else SKAA_KINDS[pick % SKAA_KINDS.size()]
+		var ag := spawn_agent(root, lane[0], lane[1], night_kind if TimeOfDay.is_night() else day_kind, rng.randi(), rng.randf())
+		ag.night_kind = night_kind
+		ag.day_kind = day_kind
 	return count
+
+
+## Day <-> night: pedestrians whose role differs by phase change kind (their
+## model goes back to the pool and the next assignment pass re-dresses them).
+func _on_phase_changed(_phase: int) -> void:
+	var night := TimeOfDay.is_night()
+	for ag in _agents:
+		if not is_instance_valid(ag) or ag.night_kind == &"":
+			continue
+		var want := ag.night_kind if night else ag.day_kind
+		if want == ag.kind:
+			continue
+		ag.kind = want
+		if ag.model != null:
+			_park(ag.model)
+			ag.model = null
+			_active.erase(ag)
+
+
+## Obligator pedestrians currently in the crowd (tests, debug).
+func obligator_count() -> int:
+	var n := 0
+	for ag in _agents:
+		if is_instance_valid(ag) and ag.kind in OBLIGATOR_KINDS:
+			n += 1
+	return n
 
 
 ## Spawns one pedestrian walking between world points `a` and `b` (y = ground).

@@ -3,6 +3,7 @@
 	"title": "The Canton of Resource",
 	"act": "2",
 	"chapter": "A Night Heist",
+	"time_of_day": "night",
 	"prerequisites": ["dinner_at_keep_venture"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

@@ -1,0 +1,20 @@
+{
+	"id": "ambush_market_3",
+	"params": {
+		"enemy_types": [
+			"hazekiller",
+			"coinshot",
+			"guard"
+		],
+		"spawn_radius": 4.0
+	},
+	"rewards": {
+		"coins": 128,
+		"mastery_points": 2,
+		"vials": 1
+	},
+	"start_marker": "ambush_market_3",
+	"title": "Obligator Ambush: Fountain Steps",
+	"type": "obligator_ambush",
+	"validated": true
+}

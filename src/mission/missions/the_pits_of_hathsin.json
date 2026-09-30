@@ -3,6 +3,7 @@
 	"title": "The Pits of Hathsin",
 	"act": "2",
 	"chapter": "Into the Crevasses",
+	"time_of_day": "night",
 	"prerequisites": ["house_war"],
 	"rewards": {"unlocks": []},
 	"fail_conditions": [],

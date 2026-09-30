@@ -192,6 +192,7 @@ func reset_run() -> void:
 	dialogue_flags.clear()
 	post_game = false
 	discovered_safehouses.clear()
+	TimeOfDay.reset()
 
 
 # --- Side activities ---------------------------------------------------------
@@ -337,6 +338,8 @@ func to_dict() -> Dictionary:
 		"dialogue_flags": dialogue_flags,
 		"post_game": post_game,
 		"discovered_safehouses": discovered_safehouses,
+		# Raw world clock (0..24); forced mission/interior phases are not saved.
+		"time_of_day": TimeOfDay.hour,
 	}
 
 
@@ -373,6 +376,7 @@ func from_dict(data: Dictionary) -> void:
 	dialogue_flags = data.get("dialogue_flags", {})
 	post_game = bool(data.get("post_game", false))
 	discovered_safehouses = data.get("discovered_safehouses", {})
+	TimeOfDay.set_hour(float(data.get("time_of_day", TimeOfDay.DEFAULT_HOUR)))
 	if version != SAVE_VERSION:
 		push_warning("GameState: loaded save version %d, current is %d" % [version, SAVE_VERSION])
 
