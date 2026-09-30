@@ -6,9 +6,9 @@
 resource_name = "cloth"
 render_priority = 0
 shader = ExtResource("1")
-shader_parameter/roughness = 0.86
+shader_parameter/roughness = 0.93
 shader_parameter/metallic = 0.0
-shader_parameter/specular = 0.35
+shader_parameter/specular = 0.28
 shader_parameter/detail_strength = 0.14
 shader_parameter/grime_strength = 0.18
 shader_parameter/rim_strength = 0.3

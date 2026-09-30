@@ -198,7 +198,10 @@ class Body:
             # Windowed smoothly across the face (a super-gaussian in theta):
             # the old hard 52..128 degree cut left a step at each temple that
             # read as a seam running from the brow back to the ear.
-            k += 0.045 * math.exp(-((th - 90) / 34.0) ** 4) * math.exp(-((z - brow_z) / (0.009 * s)) ** 2)
+            # Deeper than before (0.045 / 9 mm) so it reads in profile, with a
+            # little extra at the glabella over the nose root.
+            k += 0.07 * math.exp(-((th - 90) / 34.0) ** 4) * math.exp(-((z - brow_z) / (0.011 * s)) ** 2)
+            k += 0.02 * math.exp(-((th - 90) / 12.0) ** 2) * math.exp(-((z - brow_z + 0.004 * s) / (0.008 * s)) ** 2)
             # Cheekbones: sharper falloff (tighter sigma) and more prominent,
             # sitting just below and outside the eye sockets.
             for cx in (46.0, 134.0):
@@ -273,15 +276,17 @@ class Body:
         face_y = lambda zz: np.interp(zz, [c[2] for c in centers], [c[1] + r[2] for c, r in zip(centers, radii)])
         # nose: diamond-section wedge whose back half sits inside the face
         fy = face_y(eye_z)
-        pts = [v3(0, fy - 0.008 * s, eye_z + 0.006 * s), v3(0, fy + 0.002 * s, eye_z - 0.012 * s),
-               v3(0, fy + 0.012 * s, nose_z + 0.012 * s), v3(0, fy + 0.016 * s, nose_z + 0.002 * s)]
+        # Projects further than before (tip ~1 cm more), so the profile has a
+        # real nose rather than a bump on a flat face.
+        pts = [v3(0, fy - 0.006 * s, eye_z + 0.006 * s), v3(0, fy + 0.007 * s, eye_z - 0.012 * s),
+               v3(0, fy + 0.019 * s, nose_z + 0.012 * s), v3(0, fy + 0.025 * s, nose_z + 0.002 * s)]
         tube(self.m, pts, [(0.005 * s, 0.007 * s), (0.007 * s, 0.009 * s), (0.01 * s, 0.011 * s), (0.013 * s, 0.01 * s)],
              n=6, hint=(0, 1, 0.2), color=skin, weights={"Head": 1.0}, cap1=0.008 * s, cap0=0.002 * s)
         # nostril wings: two small lobes either side of the tip, so the nose has
         # a base from the front instead of reading as a thin blade
         skin_dk = tuple(np.array(skin[:3]) * 0.9) + (skin[3] if len(skin) > 3 else 1.0,)
         for side in (1, -1):
-            c = v3(side * 0.0085 * s, fy + 0.006 * s, nose_z + 0.003 * s)
+            c = v3(side * 0.009 * s, fy + 0.011 * s, nose_z + 0.003 * s)
             tube(self.m, [c - v3(0, 0.004 * s, 0), c + v3(0, 0.002 * s, 0)], [(0.0065 * s, 0.0055 * s)] * 2, n=6,
                  hint=(0, 0, 1), color=skin_dk, weights={"Head": 1.0}, cap0=0.002 * s, cap1=0.003 * s)
         # mouth: a dark lip line plus a fuller lower lip, laid onto the front of
@@ -356,7 +361,7 @@ class Body:
         return lm
 
     def hair_shell(self, color, *, fringe_z=None, back_z=None, puff=1.12, jag=0.012, n=20, spikes=7,
-                   style="short", bald_amount=0.55):
+                   style="short", bald_amount=0.55, clumps=0.0, seed=0.0):
         """Hair cap built from the head profile, hidden in front below the fringe.
 
         `style`:
@@ -366,6 +371,10 @@ class Body:
           - "bald": a thin fringe of hair low on the sides/back only, leaving
             the crown bare (pair with `bald_top=` on `head()` for the scalp
             tone to show through).
+
+        `clumps` (0..1) breaks a short cap up so it doesn't read as a smooth
+        helmet: raised, slightly swept locks (lighter on top, darker in the
+        grooves) and a ragged, uneven hairline. `seed` varies the pattern.
         """
         lm = self.head_lm
         s = lm["s"]
@@ -404,8 +413,34 @@ class Body:
             centers.append(c)
             radii.append(tuple(max(x, 0.036 * s) * puff + (0.004 if style == "bald" else 0.008) * s for x in r))
 
+        if clumps > 0.0:
+            n = max(n, 28)
+
+        def lump(i, th):
+            """Swept lock pattern in [-1, 1]: locks run back from the hairline."""
+            u = (rings_z[i] - rings_z[0]) / max(rings_z[-1] - rings_z[0], 1e-6)
+            a = math.radians(th)
+            v = (0.55 * math.sin(5 * a + 2.1 + seed + 5.0 * u) * math.sin(3 * a - 1.3 + 7.0 * u)
+                 + 0.45 * math.sin(11 * a + 0.7 * seed + 3.0 * u))
+            return max(-1.0, min(1.0, v * 1.25))
+
+        def hairline(th):
+            a = math.radians(th)
+            return fz + clumps * 0.016 * s * (0.55 * math.sin(4 * a + seed) + 0.45 * math.sin(11 * a + 2 * seed))
+
+        base_color = color
+        if clumps > 0.0:
+            def color(p, i, th):
+                c = np.array(base_color(p, i, th) if callable(base_color) else base_color, dtype=float)
+                # lock tops catch a lighter sheen, grooves go darker: dark hair
+                # needs an additive lift or it stays one flat black under light
+                t = clumps * (lump(i, th) + 1.0) * 0.5
+                rgb = lerp(c[:3] * 0.7, c[:3] * 1.4 + 0.2, t * t)
+                return tuple(rgb) + (c[3] if len(c) > 3 else 1.0,)
+
         def shape(i, th):
             z = rings_z[i]
+            fz = hairline(th)
             front = math.exp(-((th - 90) / 55.0) ** 2)
             side_ = math.exp(-((th - 90) / 95.0) ** 2)
             k = 1.0
@@ -429,6 +464,9 @@ class Body:
                 k += -0.03 + 0.035 * math.sin(math.pi * t_b) * min(1.0, bald_amount / 0.55)
             if i == 0 or (z < fz + 0.01 * s and front > 0.3):
                 k += jag / 0.1 * 0.25 * math.sin(math.radians(th) * spikes)
+            if clumps > 0.0:
+                # locks stand proud of the cap; grooves stay above the scalp
+                k += clumps * 0.085 * max(lump(i, th), -0.3)
             return k
 
         # Level rings: letting them tilt with the (slightly forward-leaning)
@@ -439,9 +477,9 @@ class Body:
              weights={"Head": 1.0}, cap1=0.026 * s)
 
         if style == "long":
-            self._hair_tail(color, bz, s)
+            self._hair_tail(base_color, bz, s)
         elif style == "bun":
-            self._hair_bun(color, top_z, s)
+            self._hair_bun(base_color, top_z, s)
 
     def _back_point(self, z, s, push=1.0):
         """A point on the back surface of the head profile at height `z`."""

@@ -120,13 +120,19 @@ def flat_cap(b: Body, col, *, size=1.0, brim=0.07, droop=0.0):
     rr = [0.088, 0.094, 0.1, 0.098, 0.084, 0.05]
     rr = [r * size for r in rr]
     tube(b.m, c, [(r * s, r * 1.15 * s) for r in rr], n=16, color=col, weights={"Head": 1.0}, cap1=0.01 * s)
-    # peak: a flattened half-disc out front, angled slightly down
-    yb = 0.088 * size * 1.15 * s - 0.01 * s
-    pts = [v3(x * s * size, yb + brim * s * math.cos(x / 0.09 * 1.4), z0 + 0.004 * s - 0.012 * s * abs(x) / 0.09)
-           for x in (-0.085, -0.05, 0.0, 0.05, 0.085)]
-    tube(b.m, pts, [(0.006 * s, 0.012 * s), (0.006 * s, brim * 0.9 * s), (0.006 * s, brim * s), (0.006 * s, brim * 0.9 * s),
-                    (0.006 * s, 0.012 * s)], n=6, hint=(0, 0, 1), color=tuple(np.array(col) * np.array([0.8, 0.8, 0.8, 1])),
-         weights={"Head": 1.0}, cap0=0.004 * s, cap1=0.004 * s)
+    # Peak (brim): a thin half-disc jutting forward from the front of the band,
+    # tipped slightly down. (It used to be lofted with its thickness and depth
+    # swapped, which made a tall flat wall rather than a brim.)
+    yb = 0.088 * size * 1.15 * s - 0.012 * s
+    half_w = 0.082 * size
+    xs = np.linspace(-half_w, half_w, 7)
+    pts, radii = [], []
+    for x in xs:
+        reach = brim * math.sqrt(max(1.0 - (x / (half_w * 1.02)) ** 2, 0.0)) + 0.008
+        pts.append(v3(x * s, yb + reach * 0.5 * s, z0 + 0.008 * s - 0.25 * reach * s * 0.5))
+        radii.append((reach * 0.5 * s, 0.004 * s))
+    tube(b.m, pts, radii, n=8, hint=(0, -0.25, 1), color=tuple(np.array(col) * np.array([0.8, 0.8, 0.8, 1])),
+         weights={"Head": 1.0}, cap0=0.003 * s, cap1=0.003 * s)
 
 
 def wide_hat(b: Body, col, ribbon, *, brim=0.24, tilt=0.03):
@@ -185,6 +191,15 @@ def hood(b: Body, col, *, open_front=0.3, rag=False):
          weights=b.W(["Head", "Neck", "UpperChest"], {"UpperChest": 0.3, "Neck": 0.4}), cap1=0.01 * s)
 
 
+def torso_front_y(b: Body, table, z):
+    """Front (+Y) surface of a b.torso(table) at height z, for studs laid onto it."""
+    zf = z / b.H
+    rows = np.array(table)
+    yc = np.interp(zf, rows[:, 0], rows[:, 4])
+    rf = np.interp(zf, rows[:, 0], rows[:, 2])
+    return (yc + rf * b.P["width"]) * b.s
+
+
 def headscarf(b: Body, col):
     """Scarf tied over the hair, knot at the nape."""
     lm = b.head_lm
@@ -211,22 +226,43 @@ def hair_bun(b: Body, col, *, bun=0.045):
          n=10, hint=(0, 0, 1), color=col, weights={"Head": 1.0}, cap1=0.02 * s)
 
 
-def fringe_hair(b: Body, col):
-    """Horseshoe of hair round the back and sides of a balding head (Clubs)."""
+def fringe_hair(b: Body, col, skin=None):
+    """Horseshoe of hair round the back and sides of a balding head (Clubs).
+
+    Blended into the scalp rather than stuck on it. The top edge breaks into
+    uneven tufts that dip under the skin, the colour thins toward the skin
+    tone along the top and at the temples, and per-vertex speckle breaks up
+    the flat grey. (It used to read as a flat grey patch stuck to the head.)
+    """
     lm = b.head_lm
     s = lm["s"]
-    rows = 6
+    rows = 9
+    z0, z1 = lm["eye_z"] - 0.03 * s, lm["brow_z"] + 0.04 * s
+    base = np.array(col, dtype=float)
+    sk = np.array(skin if skin is not None else col, dtype=float)
+
+    def edge_t(i, th):
+        """0 in the body of the fringe, 1 at its top edge and temple ends."""
+        u = i / (rows - 1)
+        tuft = 0.5 + 0.5 * math.sin(math.radians(th) * 7.0 + 1.3) * math.sin(math.radians(th) * 3.0)
+        top = smoothstep(0.45 + 0.25 * tuft, 1.0, u)
+        ends = math.exp(-((th - 165) / 16.0) ** 2) + math.exp(-((th - 375) / 16.0) ** 2)
+        return min(1.0, top + ends), tuft
 
     def shape(i, th):
-        # Feather every edge of the open shell into the scalp, so it reads as
-        # hair rather than a flat plate with a hard rim at the temples.
-        edge = math.exp(-((th - 165) / 12.0) ** 2) + math.exp(-((th - 375) / 12.0) ** 2)
-        k = 1.0 - 0.1 * edge
-        k *= (0.95, 0.99, 1.0, 1.0, 0.975, 0.92)[i]
+        e, tuft = edge_t(i, th)
+        k = 1.0 - 0.09 * e  # the thinning edge dips under the scalp
+        if i == 0:
+            k *= 0.95
         return k
 
-    b.head_shell(col, lm["eye_z"] - 0.03 * s, lm["brow_z"] + 0.035 * s, puff=1.04, add=0.004, arc=(165, 375), n=16,
-                 rows=rows, shape=shape)
+    def color(p, i, th):
+        e, _ = edge_t(i, th)
+        grain = hash01(int(p[0] / 0.006 + 500), int(p[1] / 0.006 + 500), int(p[2] / 0.006)) - 0.5
+        c = lerp(base * (1.0 + 0.16 * grain), sk * 0.92, 0.6 * e)
+        return tuple(c[:3]) + (1.0,)
+
+    b.head_shell(color, z0, z1, puff=1.03, add=0.004, arc=(160, 380), n=20, rows=rows, shape=shape)
 
 
 # --------------------------------------------------------------------- props
@@ -370,7 +406,7 @@ def build_kelsier():
 
 def build_dockson():
     b = Body(H=1.76, sh_w=0.19, hip_w=0.1, apose=40, width=1.1, limb=1.05, neck=1.1)
-    coat, shirt, vest = hexcol("5c4630"), hexcol("b8ae96"), hexcol("3a3630")
+    coat, shirt, vest = hexcol("5c4630"), hexcol("9a9280"), hexcol("3a3630")
     pants, boots = hexcol("4a4236"), hexcol("2e241c")
     skin, hair = hexcol("c49a7c"), hexcol("3a2818")
     H, s = b.H, b.s
@@ -379,19 +415,21 @@ def build_dockson():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 7 and p[2] > 0.74 * H:
-            return shirt
+        if abs(th - 90) < 6 + 60 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
+            return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 24 and p[2] > 0.6 * H:
             return vest
         if 0.585 * H < p[2] < 0.608 * H:
             return hexcol("1e1610")
         return coat
 
-    b.torso(t, tcol)
+    # more columns so the narrow shirt front stays a crisp strip instead of
+    # blending across 18-degree faces into a glare-like streak down the chest
+    b.torso(t, tcol, n=32)
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2e2016"), lips=hexcol("8a5c4e"), jaw=1.1)
     b.hair_shell(hair, puff=1.0, jag=0.004, back_z=b.head_lm["chin_z"] + 0.05 * s, fringe_z=b.head_lm["brow_z"] + 0.035 * s,
-                 spikes=5)
+                 spikes=5, clumps=1.0, seed=0.4)
     b.beard(hexcol("4a3624"), length=0.022, full=False)
     for side in (1, -1):
         b.arm(side, color=band(coat, [(0, 0.0, coat)]), flare=0.008, radii_scale=1.06)
@@ -410,7 +448,7 @@ def build_dockson():
 
 def build_breeze():
     b = Body(H=1.74, sh_w=0.18, hip_w=0.1, apose=40, width=1.12, limb=1.02, neck=1.1)
-    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("ebe5d8")
+    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("cfc8b8")
     pants, shoes = hexcol("2c2830"), hexcol("141110")
     skin, hair = hexcol("e0b49c"), hexcol("2a1e18")
     H, s = b.H, b.s
@@ -419,18 +457,21 @@ def build_breeze():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 8 and p[2] > 0.74 * H:
-            return shirt
+        if abs(th - 90) < 6 + 60 * max(p[2] / H - 0.72, 0.0) and p[2] > 0.72 * H:
+            return shirt  # a V opening, wide enough to span columns (not a one-vertex streak)
         if abs(th - 90) < 30 and p[2] > 0.56 * H:
-            # waistcoat with a line of buttons
-            return hexcol("c8b070") if abs(th - 90) < 3 and int(p[2] / (0.03 * s)) % 2 == 0 else vest
+            # waistcoat (its buttons are real studs below: painted onto the
+            # single centre column they smeared into one bright gold streak)
+            return vest
         return coat
 
-    b.torso(t, tcol)
+    # more columns so the narrow shirt/waistcoat front stays crisp instead of
+    # blending across 18-degree faces into a glare-like streak down the chest
+    b.torso(t, tcol, n=32)
     b.neck(skin, r=0.058)
     b.head(skin, brow=hexcol("2a1e18"), lips=hexcol("b0746a"), jaw=1.08)
     b.hair_shell(hair, puff=1.04, jag=0.0, back_z=b.head_lm["chin_z"] + 0.055 * s, fringe_z=b.head_lm["brow_z"] + 0.04 * s,
-                 spikes=3)
+                 spikes=3, clumps=1.0, seed=2.2)
     for side in (1, -1):
         b.arm(side, color=lambda p, i, th, side=side: hexcol("ebe5d8") if arm_t(b, side, p) > 1.9 else coat,
               flare=0.01, radii_scale=1.06)
@@ -446,6 +487,12 @@ def build_breeze():
     # tailcoat tails at the back
     b.skirt(0.6 * H, 0.33 * H, (0.17 * s, 0.11 * s, 0.12 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,
             arc=(200, 340), leg_share=0.55, n=12)
+    # waistcoat buttons
+    for k_ in range(5):
+        z_ = (0.6 + 0.03 * k_) * H
+        y_ = torso_front_y(b, t, z_) + 0.002 * s
+        tube(b.m, [v3(0, y_ - 0.003 * s, z_), v3(0, y_ + 0.002 * s, z_)], [0.005 * s] * 2, n=6, hint=(0, 0, 1),
+             mat=METAL, color=hexcol("c8a650"), weights=b.W(["Spine", "Chest"]), cap1=0.002 * s)
     # watch chain
     tube(b.m, [v3(0.06 * s, 0.14 * s, 0.63 * H), v3(0.1 * s, 0.14 * s, 0.61 * H), v3(0.14 * s, 0.12 * s, 0.62 * H)],
          [0.003 * s] * 3, n=4, mat=METAL, color=hexcol("d8b860"), weights=b.W(["Spine", "Hips"]))
@@ -477,7 +524,7 @@ def build_ham():
     b.neck(skin, r=0.064)
     b.head(skin, brow=hexcol("2a1e16"), lips=hexcol("8a5a4c"), jaw=1.12)
     b.hair_shell(hair, puff=0.98, jag=0.0, back_z=b.head_lm["eye_z"] - 0.01 * s, fringe_z=b.head_lm["top"] - 0.02 * s,
-                 style="long")
+                 style="long", clumps=1.0, seed=4.1)
     for side in (1, -1):
         b.arm(side, color=skin, radii_scale=1.12)
         b.hand(side, skin, scale=1.06)
@@ -513,7 +560,7 @@ def build_clubs():
     b.torso(t, band(shirt, [(0, 0.5 * H, pants), (0.585 * H, 0.605 * H, hexcol("2a2018"))]))
     b.neck(skin, r=0.05)
     b.head(skin, brow=hexcol("8a8478"), lips=hexcol("8a605a"), jaw=1.02, gaunt=0.4, bald_top=hexcol("d0a890"))
-    fringe_hair(b, hair)
+    fringe_hair(b, hair, skin=skin)
     b.beard(hexcol("9a968c"), length=0.012, full=False)
 
     def acol(side):
@@ -568,7 +615,7 @@ def build_spook():
     tube(b.m, [v3(0.04 * s, 0.06 * s, 0.83 * H), v3(0.05 * s, 0.1 * s, 0.76 * H), v3(0.045 * s, 0.11 * s, 0.68 * H)],
          [(0.022 * s, 0.006 * s)] * 3, n=4, hint=(0, 1, 0), color=hexcol("7a3a2a"), weights=b.W(["UpperChest", "Chest"]))
     # the oversized cap
-    flat_cap(b, cap, size=1.42, brim=0.1, droop=0.035)
+    flat_cap(b, cap, size=1.1, brim=0.05, droop=0.02)
     return b, dict(mats={CLOTH: "Cloth"}, style="spook")
 
 

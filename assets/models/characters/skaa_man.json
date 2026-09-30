@@ -4,12 +4,12 @@
  "tris": 4212,
  "height": 1.7560243627384668,
  "garments": {
-  "cap": 236,
+  "cap": 288,
   "hood": 176,
   "sack": 110,
   "scarf": 24
  },
- "tris_max": 4758,
+ "tris_max": 4810,
  "materials": [
   "Cloth"
  ],

@@ -1,10 +1,10 @@
 {
  "name": "hazekiller",
  "style": "haze",
- "tris": 4262,
+ "tris": 4502,
  "height": 1.7872844677044843,
  "garments": {},
- "tris_max": 4262,
+ "tris_max": 4502,
  "materials": [
   "Cloth"
  ],
