@@ -13,7 +13,7 @@ func before_each() -> void:
 func after_each() -> void:
 	GameState.reset_run()
 	for slot in [22]:
-		var p := "user://saves/slot_%d.json" % slot
+		var p := GameState.slot_path(slot)
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
 

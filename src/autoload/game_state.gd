@@ -80,11 +80,16 @@ var stat_coins_thrown: int = 0
 var stat_deaths: int = 0
 var stat_detected_count: int = 0
 
+## Folder the slots live in. `SAVE_DIR` in the game; the test runner points
+## it at a private per-run folder (see `use_save_dir`) so parallel test runs
+## never share (or clobber) each other's slots, nor the player's saves.
+var save_dir := SAVE_DIR
+
 var _has_save := false
 
 
 func _ready() -> void:
-	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
+	DirAccess.make_dir_recursive_absolute(save_dir)
 	Events.checkpoint_reached.connect(_on_checkpoint_reached)
 	Events.objective_updated.connect(_on_objective_updated)
 	Events.mission_completed.connect(_on_mission_completed)
@@ -305,7 +310,18 @@ func autosave() -> void:
 # --- Save / load ---------------------------------------------------------------
 
 func _slot_path(slot: int) -> String:
-	return "%s/slot_%d.json" % [SAVE_DIR, slot]
+	return slot_path(slot)
+
+
+## File path of save `slot` in the current `save_dir`.
+func slot_path(slot: int) -> String:
+	return "%s/slot_%d.json" % [save_dir, slot]
+
+
+## Redirects saves to `dir` (created if needed). Used by the test runner.
+func use_save_dir(dir: String) -> void:
+	save_dir = dir
+	DirAccess.make_dir_recursive_absolute(save_dir)
 
 
 func to_dict() -> Dictionary:
@@ -422,13 +438,13 @@ func has_save(slot: int) -> bool:
 func latest_slot() -> int:
 	var best := -1
 	var best_time := -1
-	if not DirAccess.dir_exists_absolute(SAVE_DIR):
+	if not DirAccess.dir_exists_absolute(save_dir):
 		return -1
-	for fname in DirAccess.get_files_at(SAVE_DIR):
+	for fname in DirAccess.get_files_at(save_dir):
 		if not (fname.begins_with("slot_") and fname.ends_with(".json")):
 			continue
 		var slot := int(fname.trim_prefix("slot_").trim_suffix(".json"))
-		var f := FileAccess.open(SAVE_DIR + "/" + fname, FileAccess.READ)
+		var f := FileAccess.open(save_dir + "/" + fname, FileAccess.READ)
 		if f == null:
 			continue
 		var parsed = JSON.parse_string(f.get_as_text())

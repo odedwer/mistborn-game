@@ -80,4 +80,4 @@ func test_game_state_buy_mastery_persists_across_save_load() -> void:
 	assert_true(GameState.load_game(11))
 	assert_eq(GameState.mastery_points, 2)
 	assert_eq(GameState.mastery_level(&"tin_range"), 1)
-	DirAccess.remove_absolute("user://saves/slot_11.json")
+	DirAccess.remove_absolute(GameState.slot_path(11))

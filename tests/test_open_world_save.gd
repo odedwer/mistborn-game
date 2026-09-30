@@ -9,8 +9,8 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	if FileAccess.file_exists("user://saves/slot_99.json"):
-		DirAccess.remove_absolute("user://saves/slot_99.json")
+	if FileAccess.file_exists(GameState.slot_path(99)):
+		DirAccess.remove_absolute(GameState.slot_path(99))
 
 
 func test_capture_open_world_position_from_live_player() -> void:
@@ -35,7 +35,7 @@ func test_save_game_captures_position_without_a_checkpoint() -> void:
 	assert_true(GameState.has_open_world_position)
 	assert_almost(GameState.open_world_position.origin.x, 5.0)
 	player.queue_free()
-	DirAccess.remove_absolute("user://saves/slot_20.json")
+	DirAccess.remove_absolute(GameState.slot_path(20))
 
 
 func test_open_world_state_round_trips() -> void:
@@ -59,7 +59,7 @@ func test_open_world_state_round_trips() -> void:
 	assert_eq(GameState.mastery_points, 4)
 	assert_eq(GameState.mastery_level(&"push_force"), 2)
 	assert_eq(GameState.mastery_level(&"tin_range"), 1)
-	DirAccess.remove_absolute("user://saves/slot_21.json")
+	DirAccess.remove_absolute(GameState.slot_path(21))
 
 
 func test_collect_item_is_idempotent_and_persists() -> void:
