@@ -77,3 +77,16 @@ Follow-ups:
 - Clubs' grey side fringe reads like a flat patch stuck to the scalp.
 - Strong specular hotspot on Breeze's and Dockson's chest fabric; raise the roughness.
 - Hazekiller hood opening is ragged; faces are flat in profile (the nose and brow ridge need depth).
+
+## Review of world pass 3 (time of day)
+
+Merged: TimeOfDay autoload (ash-haze day and misty night, saved; night missions and interiors force night; night-only obligator patrols; wait-until-night at safehouses; `--time=<h>` and F7/F8 in debug builds), ashlar merchant/noble walls with frieze and cornice, bushier forked trees, heavy iron balcony rails, and 10 validated market activities. 293 tests green. Reviewed p3_merchant_avenue_day, p3_noble_facade_night and p3_keep_garden_topdown.
+
+Follow-ups:
+- Day reads well: brown ash haze, lamps still glowing, trees now read as trees. Noble ashlar and balconies read clearly at night.
+- The left-hand merchant building in the day avenue shot still uses the oversized crazy-paving stone; check which style or material path skips the new ashlar.
+- The keep garden top-down shows the walls, but the enclosure is almost bare: no visible hedges or garden beds. Needs parterre beds, paths and a fountain or statue.
+- The cornice reads only as a dark line; it needs more projection or a lighter trim colour.
+- There's no on-screen clock or time-of-day indicator (add one to the HUD or the map tab).
+- `test_save::test_latest_slot_picks_most_recent` failed twice while another worktree's test run was writing to the same `user://saves` folder. Isolate the test save dir (e.g. a per-run subfolder) so parallel runs can't collide.
+- Activity ring-path reachability is still not validated.
