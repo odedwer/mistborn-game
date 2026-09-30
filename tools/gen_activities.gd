@@ -10,9 +10,11 @@ extends SceneTree
 const TARGET := 3
 const SEED := 20260929
 const MIN_SPACING := 110.0
-const DISTRICTS: Array[StringName] = [&"skaa_slums", &"merchant", &"noble", &"docks"]
+## The market (Fountain Square's quarter) is small: pack its activities closer.
+const SPACING_OVERRIDE := {&"market": 40.0}
+const DISTRICTS: Array[StringName] = [&"skaa_slums", &"merchant", &"noble", &"docks", &"market"]
 const TYPES: Array[StringName] = [&"coin_race", &"rooftop_pursuit", &"obligator_ambush", &"crowd_riot"]
-const SHORT := {&"skaa_slums": "skaa", &"merchant": "merchant", &"noble": "noble", &"docks": "docks"}
+const SHORT := {&"skaa_slums": "skaa", &"merchant": "merchant", &"noble": "noble", &"docks": "docks", &"market": "market"}
 const KIND := {&"coin_race": "coin_race", &"rooftop_pursuit": "pursuit", &"obligator_ambush": "ambush", &"crowd_riot": "riot"}
 const NAMES := {
 	&"coin_race": {
@@ -20,24 +22,28 @@ const NAMES := {
 		&"merchant": ["Guildhall Gallop", "Counting-House Dash", "Silk Row Sprint"],
 		&"noble": ["Keep Ring Circuit", "Gilded Terrace Run", "Bannerline Dash"],
 		&"docks": ["Jetty Run", "Cargo Crane Circuit", "Barge Row Sprint"],
+		&"market": ["Stall Awning Dash", "Fountain Rim Circuit", "Barrow Row Sprint"],
 	},
 	&"rooftop_pursuit": {
 		&"skaa_slums": ["Rooftop Pursuit: Pickpocket", "Rooftop Pursuit: Runner", "Rooftop Pursuit: Informant"],
 		&"merchant": ["Rooftop Pursuit: Fence", "Rooftop Pursuit: Tally Runner", "Rooftop Pursuit: Silk Thief"],
 		&"noble": ["Rooftop Pursuit: Jewel Thief", "Rooftop Pursuit: Spy", "Rooftop Pursuit: Courier"],
 		&"docks": ["Rooftop Pursuit: Smuggler", "Rooftop Pursuit: Cargo Runner", "Rooftop Pursuit: Dock Cutpurse"],
+		&"market": ["Rooftop Pursuit: Fruit Thief", "Rooftop Pursuit: Coin Clipper", "Rooftop Pursuit: Stall Robber"],
 	},
 	&"obligator_ambush": {
 		&"skaa_slums": ["Obligator Ambush: Ash Lane", "Obligator Ambush: Soup Line", "Obligator Ambush: Tenement Row"],
 		&"merchant": ["Obligator Ambush: Guild Court", "Obligator Ambush: Silk Row", "Obligator Ambush: Ledger Street"],
 		&"noble": ["Obligator Ambush: Garden Gate", "Obligator Ambush: Carriage Road", "Obligator Ambush: Banner Court"],
 		&"docks": ["Obligator Ambush: Cargo Quay", "Obligator Ambush: Net Loft", "Obligator Ambush: Toll Bridge"],
+		&"market": ["Obligator Ambush: Weighing House", "Obligator Ambush: Stall Row", "Obligator Ambush: Fountain Steps"],
 	},
 	&"crowd_riot": {
 		&"skaa_slums": ["Soup Line Unrest", "Ration Day Unrest", "Ashfall Unrest"],
 		&"merchant": ["Guild Levy Unrest", "Counting-House Unrest", "Market Toll Unrest"],
 		&"noble": ["Servants' Quarter Unrest", "Kitchen Gate Unrest", "Stable Yard Unrest"],
 		&"docks": ["Stevedores' Unrest", "Shipwrights' Unrest", "Ferrymen's Unrest"],
+		&"market": ["Grain Price Unrest", "Stallholders' Unrest", "Fish Row Unrest"],
 	},
 }
 
@@ -179,7 +185,10 @@ func _fix(a: ActivityData, data: Dictionary, start: Vector3) -> bool:
 
 
 func _candidate(d: StringName) -> Vector2:
-	for i in 400:
+	# Uniform over the whole city: a small district (the market is <1 % of
+	# it) needs many more draws to be hit at all.
+	var tries := 20000 if SPACING_OVERRIDE.has(d) else 400
+	for i in tries:
 		var p := Vector2(rng.randf_range(plan.bounds.position.x, plan.bounds.end.x),
 				rng.randf_range(plan.bounds.position.y, plan.bounds.end.y))
 		if plan.district_at(p) != d or plan.distance_to_wall(p) < 90.0:
@@ -191,9 +200,10 @@ func _candidate(d: StringName) -> Vector2:
 		if plan.landmark_overlapping(Rect2(p, Vector2.ZERO).grow(45.0)) != null:
 			continue
 		var close := false
+		var spacing := float(SPACING_OVERRIDE.get(d, MIN_SPACING))
 		for m: Dictionary in plan.markers:
 			var pa: Array = m["pos"]
-			if Vector2(float(pa[0]), float(pa[1])).distance_to(p) < MIN_SPACING:
+			if Vector2(float(pa[0]), float(pa[1])).distance_to(p) < spacing:
 				close = true
 				break
 		if close:
@@ -266,7 +276,7 @@ func _build_data(id: String, t: StringName, title: String, d: StringName, start:
 				types.append(pool[rng.randi() % pool.size()])
 			base["params"] = {"enemy_types": types, "spawn_radius": 9.0}
 			base["rewards"] = {"coins": int(80 * scale), "vials": 1, "mastery_points": 2}
-			if not _fit_radius(base, start, [9.0, 7.0, 5.5, 4.0]):
+			if not _fit_radius(base, start, [9.0, 7.0, 5.5, 4.0, 3.0]):
 				return {}
 		&"crowd_riot":
 			base["params"] = {"start_mood": 78.0, "calm_threshold": 25.0, "member_count": 5,

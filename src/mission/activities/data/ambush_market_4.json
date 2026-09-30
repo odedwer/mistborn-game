@@ -1,0 +1,20 @@
+{
+	"id": "ambush_market_4",
+	"params": {
+		"enemy_types": [
+			"guard",
+			"guard",
+			"hazekiller"
+		],
+		"spawn_radius": 4.0
+	},
+	"rewards": {
+		"coins": 128,
+		"mastery_points": 2,
+		"vials": 1
+	},
+	"start_marker": "ambush_market_4",
+	"title": "Obligator Ambush: Weighing House",
+	"type": "obligator_ambush",
+	"validated": true
+}

@@ -237,6 +237,16 @@
 		{"group": "activity_start", "activity_id": "coin_race_skaa_2", "placement": "rooftop", "pos": [-1159, -103], "floors": 4, "flat": true},
 		{"group": "activity_start", "activity_id": "ambush_skaa_2", "placement": "street", "pos": [-1002, -327]},
 		{"group": "activity_start", "activity_id": "pursuit_noble_4", "placement": "rooftop", "pos": [680, -1742], "floors": 4, "flat": true},
-		{"group": "activity_start", "activity_id": "ambush_noble_4", "placement": "street", "pos": [-557, -1307]}
+		{"group": "activity_start", "activity_id": "ambush_noble_4", "placement": "street", "pos": [-557, -1307]},
+		{"group": "activity_start", "activity_id": "coin_race_market_1", "placement": "rooftop", "pos": [-396, -423], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "coin_race_market_2", "placement": "rooftop", "pos": [-81, -530], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "coin_race_market_3", "placement": "rooftop", "pos": [-428, -490], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "pursuit_market_2", "placement": "rooftop", "pos": [-68, -607], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "pursuit_market_3", "placement": "rooftop", "pos": [-380, -574], "floors": 4, "flat": true},
+		{"group": "activity_start", "activity_id": "ambush_market_2", "placement": "street", "pos": [-256, -620]},
+		{"group": "activity_start", "activity_id": "riot_market_2", "placement": "street", "pos": [-138, -567]},
+		{"group": "activity_start", "activity_id": "riot_market_3", "placement": "street", "pos": [-339, -646]},
+		{"group": "activity_start", "activity_id": "ambush_market_3", "placement": "street", "pos": [-410, -652]},
+		{"group": "activity_start", "activity_id": "ambush_market_4", "placement": "street", "pos": [-80, -392]}
 	]
 }
