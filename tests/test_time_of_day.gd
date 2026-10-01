@@ -286,7 +286,7 @@ func test_night_moon_fill_open_world_only() -> void:
 	host.add_child(drv)
 	drv.setup(world_env["environment"], world_env["moon"], null, null, fill)
 	TimeOfDay.set_hour(23.0)
-	assert_almost(fill.light_energy, EnvironmentBuilder.FILL_ENERGY)
+	assert_almost(fill.light_energy, EnvironmentBuilder.fill_energy())
 	assert_true(fill.visible)
 	TimeOfDay.set_hour(12.0)
 	assert_almost(fill.light_energy, 0.0)

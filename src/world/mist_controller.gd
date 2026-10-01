@@ -32,6 +32,8 @@ const QUALITY := [
 ## streets, roofs and the player readable at night without tin, and tin
 ## vision still brightens *from* it.
 @export var base_ambient := 3.0
+## Forward+ night ambient floor (see `EnvironmentBuilder.FILL_ENERGY_FORWARD`).
+@export var base_ambient_forward := 2.3
 ## Daytime (see `set_daylight`): the mist burns off to a thin ash haze.
 @export var day_mist_scale := 0.06
 @export var day_base_fog_scale := 0.4
@@ -167,7 +169,8 @@ func _apply() -> void:
 	var depth := base_depth_fog if volumetric else low_quality_depth_fog
 	environment.fog_density = lerpf(depth, day_depth_fog, d) * thin
 	environment.tonemap_exposure = lerpf(base_exposure, day_exposure, d) * (1.0 + 0.9 * tin)
-	environment.ambient_light_energy = lerpf(base_ambient, day_ambient, d) + 0.8 * tin
+	var night_ambient := base_ambient if _compat else base_ambient_forward
+	environment.ambient_light_energy = lerpf(night_ambient, day_ambient, d) + 0.8 * tin
 	for m: ShaderMaterial in [mist_material, canal_material]:
 		if m != null:
 			m.set_shader_parameter("density_scale", thin * lerpf(1.0, day_mist_scale, d))
