@@ -440,12 +440,16 @@ func _start_ambush(a: ActivityData, start_pos: Vector3) -> void:
 			marker.global_position = pos
 			var enemy: Node = spawner.call("spawn_type", StringName(types[i]), marker)
 			marker.queue_free()
-			if enemy != null:
+			# spawn_type hands back the enemy already alive at a marker, so the
+			# same enemy can come back twice (or from an earlier run of this
+			# ambush). Count and wire each one once, or the ambush can't complete.
+			if enemy != null and not spawned.has(enemy):
 				spawned.append(enemy)
 				nodes.append(enemy)
 				var health := Health.find_on(enemy)
-				if health != null:
-					health.died.connect(_on_ambush_enemy_died.bind(a.id, enemy))
+				var on_died := _on_ambush_enemy_died.bind(a.id, enemy)
+				if health != null and not health.died.is_connected(on_died):
+					health.died.connect(on_died)
 	_active[a.id] = {"type": "obligator_ambush", "elapsed": 0.0, "nodes": nodes, "alive": spawned}
 
 

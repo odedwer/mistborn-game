@@ -129,6 +129,33 @@ func test_obligator_ambush_completes_when_all_defeated() -> void:
 	spawner.queue_free()
 
 
+## Mirrors EnemySpawner.spawn_type, which returns the enemy already alive at a
+## marker: here every call hands back the same enemy.
+func _reusing_spawner() -> Node:
+	var spawner := Node.new()
+	spawner.add_to_group(&"enemy_spawner")
+	var src := "extends Node\nvar e: Node3D\nfunc spawn_type(_t, at):\n\tif e == null:\n\t\te = Node3D.new()\n\t\tvar h := Node.new()\n\t\th.name = \"Health\"\n\t\th.set_script(load(\"res://src/combat/health.gd\"))\n\t\te.add_child(h)\n\t\tadd_child(e)\n\t\te.global_position = at.global_position\n\treturn e\n"
+	var script := GDScript.new()
+	script.source_code = src
+	script.reload()
+	spawner.set_script(script)
+	add_child(spawner)
+	return spawner
+
+
+func test_ambush_counts_a_reused_enemy_once() -> void:
+	var spawner := _reusing_spawner()
+	assert_true(_mgr.start_activity(&"ambush_market", Vector3(20, 0, 20)))
+	var alive: Array = _mgr._active[&"ambush_market"]["alive"]
+	assert_eq(alive.size(), 1, "the same enemy is counted once")
+	var h: Health = alive[0].get_node(^"Health")
+	assert_eq(h.died.get_connections().size(), 1, "died is connected once")
+	var got_complete := [false]
+	_mgr.activity_completed.connect(func(id, _medal, _t): got_complete[0] = (id == &"ambush_market"))
+	h.take_damage(10000.0)
+	assert_true(got_complete[0], "killing the one enemy completes the ambush")
+	spawner.queue_free()
+
 func test_loads_act2_activities() -> void:
 	assert_true(_mgr.activities.has(&"obligator_courier_intercept"))
 	assert_true(_mgr.activities.has(&"soothing_riots"))

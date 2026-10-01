@@ -482,7 +482,11 @@ class Body:
                 # sat almost exactly on the skin and z-fought into a stripe
                 # running from the eye corner back to the hair.
                 # (bald: only a low band round the back stays, behind the ears)
-                hide = 1.0 if abs(th - 90) < (100 if style == "bald" else 60) else 0.0
+                # (a steep ramp over ~one column rather than a hard step: the
+                # crossing lands inside the quads, so the sideburn corner is
+                # rounded rather than a square notch)
+                lim = 100 if style == "bald" else 60
+                hide = 1.0 - smoothstep(lim - 6.0, lim + 6.0, abs(th - 90))
                 k -= 0.35 * hide * smoothstep(fz, fz - 0.015 * s, z)
                 k -= 0.12 * side_ * smoothstep(lm["eye_z"], lm["eye_z"] - 0.04 * s, z)
             if style == "choppy":
@@ -499,10 +503,23 @@ class Body:
                 # Cut the shell around each ear (a hard step between columns,
                 # so there's no band where hair and skin z-fight): the hair
                 # tucks behind the ear and the ear sits in front of it.
-                for e_th in (-10.0, 190.0):
-                    d = abs((th - e_th + 180.0) % 360.0 - 180.0)
-                    if d < 21.0:
-                        k -= 0.3 * smoothstep(ear_z0 - 0.008 * s, ear_z0, z) * (1 - smoothstep(ear_z1, ear_z1 + 0.008 * s, z))
+                # The cut is an ellipse round the ear, rather than a square
+                # window. Its front edge leans back
+                # towards the bottom, leaving a tapered sideburn wedge in front
+                # of the ear.
+                zc, hz = 0.5 * (ear_z0 + ear_z1), 0.5 * (ear_z1 - ear_z0) + 0.004 * s
+                for e_th, fwd in ((-10.0, 1.0), (190.0, -1.0)):
+                    d = (th - e_th + 180.0) % 360.0 - 180.0  # signed, degrees
+                    f = d * fwd  # > 0 towards the face
+                    dz = (z - zc) / hz
+                    # sideburn: the front half narrows as it goes down
+                    reach = 30.0 if f < 0 else 30.0 * (0.55 + 0.45 * min(max(dz + 0.2, 0.0), 1.0))
+                    # Continuous but steep: the shell crosses the skin along one
+                    # line inside the quads, so the outline interpolates
+                    # smoothly (a hard in/out step gave a staircase), and the
+                    # ramp is too short for a z-fighting band.
+                    r = math.sqrt((f / reach) ** 2 + dz * dz)
+                    k -= 0.3 * (1.0 - smoothstep(0.65, 1.05, r))
             if style == "bald":
                 # A low band of close-cropped hair round the back: it swells just
                 # clear of the scalp mid-band and tucks under it at both edges,

@@ -214,14 +214,54 @@ def torso_surface(b: Body, rings, x, z, lift=0.004):
         if len(pts) < 2:
             continue
         px = [p[0] for p in pts]
-        zs.append(float(np.mean([p[2] for p in pts])))
+        # the ring's own height at this x (tilted rings are higher in front)
+        zs.append(float(np.interp(x, px, [p[2] for p in pts])))
         ys.append(float(np.interp(x, px, [p[1] for p in pts])))
     order = np.argsort(zs)
     y = np.interp(z, np.array(zs)[order], np.array(ys)[order])
     return v3(x, y + lift, z)
 
 
-def shirt_v(b: Body, rings, col, *, z_point=0.72, z_top=0.815, half_w=0.05):
+def waistcoat_panel(b: Body, rings, col, *, z_bot=0.565, z_top=0.8, half_frac=0.5, lift=0.003):
+    """Waistcoat front as its own panel on the torso.
+
+    As vertex colour on the torso, the saturated gold faded into the dark
+    coat across a whole column (11 degrees) all round its outline, and the
+    soft gold halo read as a hot orange glow on the chest. The panel has a
+    crisp outline, shades darker towards its sides, and gets a slightly
+    darker hem band.
+    """
+    s, H = b.s, b.H
+    V = b.m.verts
+    zs = np.linspace(z_bot * H, z_top * H, 9)
+
+    def half_w(z):
+        best = None
+        for ring in rings:
+            pts = [V[r[0]] for r in ring]
+            zm = float(np.mean([p[2] for p in pts]))
+            if best is None or abs(zm - z) < abs(best[0] - z):
+                best = (zm, max(p[0] for p in pts))
+        return best[1] * half_frac
+
+    fr = np.linspace(-1.0, 1.0, 7)
+    W = b.W(["Spine", "Chest", "UpperChest"])
+    base = np.array(col[:3], dtype=float)
+    for a, c in zip(fr[:-1], fr[1:]):
+        edge = max(abs(a), abs(c))
+        left = [torso_surface(b, rings, a * half_w(z), z, lift) for z in zs]
+        right = [torso_surface(b, rings, c * half_w(z), z, lift) for z in zs]
+
+        def rc(i, edge=edge):
+            k = 1.0 - 0.3 * edge ** 2
+            if i == 0:
+                k *= 0.7
+            return tuple(base * k) + (1.0,)
+
+        ribbon(b.m, left, right, color=rc, weights=W, normal_hint=(0, 1, 0))
+
+
+def shirt_v(b: Body, rings, col, *, z_point=0.72, z_top=0.815, half_w=0.05, lift=0.004):
     """Shirt front showing in a coat/waistcoat V, as its own panel on the chest.
 
     Painting the V into the torso's vertex colours smeared it: the narrow
@@ -240,8 +280,8 @@ def shirt_v(b: Body, rings, col, *, z_point=0.72, z_top=0.815, half_w=0.05):
         left, right = [], []
         for z in zs:
             w = 0.003 * s + half_w * s * (z - zs[0]) / (zs[-1] - zs[0])
-            left.append(torso_surface(b, rings, a * w, z))
-            right.append(torso_surface(b, rings, c * w, z))
+            left.append(torso_surface(b, rings, a * w, z, lift))
+            right.append(torso_surface(b, rings, c * w, z, lift))
 
         def rc(i, edge=edge):
             pleat = 0.93 + 0.07 * math.cos(i * 2.2)
@@ -500,7 +540,7 @@ def build_breeze():
     b = Body(H=1.74, sh_w=0.18, hip_w=0.1, apose=40, width=1.12, limb=1.02, neck=1.1)
     # Linen, not paper white: the old ~0.8-0.9 albedo shirt next to the gold
     # waistcoat blew out into a glowing gold-white streak under strong light.
-    coat, vest, shirt = hexcol("4c2640"), hexcol("7e5e22"), hexcol("a49c8c")
+    coat, vest, shirt = hexcol("4c2640"), hexcol("6e5426"), hexcol("a49c8c")  # muted brocade gold
     linen_hi, linen_cuff = hexcol("b8b2a4"), hexcol("aca698")
     pants, shoes = hexcol("2c2830"), hexcol("141110")
     skin, hair = hexcol("e0b49c"), hexcol("2a1e18")
@@ -510,10 +550,7 @@ def build_breeze():
     def tcol(p, i, th):
         if p[2] < 0.5 * H:
             return pants
-        if abs(th - 90) < 30 and p[2] > 0.56 * H:
-            # waistcoat (its buttons are real studs below: painted onto the
-            # single centre column they smeared into one bright gold streak)
-            return vest
+        # (the waistcoat and shirt are panels laid on top: see waistcoat_panel)
         return coat
 
     # more columns so the narrow shirt/waistcoat front stays crisp instead of
@@ -534,7 +571,8 @@ def build_breeze():
     tube(b.m, [v3(0, 0.06 * s, 0.815 * H), v3(0, 0.08 * s, 0.79 * H), v3(0, 0.1 * s, 0.75 * H)],
          [(0.03 * s, 0.018 * s), (0.028 * s, 0.02 * s), (0.012 * s, 0.01 * s)], n=6, hint=(0, 1, 0),
          color=linen_hi, weights=b.W(["UpperChest", "Neck"]), cap1=0.006 * s)
-    shirt_v(b, trings, shirt, half_w=0.05)
+    waistcoat_panel(b, trings, vest)
+    shirt_v(b, trings, shirt, half_w=0.05, lift=0.007)
     collar(b, coat, h=0.045, r=(0.08, 0.075, 0.08))
     # tailcoat tails at the back
     b.skirt(0.6 * H, 0.33 * H, (0.17 * s, 0.11 * s, 0.12 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,
@@ -542,7 +580,7 @@ def build_breeze():
     # waistcoat buttons
     for k_ in range(5):
         z_ = (0.6 + 0.03 * k_) * H
-        y_ = torso_front_y(b, t, z_) + 0.002 * s
+        y_ = torso_surface(b, trings, 0.0, z_, 0.004)[1]
         tube(b.m, [v3(0, y_ - 0.003 * s, z_), v3(0, y_ + 0.002 * s, z_)], [0.005 * s] * 2, n=6, hint=(0, 0, 1),
              mat=METAL, color=hexcol("c8a650"), weights=b.W(["Spine", "Chest"]), cap1=0.002 * s)
     # watch chain

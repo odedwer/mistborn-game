@@ -49,6 +49,10 @@ var _building: Array[ChunkInstancer] = []
 var _baking: Array[ChunkInstancer] = []
 ## Instanced units waiting for a free bake slot (nearest first).
 var _bake_queue: Array[ChunkInstancer] = []
+## Wanted units the last update couldn't request yet (task slots full). They
+## count as pending work: without this, is_busy() could read false between
+## updates while units were still waiting for a slot.
+var _unrequested := 0
 ## Prebuilt data (landmarks computed for the marker index), consumed on load.
 var _prebuilt: Dictionary = {}
 ## key -> pin count. A pinned unit is never unloaded (e.g. a running open-world
@@ -99,7 +103,7 @@ func is_area_loaded(p: Vector3) -> bool:
 
 
 func is_busy() -> bool:
-	return not _tasks.is_empty() or not _building.is_empty()
+	return not _tasks.is_empty() or not _building.is_empty() or _unrequested > 0
 
 
 ## True while navmeshes are still baking or queued.
@@ -284,9 +288,11 @@ func _update_wanted() -> void:
 		if not _units.has(k) and not _tasks.has(k):
 			missing.append([wanted[k], k])
 	missing.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	_unrequested = missing.size()
 	for item: Array in missing:
 		if _tasks.size() >= max_tasks:
 			break
+		_unrequested -= 1
 		var k: String = item[1]
 		if _prebuilt.has(k):
 			_begin_instancing(k, _take_result(k))
