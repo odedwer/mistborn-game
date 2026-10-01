@@ -178,9 +178,10 @@ class Rig:
 STYLES = {
     "vin": dict(base={"r_elbow": 28, "l_elbow": 22, "r_wrist": -10, "r_abd": 10, "l_abd": 9},
                 stride=1.0, swing=1.0, hunch=0.0, speed_k=1.0),
+    # (the lantern hangs from his belt now: the left arm is free)
     "guard": dict(base={"r_elbow": 82, "r_abd": 9, "r_flex": 8, "r_twist": -8, "r_wrist": -8,
-                        "l_elbow": 72, "l_flex": 12, "l_abd": 10, "l_twist": 5},
-                  arm_lock={"r", "l"}, stride=1.0, swing=0.35, hunch=0.0, weapon_r=True),
+                        "l_elbow": 20, "l_abd": 10},
+                  arm_lock={"r"}, stride=1.0, swing=0.35, hunch=0.0, weapon_r=True),
     "haze": dict(base={"r_elbow": 78, "r_abd": 10, "r_flex": 6, "r_twist": -6, "r_wrist": -6,
                        "l_abd": 16, "l_elbow": 30, "l_flex": 8},
                  arm_lock={"r"}, stride=1.0, swing=0.6, hunch=2.0, weapon_r=True),
@@ -585,7 +586,7 @@ def make_anims(style: str, S: Skel):
         """Re-keys an r_* arm pose onto the reaching hand."""
         out = {}
         for key, v in d.items():
-            if key.startswith("r_") and key[2:] in ("abd", "flex", "elbow", "twist", "wrist"):
+            if key.startswith("r_") and key[2:] in ("abd", "flex", "elbow", "twist", "wrist", "wtwist"):
                 out[hand + key[1:]] = v
             elif key == "spine_twist":
                 out[key] = v * tw
@@ -597,15 +598,29 @@ def make_anims(style: str, S: Skel):
     brace = {"hips_z": -0.05 * k, f"{lead}_fy": 0.13 * k, f"{trail}_fy": -0.1 * k,
              f"{trail}_fx": base[f"{trail}_fx"] - 0.03 * k * (1 if trail == "l" else -1)}
 
+    # Arm keys solved for the hand, not guessed (see the pose review tools):
+    #  - Push: an open palm thrust. The arm extends forward and ~18 degrees out
+    #    towards its own side, so at 3/4 it no longer reaches across the chest.
+    #    The wrist is extended with the fingers up and the palm square to the
+    #    target.
+    #  - Pull: the arm reaches out with the hand closing into a fist (wrist curled
+    #    down, palm in), then the fist is hauled back to the ribs with the elbow
+    #    behind the body. The old pull ended with the hand up by the face.
+    palm_wind = {"r_abd": 25, "r_flex": 40, "r_elbow": 110, "r_twist": 0, "r_wrist": 60, "r_wtwist": -60,
+                 "spine_twist": -14, "spine_lean": 2}
+    palm_out = {"r_abd": 18, "r_flex": 92, "r_elbow": 2, "r_twist": 0, "r_wrist": 70, "r_wtwist": -72,
+                "spine_twist": 10, "spine_lean": 8, "head_pitch": -4}
+    fist_reach = {"r_abd": 11, "r_flex": 97, "r_elbow": 0, "r_twist": 2, "r_wrist": -28, "r_wtwist": -49,
+                  "spine_twist": 14, "spine_lean": 6}
+    fist_back = {"r_abd": 2, "r_flex": -22, "r_elbow": 116, "r_twist": 15, "r_wrist": 22, "r_wtwist": 14,
+                 "spine_twist": -18, "spine_lean": -8, "head_pitch": 7}  # eyes stay on the target
+
     def push(t):
         return keyed([
             (0.0, {}),
-            (0.14, dict(brace, **arm({"r_abd": 18, "r_flex": 45, "r_elbow": 115, "r_twist": -10, "r_wrist": 20,
-                                      "spine_twist": -14, "spine_lean": 4}))),
-            (0.26, dict(brace, **arm({"r_abd": 12, "r_flex": 88, "r_elbow": 0, "r_twist": -60, "r_wrist": 65,
-                                      "spine_twist": 12, "spine_lean": 8, "head_pitch": -4}))),
-            (0.42, dict(brace, **arm({"r_abd": 12, "r_flex": 85, "r_elbow": 4, "r_twist": -60, "r_wrist": 60,
-                                      "spine_twist": 10, "spine_lean": 6}))),
+            (0.14, dict(brace, **arm(palm_wind))),
+            (0.26, dict(brace, **arm(palm_out))),
+            (0.42, dict(brace, **arm(dict(palm_out, r_flex=89, spine_twist=8, spine_lean=6)))),
             (0.65, {}),
         ], t, base)
 
@@ -615,12 +630,9 @@ def make_anims(style: str, S: Skel):
         back = dict(brace, hips_y=-0.04 * k)
         return keyed([
             (0.0, {}),
-            (0.18, dict(brace, **arm({"r_abd": 12, "r_flex": 92, "r_elbow": 2, "r_twist": -20, "r_wrist": -15,
-                                      "spine_twist": 16, "spine_lean": 6}))),
-            (0.3, dict(back, **arm({"r_abd": 12, "r_flex": 88, "r_elbow": 5, "r_twist": -20, "r_wrist": 25,
-                                    "spine_twist": 14, "spine_lean": -6}))),
-            (0.44, dict(back, **arm({"r_abd": 30, "r_flex": 10, "r_elbow": 125, "r_twist": 30, "r_wrist": 30,
-                                     "spine_twist": -18, "spine_lean": -12, "head_pitch": -6}))),
+            (0.18, dict(brace, **arm(fist_reach))),
+            (0.3, dict(back, **arm(dict(fist_reach, r_wrist=-40, spine_lean=-4)))),
+            (0.44, dict(back, **arm(fist_back))),
             (0.75, {}),
         ], t, base)
 
