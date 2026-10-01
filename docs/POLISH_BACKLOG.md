@@ -153,3 +153,23 @@ Follow-ups:
 - The dialogue now reads "steel" correctly. At night the player, the roof walk and the city read; the foreground chimneys are still near-black silhouettes, which is acceptable.
 - Night values were tuned only on opengl3, so take one Vulkan night shot to confirm Forward+ isn't over-bright.
 - **Courtyard** still reads as a vast empty plaza: the planters and booths are invisible at this scale and the props are tiny. It needs mid-scale structure: a paved central carriage loop, hedged lawns or low walls breaking up the space, lamp posts along the approach, and guard figures. The keep facade still uses the busy crazy-paving stone rather than ashlar. A large dark shadow shape fills the foreground (gatehouse or camera placement?).
+
+## Review of art pass 9, and an ambush fix
+
+Merged art pass 9:
+- Elliptical hair cut-outs with tapered sideburns around the ears.
+- Breeze's gold waistcoat as its own crisp panel: the glow was paint bleeding into the coat, not emission.
+- A `--pose=idle|walk|run|jump|push|pull` lineup flag and a poses group.
+- Fixes for the three worst animation problems:
+  - Armed characters now Push/Pull with the free hand, so the spear and axe no longer pass through their heads.
+  - A tucked jump apex.
+  - A lower knee lift for robed runners.
+
+Reviewed p9_after_ears_side and p9_after_poses_34.
+
+Also fixed on the main branch: `test_soak` caught "died already connected" in `ActivityManager._start_ambush`. `EnemySpawner.spawn_type` returns the enemy already alive at a marker, so an ambush could get the same enemy twice, wiring it twice and listing it twice in `alive`. Killing it then never completed the ambush. Each enemy is now counted once, with a regression test (`test_ambush_counts_a_reused_enemy_once`) that fails without the fix. Soak passed 2/2 after the fix.
+
+Follow-ups:
+- Ear profiles read cleanly now, and Push/Pull no longer clips weapons.
+- The off-hand Push reaches across the chest at 3/4. The Inquisitor's Pull pose brings his hand up to his face. The guard's Push holds the lantern forward rather than an open palm.
+- `test_world_gen::test_slice_metal_density_and_streaming` ("Keep Venture streamed in") failed once in a full run while another agent was running heavy jobs on the same machine. It looks like a timing/load sensitivity; watch it and make the streaming wait condition-based if it recurs.
