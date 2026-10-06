@@ -375,7 +375,8 @@ static func _courtyard_fountain(data: ChunkBuildData, c: Vector3) -> void:
 		var a1 := TAU * float(k + 1) / 8.0
 		var w0 := c + Vector3(0, 0.45, 0)
 		wm.add_tri(w0, w0 + Vector3(sin(a0), 0, cos(a0)) * r, w0 + Vector3(sin(a1), 0, cos(a1)) * r, Color(1, 1, 1))
-	st.add_box(c + Vector3(-0.35, 0.0, -0.35), c + Vector3(0.35, 1.2, 0.35), col * 0.7, col, col)
+	# Big dressed courses on the pedestal (the basin keeps the facade ashlar).
+	data.mb(M.DRESSED_STONE).add_box(c + Vector3(-0.35, 0.0, -0.35), c + Vector3(0.35, 1.2, 0.35), col * 0.7, col, col)
 	data.add_instance(&"statue", Transform3D(Basis().scaled(Vector3.ONE * 0.55), c + Vector3(0, 1.2, 0)))
 	data.add_box_shape(c + Vector3(0, 0.32, 0), Vector3(r * 2.0, 0.64, r * 2.0))
 	data.add_box_shape(c + Vector3(0, 0.9, 0), Vector3(0.7, 1.8, 0.7))

@@ -225,15 +225,15 @@ static func _statue_spot_free(plan: CityPlan, L: ChunkLayout, p: Vector2) -> boo
 	return true
 
 
-## A pale marble figure on an ashlar plinth, facing the avenue (stone, so not
-## an anchor): collision for the plinth and the figure, and a nav obstacle.
+## A weathered bronze figure on a dressed-stone plinth, facing the avenue (not
+## a Push/Pull anchor): collision for the plinth and the figure, and a nav obstacle.
 static func _statue(data: ChunkBuildData, p: Vector2, facing: Vector2) -> void:
 	var b := Basis(Vector3.UP, atan2(facing.x, facing.y))
 	var base := Vector3(p.x, 0.0, p.y)
 	data.add_instance(&"plinth", Transform3D(b, base))
 	# Heroic scale: the 2.3 m figure at 1.35x (~3.1 m, standard to 4.2 m) on a
 	# 1.7 m die.
-	data.add_instance(&"statue_marble", Transform3D(b.scaled(Vector3.ONE * STATUE_SCALE), base + Vector3.UP * 1.7))
+	data.add_instance(&"statue_bronze", Transform3D(b.scaled(Vector3.ONE * STATUE_SCALE), base + Vector3.UP * 1.7))
 	data.add_box_shape(base + Vector3(0, 0.85, 0), Vector3(1.7, 1.7, 1.7))
 	data.add_box_shape(base + Vector3(0, 1.7 + 1.55, 0), Vector3(1.0, 3.1, 1.0))
 	data.add_nav_box(base - Vector3(0.85, 0, 0.85), base + Vector3(0.85, 1.7, 0.85), false)

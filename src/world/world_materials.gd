@@ -11,7 +11,7 @@ extends RefCounted
 enum Mat {
 	STONE, BRICK, PLASTER, TRIM, SLATE, ROOF_FLAT, WOOD, WINDOW, COBBLE,
 	GROUND_DARK, ASH, WATER, IRON, KEEP_STONE, OBSIDIAN, LANTERN_GLASS, CANAL_WALL, FAR,
-	ASHLAR, BANNER,
+	ASHLAR, BANNER, BRONZE, DRESSED_STONE,
 }
 
 const TEX_DIR := "res://assets/textures/"
@@ -112,7 +112,55 @@ static func _create(id: int) -> Material:
 			# stone_wall texture is a polygonal rubble that read as crazy
 			# paving at any scale.
 			return _triplanar("ashlar", 2.4, 0.9, Color(1, 1, 1))
+		Mat.DRESSED_STONE:
+			# The same coursed-block texture at three times the scale (0.6 m
+			# courses of 0.6-1.35 m blocks), slightly darker and weathered: big
+			# dressed blocks for statue plinths and fountain pedestals, where
+			# the 0.2 m facade courses read as brickwork.
+			return _triplanar("ashlar", 7.2, 0.92, Color(0.86, 0.84, 0.8))
+		Mat.BRONZE:
+			return _bronze()
 	return StandardMaterial3D.new()
+
+
+## Weathered statuary bronze: a dark brown-bronze mottled with dull verdigris,
+## rough where the patina has built up, a little smoother and more metallic
+## on the worn bronze between. Both maps come from one seamless noise image
+## (fixed seed, built synchronously), projected triplanar in world space so
+## no two statues weather alike. Vertex colour darkens the folds.
+static func _bronze() -> StandardMaterial3D:
+	var fnl := FastNoiseLite.new()
+	fnl.seed = 0xB20
+	fnl.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	fnl.frequency = 0.035
+	fnl.fractal_octaves = 4
+	var src := fnl.get_seamless_image(128, 128)
+	var alb := Image.create(128, 128, true, Image.FORMAT_RGB8)
+	var rough := Image.create(128, 128, true, Image.FORMAT_L8)
+	var metal := Color(0.24, 0.18, 0.12)
+	var patina := Color(0.22, 0.31, 0.26)
+	for y in 128:
+		for x in 128:
+			var v := src.get_pixel(x, y).r
+			var t := smoothstep(0.5, 0.78, v) * 0.75
+			alb.set_pixel(x, y, metal.lerp(patina, t) * (0.8 + 0.35 * v))
+			rough.set_pixel(x, y, Color.from_hsv(0.0, 0.0, lerpf(0.45, 0.85, t)))
+	alb.generate_mipmaps()
+	rough.generate_mipmaps()
+	var m := StandardMaterial3D.new()
+	m.uv1_triplanar = true
+	m.uv1_world_triplanar = true
+	m.uv1_triplanar_sharpness = 4.0
+	m.uv1_scale = Vector3.ONE / 0.9
+	m.vertex_color_use_as_albedo = true
+	m.albedo_texture = ImageTexture.create_from_image(alb)
+	m.roughness = 1.0
+	m.roughness_texture = ImageTexture.create_from_image(rough)
+	m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+	m.metallic = 0.45
+	m.metallic_specular = 0.4
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m
 
 
 static func _shader_mat(file: String) -> ShaderMaterial:

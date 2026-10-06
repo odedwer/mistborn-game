@@ -18,7 +18,7 @@ const INSTANCE_RANGE := {
 	&"weathervane": 220.0, &"lightning_rod": 260.0, &"bollard": 130.0, &"stall": 160.0, &"well": 200.0,
 	# Keep gardens are seen from rooftops and from the air: keep them in view.
 	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0, &"carriage": 200.0,
-	&"plinth": 400.0, &"statue_marble": 400.0, &"modillion": 140.0,
+	&"plinth": 400.0, &"statue_bronze": 400.0, &"modillion": 140.0,
 	&"shop_sign_board": 110.0, &"shop_sign_medallion": 110.0, &"shop_sign_coin": 110.0,
 }
 const DETAIL_RANGE := 150.0
