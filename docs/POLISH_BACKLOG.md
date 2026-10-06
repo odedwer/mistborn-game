@@ -206,3 +206,24 @@ Follow-ups:
 - `melee` for the armed characters hasn't been checked. It is a wide weapon-hand swing and may clip the way the throw did.
 - In the side Push, the Inquisitor's axe lies nearly horizontal under the pushing forearm. It reads, but an upright, lowered axe would be cleaner.
 - The guard's dark glove makes his open palm read as a fist at a distance.
+
+## Review of world pass 8
+
+Merged:
+- **Keep Venture courtyard lamps.** The lamps were a normal size. The problem was placement: the first pair stood about 2 m from the camera just inside the gate. The approach now uses 0.8-scale garden lamps, set back. Lamp posts take an optional `"scale"`, and the collision, Metallic anchor, nav, light and validator all follow it.
+- **Streaming test.** The new `WorldStreamer.is_settled()` is true when nothing is in flight or queued and every wanted unit is loaded. `test_world_gen` polls it with a 300 s timeout instead of a fixed window. Under heavy load it settles in 1.5–2.7 s.
+- **Set pieces.**
+  - Modillion brackets under the merchant/noble cornices: one shared MultiMesh with a 140 m range.
+  - Wrought-iron shop signs on merchant shopfronts (style key `shop_signs`).
+  - Deterministic avenue statues on plinths in the noble and merchant districts (style key `statues`). They are never placed in the slice and they collide.
+  - Docs are in `docs/OPEN_WORLD.md` and `docs/PERFORMANCE.md`.
+
+302 tests green. Reviewed p8w_courtyard_after, p8w_noble_statue_after and p8w_merchant_cornice_after.
+
+Follow-ups:
+- The courtyard now reads at a sensible scale from the gate.
+- **Statue:** a stark, pale, blocky figure that glows against the dark street. Use a sculpted mesh, or at least a weathered, darker bronze or verdigris material. The plinth reads as brick; it should be dressed ashlar.
+- Statues can repeat every 128 m on long boulevards, which is too regular. Add jitter or skip some slots.
+- **Cost:** noble chunk generation is up about 1.2 ms and a merchant street frame draws about 15% more primitives, mostly the modillions. Consider a shorter modillion range, or LOD them out beyond about 60 m.
+- **Steel-jump margin:** `test_traversal` cp_3 → keep_courtyard now lands in 1087 of 1500 frames, against 943 before. It still passes, but with less margin.
+- There is no close-up shot of the shop signs yet.
