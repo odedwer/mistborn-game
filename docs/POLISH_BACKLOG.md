@@ -192,3 +192,17 @@ The CI-setup worktree branch `worktree-agent-ab1d031367fe88822` was not merged: 
 Follow-ups:
 - The courtyard reads as a place now. The lawns are ash-grey, which fits the setting. The two foreground lanterns are very large in the default camera framing.
 - At 3/4, the guard's and the Inquisitor's off-hand Push still lifts the hand beside the face instead of driving it forward toward the target. Vin and Kelsier read correctly.
+
+## Review of art pass 11
+
+Merged:
+- **Off-hand Push** for the guard and the Inquisitor now drives the open palm to the sternum. The shoulder leads, the torso leans in, and the weapon arm swings back as a counterweight. The cause was camera geometry, not the key: the lineup's 3/4 camera sees the right end of the line almost head-on, so a shoulder-height palm foreshortened to sit beside the face.
+- **Pull:** `pull_reach` now reaches to the chest as well, and the haul's spine twist is smaller so the spear and axe no longer swing across the body.
+- **Throw:** all four armed characters (guard, hazekiller, thug, Inquisitor) throw with the free hand. The wind-up previously put the guard's spear through his neck and the Inquisitor's axe in his face.
+
+302 tests green. Reviewed p11_after_push_side and p11_wip3_enemies_throw_wind_34.
+
+Follow-ups:
+- `melee` for the armed characters hasn't been checked. It is a wide weapon-hand swing and may clip the way the throw did.
+- In the side Push, the Inquisitor's axe lies nearly horizontal under the pushing forearm. It reads, but an upright, lowered axe would be cleaner.
+- The guard's dark glove makes his open palm read as a fist at a distance.
