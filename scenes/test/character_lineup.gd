@@ -5,14 +5,15 @@ extends Node3D
 ##   --only=<id>            show a single character (any id in GROUPS, e.g. vin, kelsier, noble_woman_2)
 ##   --group=<name>         enemies (default), crew, gentry, folk (crowd variants), all
 ##   --variants=<n>         with --only: n randomize_variant() copies of a base model (crowd check)
-##   --pose=<name>          freeze a named pose for review: idle, walk, run, jump (apex), push, pull
+##   --pose=<name>          freeze a named pose for review: idle, walk, run, jump (apex), push, pull,
+##                          attack, melee, throw, hit, fall, dead, crouch
 ##                          (with --group=poses: Vin, Kelsier, a guard and an Inquisitor)
 ##   --anim=<name>          play this animation on everyone (AnimationPlayer, tree disabled)
 ##   --t=<seconds>          freeze the animation at this time (with --anim)
 ##   --action=<name>        call play_action(name) through the CharacterModel API after 0.5 s
 ##   --moving               characters run around a circle via set_locomotion (cloak dynamics)
 ##   --cam=front|back|side|34|top
-##   --zoom=head            close-up of the head (with --only)
+##   --zoom=head|upper      close-up of the head, or of the chest and arms (with --only)
 ##   --light=night|studio
 ##   --shot=<png path>      save a screenshot after --frames frames and quit
 ##   --frames=<n>           frames to wait before the screenshot (default 20)
@@ -36,7 +37,16 @@ const POSES := {
 	"run": ["run", 0.18],
 	"jump": ["jump", 0.45],  # take-off peak (apex of the authored clip)
 	"push": ["push", 0.3],
-	"pull": ["pull", 0.3],
+	"pull": ["pull", 0.44],  # fist hauled back
+	"pull_reach": ["pull", 0.3],  # reaching out, fist closing
+	# combat
+	"attack": ["attack", 0.4],  # the style's own weapon strike, near contact
+	"melee": ["melee", 0.28],  # unarmed/dagger swing at contact
+	"throw": ["throw", 0.34],  # coin throw release
+	"hit": ["hit", 0.08],  # flinch peak
+	"fall": ["die", 0.55],  # mid death fall
+	"dead": ["die", 1.3],  # landed
+	"crouch": ["crouch_idle", 0.5],
 }
 
 var opts := {}
@@ -161,9 +171,15 @@ func _setup_camera(count: int) -> void:
 	if opts.has("dist"):
 		dist = float(opts["dist"])
 	if opts.has("zoom") and models.size() == 1:
-		# frame the head: --zoom=head
-		target.y = models[0].get_model_height() - 0.14
-		dist = 0.75
+		match opts["zoom"]:
+			"upper":
+				# chest and arms: --zoom=upper (hand poses, Push/Pull, throws)
+				target.y = models[0].get_model_height() * 0.72
+				dist = float(opts.get("dist", "1.6"))
+			_:
+				# frame the head: --zoom=head
+				target.y = models[0].get_model_height() - 0.14
+				dist = 0.75
 	_camera.position = target + dir * dist + Vector3(0, 0.15 if not opts.has("zoom") else 0.0, 0)
 	_camera.look_at(target, Vector3.UP)
 

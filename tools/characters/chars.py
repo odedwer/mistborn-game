@@ -92,11 +92,24 @@ def spear(b: Body, side):
          color=hexcol("6d7178"), weights=W, cap1="flat")
 
 
-def lantern(b: Body, side):
-    o, M = b.hand_frame(side)
+def lantern(b: Body, side, *, belt=False):
+    """Lantern in the hand, or (belt=True) hung from a hook on the belt at the hip.
+
+    The guard wears it on the belt, leaving the off hand free: with the lantern
+    in hand, every Push/Pull and two-handed pose thrust it forward instead of
+    an open palm.
+    """
     s = b.s
-    g = M[:, 2]
-    W = {side_name(side, "Hand"): 1.0}
+    if belt:
+        g = v3(0, 0, 1)  # handle axis: the lantern hangs straight down from the hook
+        o = v3(side * 0.215 * s * b.P["width"], 0.025 * s, 0.6 * b.H)
+        M = np.column_stack([v3(1, 0, 0), v3(0, 1, 0), g])
+        bone = "Hips"
+    else:
+        o, M = b.hand_frame(side)
+        g = M[:, 2]
+        bone = side_name(side, "Hand")
+    W = {bone: 1.0}
     iron = hexcol("3a3a3e")
     tube(b.m, [o + g * 0.03 * s, o - g * 0.07 * s], [0.004 * s, 0.004 * s], n=4, mat=METAL, color=iron, weights=W)
     top = o - g * 0.07 * s
@@ -111,7 +124,7 @@ def lantern(b: Body, side):
              color=iron, weights=W)
     tube(b.m, [top - g * 0.2 * s, top - g * 0.225 * s], [0.058 * s, 0.05 * s], n=8, mat=METAL, color=iron,
          weights=W, cap0="flat", cap1="flat")
-    b.sockets["lantern"] = (side_name(side, "Hand"), top - g * 0.12 * s)
+    b.sockets["lantern"] = (bone, top - g * 0.12 * s)
 
 
 def staff(b: Body, side, lo=0.8, hi=1.0):
@@ -260,7 +273,7 @@ def build_guard():
     tube(b.m, [v3(0, -0.01 * s, top - 0.03 * s), v3(0, -0.01 * s, top + 0.012 * s)], [(0.015 * s, 0.1 * s), (0.008 * s, 0.075 * s)],
          n=6, hint=(0, 1, 0), mat=METAL, color=hexcol("b0b5bb"), weights={"Head": 1.0}, cap1="flat")
     spear(b, 1)
-    lantern(b, -1)
+    lantern(b, -1, belt=True)
     b.sockets["chest"] = ("UpperChest", v3(0, 0.11 * s, 0.72 * H))
     return b, dict(mats={CLOTH: "Cloth", METAL: "Metal", GLOW: "Glow"}, style="guard")
 
