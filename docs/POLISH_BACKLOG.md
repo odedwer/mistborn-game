@@ -227,3 +227,18 @@ Follow-ups:
 - **Cost:** noble chunk generation is up about 1.2 ms and a merchant street frame draws about 15% more primitives, mostly the modillions. Consider a shorter modillion range, or LOD them out beyond about 60 m.
 - **Steel-jump margin:** `test_traversal` cp_3 → keep_courtyard now lands in 1087 of 1500 frames, against 943 before. It still passes, but with less margin.
 - There is no close-up shot of the shop signs yet.
+
+## Review of art pass 12
+
+Merged:
+- **Armed characters' free-hand actions.** For the guard, hazekiller, thug and Inquisitor, `melee`, `drink` and `talk` now use the free hand, with the weapon held upright. From the front, the old melee laid the spear and axe flat across the face. This doesn't change enemy combat: enemies strike with `attack`, and only the player plays `melee`.
+- **Clips outside melee.** A frame-by-frame clearance scan of the weapon against the head, neck and torso found real clips in `run` and `sprint`: the thug's club went about 4.5 cm into his head and the Inquisitor's axe about 2 cm. The guard's spear also grazed his helmet brim during Push and the Pull reach. All are fixed, and no clip now comes within 1 cm.
+- **Inquisitor side Push:** the axe stands upright and lowered at his side.
+- **Guard's glove:** `Body.hand` takes an optional palm colour, and the guard has a pale leather palm.
+
+302 tests green. Reviewed p12_after2_inq_push_side and p12_after_guard_push_front_upper.
+
+Follow-ups:
+- In the Pull haul, the Inquisitor's axe still leans about 43° inward. It doesn't clip.
+- The clearance scan (scratchpad only) checks the weapon against the head, neck and torso, but not against the arms, the hazekiller's shield or robe skirts. Consider committing it as `tools/characters/clearance.py`, with a test.
+- `docs/CHARACTERS.md` still describes `melee` as a dagger swing for everyone, and its triangle counts are out of date.
