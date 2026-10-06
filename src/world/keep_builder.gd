@@ -347,8 +347,10 @@ static func _courtyard_layout(data: ChunkBuildData, o: Vector3) -> void:
 	# Garden lamps along the approach walk: 0.8 scale (a 3.3 m post, the
 	# lantern at ~3 m) so they sit in proportion with the 1.8 m figures and the
 	# 0.5 m hedges, and set back from the gate so a camera just inside it
-	# doesn't have a lantern filling the lower frame.
-	for z: float in [-157.0, -164.5]:
+	# doesn't have a lantern filling the lower frame. The inner pair stays at
+	# z -162: test_traversal's cp_3 -> keep_courtyard steel jump uses it to
+	# come down onto the walk (at -164.5 the bot hung in the air pushing).
+	for z: float in [-157.0, -162.0]:
 		_lamp(data, o + Vector3(-3.6, 0, z), Vector2(1, 0), true, false, 0.8)
 		_lamp(data, o + Vector3(3.6, 0, z), Vector2(-1, 0), true, false, 0.8)
 	# Sentry posts: static guards at the doors, the inner gate and the loop.
