@@ -173,3 +173,22 @@ Follow-ups:
 - Ear profiles read cleanly now, and Push/Pull no longer clips weapons.
 - The off-hand Push reaches across the chest at 3/4. The Inquisitor's Pull pose brings his hand up to his face. The guard's Push holds the lantern forward rather than an open palm.
 - `test_world_gen::test_slice_metal_density_and_streaming` ("Keep Venture streamed in") failed once in a full run while another agent was running heavy jobs on the same machine. It looks like a timing/load sensitivity; watch it and make the streaming wait condition-based if it recurs.
+
+## Review of world pass 7 and art pass 10
+
+Merged world pass 7:
+- **Keep Venture courtyard** now has mid-scale structure: a paved carriage loop round the fountain, two hedged lawn beds, lamp posts down the approach, sentry figures at posts (`src/world/sentry_posts.gd`), and an ashlar keep facade replacing the crazy-paving stone.
+- **Night fill** toned down for Forward+ (Vulkan) while keeping opengl3 readable.
+
+Merged art pass 10:
+- Push is an open-palm thrust. Pull is a fist hauled back (`pull`, 0.44 s), with the reach still available as `pull_reach`.
+- The guard's lantern hangs on his belt.
+- The lineup gains attack/melee/throw/hit/fall/dead/crouch review poses and a `--zoom=upper` close-up.
+
+302 tests green. Reviewed p7w_keep_venture_courtyard_day, p7w_vulkan_hud_night_tuned, and fresh p10_after_push / p10_after_pull lineups (`--group=poses --cam=34`).
+
+The CI-setup worktree branch `worktree-agent-ab1d031367fe88822` was not merged: CI, the build scripts and export presets are already on the main branch, so it is stale.
+
+Follow-ups:
+- The courtyard reads as a place now. The lawns are ash-grey, which fits the setting. The two foreground lanterns are very large in the default camera framing.
+- At 3/4, the guard's and the Inquisitor's off-hand Push still lifts the hand beside the face instead of driving it forward toward the target. Vin and Kelsier read correctly.
