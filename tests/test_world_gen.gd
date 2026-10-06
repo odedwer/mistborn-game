@@ -6,6 +6,9 @@ const REQUIRED_OBJECTIVES := [&"rooftop_lesson_1", &"rooftop_lesson_2", &"cp_1",
 		&"keep_courtyard", &"ledger", &"extraction"]
 ## Budget for LuthadelWorld._ready (headless; the target machine is faster).
 const READY_BUDGET_MS := 3000.0
+## Upper bound on waiting for the streamer to settle (or unload). Generous on
+## purpose: the waits are condition-based, this only catches a stuck streamer.
+const STREAM_TIMEOUT_MS := 300000
 
 static var _plan: CityPlan
 
@@ -125,12 +128,20 @@ func test_slice_metal_density_and_streaming() -> void:
 	var w := _make_world()
 	w.streamer.fallback_focus = Vector3(0, 0, 0)
 	w.streamer.load_radius = 260.0
-	# Stream the whole slice district.
+	# Stream the whole slice district. Wait on the streamer's own state (every
+	# wanted unit loaded, nothing in flight), not a time or frame count: under
+	# heavy machine load generation can take minutes, and is_busy() alone can
+	# read false before the first update has requested anything. The timeout
+	# only stops a genuinely stuck streamer from hanging the suite.
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 60000:
+	var settled := false
+	while Time.get_ticks_msec() - t0 < STREAM_TIMEOUT_MS:
 		await get_tree().process_frame
-		if Time.get_ticks_msec() - t0 > 500 and not w.streamer.is_busy():
+		if w.streamer.is_settled():
+			settled = true
 			break
+	print("    slice streamed in %d ms" % (Time.get_ticks_msec() - t0))
+	assert_true(settled, "streamer settled within %d s" % (STREAM_TIMEOUT_MS / 1000))
 	var sb := w.slice_bounds()
 	var n := 0
 	for m in MetalRegistry.all():
@@ -150,7 +161,7 @@ func test_slice_metal_density_and_streaming() -> void:
 	# Unloading is spread over frames and depends on streamer load; wait for
 	# it (bounded) instead of a fixed frame count.
 	var t1 := Time.get_ticks_msec()
-	while MetalRegistry.count() >= before and Time.get_ticks_msec() - t1 < 15000:
+	while MetalRegistry.count() >= before and Time.get_ticks_msec() - t1 < STREAM_TIMEOUT_MS:
 		await get_tree().process_frame
 	assert_lt(float(MetalRegistry.count()), float(before), "unloaded chunks free their metals")
 	w.queue_free()

@@ -106,6 +106,19 @@ func is_busy() -> bool:
 	return not _tasks.is_empty() or not _building.is_empty() or _unrequested > 0
 
 
+## True once nothing is pending and every unit wanted around the current
+## focus (within `load_radius`) is fully instantiated. Unlike `is_busy()`
+## alone, this can't read "done" before the first update has requested
+## anything, or between updates while a wanted unit waits to be requested.
+func is_settled() -> bool:
+	if plan == null or is_busy():
+		return false
+	for k: String in wanted_units(focus_position(), load_radius):
+		if not is_loaded(k):
+			return false
+	return true
+
+
 ## True while navmeshes are still baking or queued.
 func is_baking() -> bool:
 	return not _baking.is_empty() or not _bake_queue.is_empty()
