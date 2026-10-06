@@ -20,7 +20,8 @@ var occ_verts := PackedVector3Array()
 var occ_idx := PackedInt32Array()
 ## Anchored metals on the chunk's static body: {"pos": Vector3, "mass": float}.
 var static_metals: Array[Dictionary] = []
-## Lamp posts (own StaticBody + Metallic): {"pos", "dir": Vector2, "lit": bool, "shadow": bool}.
+## Lamp posts (own StaticBody + Metallic): {"pos", "dir": Vector2, "lit": bool, "shadow": bool}
+## and an optional uniform "scale" (default 1).
 var lamp_posts: Array[Dictionary] = []
 ## PropMeshes kind -> Array of Transform3D (drawn with MultiMeshInstance3D).
 var instances: Dictionary = {}

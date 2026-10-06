@@ -109,12 +109,16 @@ static func _crenellate(data: ChunkBuildData, lo: Vector3, hi: Vector3, c: Color
 			det.add_box(m_lo, m_hi, c, c, top)
 
 
-static func _lamp(data: ChunkBuildData, p: Vector3, dir: Vector2, lit: bool, shadow := false) -> void:
-	data.lamp_posts.append({"pos": p, "dir": dir, "lit": lit, "shadow": shadow})
+## `s` scales the whole post (the courtyard uses smaller garden lamps).
+static func _lamp(data: ChunkBuildData, p: Vector3, dir: Vector2, lit: bool, shadow := false, s := 1.0) -> void:
+	var lp := {"pos": p, "dir": dir, "lit": lit, "shadow": shadow}
+	if not is_equal_approx(s, 1.0):
+		lp["scale"] = s
+	data.lamp_posts.append(lp)
 	data.metal_count += 1
-	data.add_nav_box(p - Vector3(0.15, 0, 0.15), p + Vector3(0.15, 4.2, 0.15), false)
+	data.add_nav_box(p - Vector3(0.15, 0, 0.15), p + Vector3(0.15, 4.2 * s, 0.15), false)
 	if lit:
-		data.add_light(p + Vector3(dir.x * 0.75, 3.75, dir.y * 0.75), PropPlacer.LAMP_LIGHT_COLOR, 11.0, 2.3, shadow)
+		data.add_light(p + Vector3(dir.x * 0.75 * s, 3.75 * s, dir.y * 0.75 * s), PropPlacer.LAMP_LIGHT_COLOR, 11.0 * s, 2.3, shadow)
 
 
 static func _static_crates(data: ChunkBuildData, center: Vector3, count: int, rng: RandomNumberGenerator) -> void:
@@ -340,10 +344,13 @@ static func _courtyard_layout(data: ChunkBuildData, o: Vector3) -> void:
 		# Clipped topiary at the corners.
 		for cp: Vector3 in [Vector3(x0 + 1.0, 0, z0 + 1.0), Vector3(x1 - 1.0, 0, z0 + 1.0), Vector3(x0 + 1.0, 0, z1 - 1.0), Vector3(x1 - 1.0, 0, z1 - 1.0)]:
 			data.add_instance(&"topiary", Transform3D(Basis(), cp))
-	# Lamp posts along the approach walk.
-	for z: float in [-153.0, -162.0]:
-		_lamp(data, o + Vector3(-3.6, 0, z), Vector2(1, 0), true)
-		_lamp(data, o + Vector3(3.6, 0, z), Vector2(-1, 0), true)
+	# Garden lamps along the approach walk: 0.8 scale (a 3.3 m post, the
+	# lantern at ~3 m) so they sit in proportion with the 1.8 m figures and the
+	# 0.5 m hedges, and set back from the gate so a camera just inside it
+	# doesn't have a lantern filling the lower frame.
+	for z: float in [-157.0, -164.5]:
+		_lamp(data, o + Vector3(-3.6, 0, z), Vector2(1, 0), true, false, 0.8)
+		_lamp(data, o + Vector3(3.6, 0, z), Vector2(-1, 0), true, false, 0.8)
 	# Sentry posts: static guards at the doors, the inner gate and the loop.
 	for sp: Array in [[Vector3(-3.05, 0, -203.8), 0.0], [Vector3(3.05, 0, -203.8), 0.0],
 			[Vector3(-7.2, 0, -151.6), PI], [Vector3(7.2, 0, -151.6), PI],
