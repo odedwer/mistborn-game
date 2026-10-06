@@ -21,7 +21,7 @@ static func place(data: ChunkBuildData, plan: CityPlan, L: ChunkLayout, seed_val
 	_lamps(data, L, rng)
 	_loose(data, plan, L, rng)
 	_plazas(data, L, rng)
-	_avenue_planting(data, plan, L, rng)
+	_avenue_planting(data, plan, L, rng, seed_value)
 
 
 static func _lamps(data: ChunkBuildData, L: ChunkLayout, rng: RandomNumberGenerator) -> void:
@@ -158,7 +158,8 @@ static func _plazas(data: ChunkBuildData, L: ChunkLayout, rng: RandomNumberGener
 ## of bare, ash-dead street trees and stone planters down both kerbs, just
 ## inside the lamp line. Style key `avenue_planting` is the tree share (the
 ## rest are planters); absent means no planting (skaa, docks, market).
-static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayout, rng: RandomNumberGenerator) -> void:
+static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayout, rng: RandomNumberGenerator,
+		seed_value: int) -> void:
 	if not L.style.has("avenue_planting") or L.empty:
 		return
 	var tree_share := float(L.style["avenue_planting"])
@@ -170,7 +171,7 @@ static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayou
 		var perp := Vector2(-dir.y, dir.x)
 		var off := st.width * 0.5 - 1.7
 		var n := int(floor((st.length() - 10.0) / 12.0))
-		var statue_slot := _statue_slot(plan, L, st, n)
+		var statue_slot := _statue_slot(plan, st, n, seed_value)
 		for i in n:
 			for side: float in [1.0, -1.0]:
 				var t := 5.0 + 12.0 * float(i) + (6.0 if side < 0.0 else 0.0)
@@ -198,19 +199,49 @@ static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayou
 
 
 ## Which avenue slot (on the +perp kerb) holds a statue, or -1. Style key
-## `statues` is the share of avenues that get one, at the middle slot; keyed
-## on the street's own geometry so it's the same whichever chunk asks.
+## `statues` is the share of avenue segments that are candidates. A segment is
+## keyed by its boundary line and index along it (it is the west/north street
+## of exactly one chunk), so any chunk can ask about any segment. Two rules
+## keep a long boulevard from repeating a statue every chunk (128 m):
+## - in a run of consecutive candidate segments along a line, only every
+##   other one gets a statue;
+## - the slot is jittered over the middle of the segment (slots 2..n-3, so
+##   ±24 m around the centre on a 128 m segment).
 ## Never inside the vertical slice (hand-tuned mission space).
-static func _statue_slot(plan: CityPlan, L: ChunkLayout, st: ChunkLayout.Street, n: int) -> int:
-	var share := float(L.style.get("statues", 0.0))
-	if share <= 0.0 or n < 3:
+static func _statue_slot(plan: CityPlan, st: ChunkLayout.Street, n: int, seed_value: int) -> int:
+	if n < 5:
 		return -1
-	var mid := (st.a + st.b) * 0.5
+	var vertical := is_equal_approx(st.a.x, st.b.x)
+	var s := plan.chunk_size
+	var line := roundi((st.a.x if vertical else st.a.y) / s)
+	var seg := roundi((minf(st.a.y, st.b.y) if vertical else minf(st.a.x, st.b.x)) / s)
+	if not _statue_candidate(plan, seed_value, vertical, line, seg):
+		return -1
+	var run := 0
+	while run < 8 and _statue_candidate(plan, seed_value, vertical, line, seg - run - 1):
+		run += 1
+	if run % 2 == 1:
+		return -1
+	var k := n - 4
+	return 2 + mini(int(CityPlan.hash01(0x57A8, 1 if vertical else 2, line, seg) * float(k)), k - 1)
+
+
+## True if boundary segment `seg` of `line` is a planted avenue whose owning
+## chunk's style rolls a statue for it (before the alternation rule).
+static func _statue_candidate(plan: CityPlan, seed_value: int, vertical: bool, line: int, seg: int) -> bool:
+	var c := Vector2i(line, seg) if vertical else Vector2i(seg, line)
+	var style := plan.style(plan.district_at(plan.chunk_rect(c).get_center()))
+	var share := float(style.get("statues", 0.0))
+	if share <= 0.0 or not style.has("avenue_planting") or bool(style.get("empty", false)):
+		return false
+	var s := plan.chunk_size
+	var mid := Vector2(line * s, seg * s + s * 0.5) if vertical else Vector2(seg * s + s * 0.5, line * s)
 	if plan.slice_bounds.grow(24.0).has_point(mid):
-		return -1
-	if CityPlan.hash01(0x57A7, int(round(mid.x)), int(round(mid.y)), int(round(st.width * 10.0))) >= share:
-		return -1
-	return n / 2
+		return false
+	var min_w := float((style.get("arterial", [8.0, 11.0]) as Array)[1]) + 0.5
+	if ChunkLayout.boundary_width(plan, seed_value, vertical, line, seg) < min_w:
+		return false
+	return CityPlan.hash01(0x57A7, 1 if vertical else 2, line, seg) < share
 
 
 ## A statue needs more room than a planter, and stays clear of every marker
