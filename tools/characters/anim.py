@@ -241,6 +241,9 @@ def base_params(style):
 
 
 # --------------------------------------------------------------------- gaits
+WEAPON_PUMP = 0.45  # share of the run/sprint elbow pump on a swinging weapon arm
+WEAPON_TIP = 0.6  # wrist tip (deg per deg of forward swing) on a swinging weapon arm
+
 def gait(t, T, base, S: Skel, *, stride, lift, duty, bob, drop, lean, arm_amp, elbow_add, sway, yaw,
          style, pitch_on=18.0, pitch_off=-30.0, crouch=False, arm_flex_add=0.0):
     p = dict(base)
@@ -267,6 +270,13 @@ def gait(t, T, base, S: Skel, *, stride, lift, duty, bob, drop, lean, arm_amp, e
             sw = -math.cos(2 * math.pi * (ph + (0.0 if side > 0 else 0.5))) * arm_amp * st.get("swing", 1.0)
             p[f"{s}_flex"] = base.get(f"{s}_flex", 0.0) + sw + arm_flex_add
             p[f"{s}_elbow"] = base.get(f"{s}_elbow", 12.0) + elbow_add + max(0.0, sw) * 0.5
+            if s == "r" and st.get("weapon_r", False):
+                # Swinging weapon arm (thug club, Inquisitor axe): the full run
+                # pump folded the forearm up on the forward swing and laid the
+                # weapon back through the head. A shallower elbow and a wrist
+                # that tips the weapon forward keep its head out in front.
+                p[f"{s}_elbow"] = base.get(f"{s}_elbow", 12.0) + elbow_add * WEAPON_PUMP + max(0.0, sw) * 0.3
+                p[f"{s}_wrist"] = base.get(f"{s}_wrist", 0.0) - max(0.0, sw) * WEAPON_TIP
         else:
             sw = -math.cos(2 * math.pi * (ph + (0.0 if side > 0 else 0.5))) * arm_amp * 0.15
             p[f"{s}_flex"] = base.get(f"{s}_flex", 0.0) + sw
@@ -474,13 +484,21 @@ def make_anims(style: str, S: Skel):
     add("throw", 0.75, throw)
 
     def melee(t):
+        # Armed styles swing with the free hand, like the throw: the wide
+        # weapon-hand swing carried the spear/staff/club/axe flat across the
+        # face at contact (seen from the front, the angle the player sees an
+        # enemy from) and right behind the neck in the wind-up.
         return keyed([
             (0.0, {}),
-            (0.14, {"r_abd": 80, "r_flex": 20, "r_elbow": 85, "r_twist": 30, "r_wrist": -20, "spine_twist": -25,
-                    "hips_yaw": -8, "l_flex": 30, "l_elbow": 50, "spine_lean": 4}),
-            (0.28, {"r_abd": 35, "r_flex": 85, "r_elbow": 25, "r_twist": -40, "r_wrist": 25, "spine_twist": 28,
-                    "hips_yaw": 8, "spine_lean": 10, "l_flex": -10}),
-            (0.36, {"r_abd": 18, "r_flex": 70, "r_elbow": 35, "r_twist": -50, "spine_twist": 30, "spine_lean": 10}),
+            # (the wind-up's mirrored twist turned the upright axe head and spear
+            # shaft in front of the face, so the off-hand wind-up barely twists)
+            (0.14, free_hand({"r_abd": 80, "r_flex": 20, "r_elbow": 85, "r_twist": 30, "r_wrist": -20,
+                              "spine_twist": -25, "hips_yaw": -8, "l_flex": 30, "l_elbow": 50, "spine_lean": 4},
+                             off={"spine_twist": -6, "hips_yaw": -4})),
+            (0.28, free_hand({"r_abd": 35, "r_flex": 85, "r_elbow": 25, "r_twist": -40, "r_wrist": 25,
+                              "spine_twist": 28, "hips_yaw": 8, "spine_lean": 10, "l_flex": -10})),
+            (0.36, free_hand({"r_abd": 18, "r_flex": 70, "r_elbow": 35, "r_twist": -50, "spine_twist": 30,
+                              "spine_lean": 10})),
             (0.6, {}),
         ], t, base)
 
@@ -658,7 +676,19 @@ def make_anims(style: str, S: Skel):
         palm_wind = dict(palm_wind, r_flex=30, r_elbow=105, r_wrist=50, spine_twist=-16)
         palm_out = dict(palm_out, r_abd=28, r_flex=80, r_elbow=2, r_wrist=80, spine_twist=20, spine_lean=14,
                         head_pitch=0, l_prot=12)
-        weapon = {"r_flex": base["r_flex"] - 18, "r_wrist": base["r_wrist"] + 30}  # wrist keeps the shaft upright
+        # The wrist keeps the shaft upright; the forearm untwists so the shaft
+        # stands a hand's width outside the kettle hat's brim (with the base
+        # twist it grazed the brim edge through the whole hold).
+        weapon = {"r_flex": base["r_flex"] - 18, "r_wrist": base["r_wrist"] + 22, "r_twist": 0}
+        if style == "inquisitor":
+            # The axe is short, so with the guard's counterweight it still leant
+            # ~36 degrees forward and, from the side, lay under the pushing
+            # forearm. The arm hangs nearly straight at the side and the wrist
+            # stands the haft up (~20 degrees off vertical), so the head rides
+            # at chest height beside the body, below the shoulder and the
+            # pushing forearm (held up by the shoulder, the blade overlapped
+            # the jaw from the side).
+            weapon = {"r_abd": 8, "r_flex": 0, "r_elbow": 20, "r_twist": 0, "r_wrist": 60}
 
     def push(t):
         hold = dict(palm_out, r_flex=palm_out["r_flex"] - 3, spine_twist=palm_out["spine_twist"] - 2,
@@ -701,8 +731,10 @@ def make_anims(style: str, S: Skel):
     def drink(t):
         mouth = {"r_abd": 25, "r_flex": 55, "r_elbow": 140, "r_twist": 55, "r_wrist": 25, "head_pitch": -28,
                  "spine_lean": -6}
-        return keyed([(0.0, {}), (0.35, mouth), (0.55, dict(mouth, head_pitch=-34)), (1.0, dict(mouth, head_pitch=-30)),
-                      (1.4, {})], t, base)
+        # armed styles drink with the free hand (the weapon hand put the spear
+        # shaft, club or axe haft through the face)
+        return keyed([(0.0, {}), (0.35, free_hand(mouth)), (0.55, free_hand(dict(mouth, head_pitch=-34))),
+                      (1.0, free_hand(dict(mouth, head_pitch=-30))), (1.4, {})], t, base)
 
     add("drink", 1.4, drink)
 
@@ -710,12 +742,14 @@ def make_anims(style: str, S: Skel):
         # conversational gesture: right hand opens palm-up, a nod, a small shrug of the left
         g = {"r_abd": 22, "r_flex": 42, "r_elbow": 78, "r_twist": -30, "r_wrist": 18, "head_pitch": 3,
              "head_yaw": 6, "spine_twist": 5, "l_flex": 10, "l_elbow": 30, "l_abd": 14, "l_twist": 0}
+        # armed styles gesture with the free hand: the weapon hand swung the
+        # weapon up beside the head
         return keyed([
             (0.0, {}),
-            (0.3, g),
-            (0.55, dict(g, r_flex=48, r_elbow=66, r_wrist=-6, head_pitch=-4, r_abd=26)),
-            (0.85, dict(g, r_flex=38, r_abd=32, r_elbow=82, head_pitch=6, head_yaw=-5, l_shrug=6)),
-            (1.15, dict(g, r_flex=44, r_elbow=72, head_pitch=0, l_shrug=0)),
+            (0.3, free_hand(g)),
+            (0.55, free_hand(dict(g, r_flex=48, r_elbow=66, r_wrist=-6, head_pitch=-4, r_abd=26))),
+            (0.85, free_hand(dict(g, r_flex=38, r_abd=32, r_elbow=82, head_pitch=6, head_yaw=-5, l_shrug=6))),
+            (1.15, free_hand(dict(g, r_flex=44, r_elbow=72, head_pitch=0, l_shrug=0))),
             (1.6, {}),
         ], t, base)
 
