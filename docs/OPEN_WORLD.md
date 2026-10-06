@@ -57,6 +57,14 @@ Every unit is a pure function of `(seed, unit id, plan)`.
 
    It then starts an async navmesh bake. `WorldStreamer` polls for completion on the main thread, so no script callbacks run on worker threads.
 
+## Merchant/noble set pieces
+
+Gated by style keys, so the skaa quarter and docks keep their plainer look:
+
+- `facade_ornament`: pilasters, an iron balcony, and a classical cornice on every free face. The cornice is a frieze, a bed moulding and a 1.1 m corona carried on a row of stone modillions (shared `modillion` MultiMesh, about every 1.2 m).
+- `shop_signs` (merchant 0.45): the share of lots that hang a trade sign on a wrought-iron bracket over the shopfront, at the pier between the first two ground-floor windows, 2.75-3.45 m up. There are three shapes: an oxblood board, a green roundel and a moneychanger's gilt coin. They are visual only.
+- `statues` (noble 0.3, merchant 0.15): the share of avenues with a statue in the middle planting slot. Each one is a smooth pale stone figure on an ashlar plinth, about 4.8 m to the head. They are keyed on the street's own geometry, so both chunks agree. Statues are never placed inside the vertical slice (grown by 24 m), and stay 8 m from any marker and clear of lamps, lots, canals, bridges and landmarks. They have collision and a nav obstacle. The slot still makes its planting RNG draws, so the rest of the avenue is unchanged.
+
 ## Streaming
 
 `WorldStreamer` (group `world_streamer`) picks its focus in this order: the node in group `player`, then the active camera, then the spawn point.
@@ -185,5 +193,5 @@ fades back in.
 
 - Interiors beyond the gatehouse office, Kredik Shaw's interior and the other keeps' courtyards.
 - Persisting the state of loose props per chunk. They currently reset on reload.
-- Statues and guild signage beyond the pilasters, balconies and cornices.
+- More set-piece variety: one statue figure and three trade-sign shapes so far (see Merchant/noble set pieces).
 - HLOD for the mid-range. Chunks currently switch from full detail straight to far-LOD boxes.

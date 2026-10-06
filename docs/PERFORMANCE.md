@@ -126,6 +126,17 @@ Noble chunk generation got slightly faster, not slower. The absolute numbers
 are higher than in pass 2 because this VM is slower.
 
 
+## World pass 8: modillions, shop signs, statues
+
+These are all MultiMesh instances, with no new merged geometry. A noble or merchant chunk gains about 900 modillions (24 triangles each, 140 m visibility range), about 4 shop signs (110 m), and occasionally a statue and plinth (400 m). The benchmark generated 3 chunks per district, best of 6 runs, with 2 x 2 runs per tree back to back:
+
+| Chunk | Before | After |
+|---|---|---|
+| noble | 10.6-10.8 ms | 11.4-12.5 ms |
+| merchant | 12.3 ms | 12.7-13.2 ms |
+
+A merchant preview frame draws about 15% more primitives (357k -> 414k at street level), and most of that is the modillions.
+
 ## Fast preview shots (`tools/preview.gd`)
 
 The full game or `scenes/test/world_preview.tscn` streams a 260-400 m radius,
