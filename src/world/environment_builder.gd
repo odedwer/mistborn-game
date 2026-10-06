@@ -20,7 +20,17 @@ const MOON_ELEVATION := 30.0
 const FILL_AZIMUTH := MOON_AZIMUTH + 165.0
 const FILL_ELEVATION := 62.0
 const FILL_COLOR := Color(0.52, 0.6, 0.86)
+## Night fill energy per renderer. Checked in Vulkan (Forward+) night shots:
+## there the volumetric mist and fuller ambient already lift the shadows, and
+## the Compatibility value (tuned for readability on opengl3, where the sooty
+## albedos sit deep in the tonemapper's toe) washed the player's cloak out.
 const FILL_ENERGY := 3.0
+const FILL_ENERGY_FORWARD := 1.5
+
+
+## Night fill energy for the current renderer.
+static func fill_energy() -> float:
+	return FILL_ENERGY if RenderingServer.get_current_rendering_method() == "gl_compatibility" else FILL_ENERGY_FORWARD
 
 
 ## Creates WorldEnvironment + moon under `parent` (+ the moon fill when
@@ -143,7 +153,7 @@ static func build(parent: Node3D, with_fill := false) -> Dictionary:
 	var to_fill := Vector3(sin(faz) * cos(fel), sin(fel), -cos(faz) * cos(fel))
 	fill.basis = Basis.looking_at(-to_fill, Vector3.UP)
 	fill.light_color = FILL_COLOR
-	fill.light_energy = FILL_ENERGY
+	fill.light_energy = fill_energy()
 	fill.light_specular = 0.15
 	fill.light_indirect_energy = 0.0
 	fill.light_volumetric_fog_energy = 0.0

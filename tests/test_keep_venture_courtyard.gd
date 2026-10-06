@@ -5,13 +5,13 @@ extends TestCase
 ## route expects it.
 
 
-func _solids(data: ChunkBuildData) -> Array[AABB]:
+func _solids(data: ChunkBuildData, min_top := 0.6) -> Array[AABB]:
 	var out: Array[AABB] = []
 	for s: Dictionary in data.shapes:
 		if s.has("box"):
 			var size: Vector3 = s["box"]
 			var bb := (s["xf"] as Transform3D) * AABB(-size * 0.5, size)
-			if bb.end.y > 0.6:
+			if bb.end.y > min_top:
 				out.append(bb)
 	return out
 
@@ -28,6 +28,8 @@ func test_courtyard_dressing_is_mission_safe() -> void:
 	var lm := plan.landmark_by_id(&"keep_venture")
 	var data := ChunkGenerator.generate_landmark(plan, 1337, lm)
 	var boxes := _solids(data)
+	# Low hedges/borders too (anything above curb height), at shin height.
+	var low := _solids(data, 0.2)
 	var checked := 0
 	for m: Dictionary in data.markers:
 		var g := StringName(m["group"])
@@ -44,7 +46,15 @@ func test_courtyard_dressing_is_mission_safe() -> void:
 			for k in 21:
 				var q := a.lerp(b, float(k) / 20.0) + Vector3.UP * 0.9
 				assert_true(_clear(q, 0.4, boxes), "patrol clear at %s" % q)
+				var q_low := q - Vector3.UP * 0.6
+				assert_true(_clear(q_low, 0.4, low), "no hedge on the patrol at %s" % q_low)
 	assert_gt(float(checked), 8.0)
+	var sentries := 0
+	for m: Dictionary in data.markers:
+		if StringName(m["group"]) == &"sentry_post":
+			sentries += 1
+			assert_true(_clear((m["pos"] as Vector3) + Vector3.UP * 0.9, 0.3, boxes), "sentry post clear at %s" % m["pos"])
+	assert_gt(float(sentries), 5.0, "static guards posted")
 	# The courtyard's central anchor (the well's, now the fountain's) is kept.
 	var found := false
 	for mt: Dictionary in data.static_metals:
