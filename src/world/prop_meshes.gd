@@ -169,6 +169,12 @@ static func _prism_x(b: WorldMeshBuilder, center: Vector3, radius: float, width:
 		b.add_tri(center - h, center + p1 - h, center + p0 - h, col)
 
 
+## One rectangular face centred on `c`, spanning +-`r` (right) and +-`u`
+## (up) as seen from the front; the outward normal is r x u.
+static func _face(b: WorldMeshBuilder, c: Vector3, r: Vector3, u: Vector3, col: Color) -> void:
+	b.add_quad(c - r - u, c + r - u, c + r + u, c - r + u, r.cross(u).normalized(), col, col)
+
+
 static func _box_c(b: WorldMeshBuilder, center: Vector3, size: Vector3, col: Color) -> void:
 	var h := size * 0.5
 	b.add_box(center - h, center + h, col, col, col, true)
@@ -387,10 +393,23 @@ static func _build(kind: StringName) -> Mesh:
 		&"modillion":
 			# A cornice bracket under the corona soffit (local: x along the
 			# facade, +z out of the wall, y = 0 at the soffit): a deep top
-			# block and a shorter scrolled drop, pale dressed stone.
+			# block and a shorter drop, pale dressed stone. Only the eight
+			# faces that can be seen (16 triangles, was 24): the top sits on
+			# the soffit, the backs against the bed moulding and the frieze,
+			# and the top block's sides start where the bed moulding (0.38 m
+			# out) stops hiding them.
 			var pc := Color(0.9, 0.87, 0.8)
-			_box_c(ashlar, Vector3(0, -0.08, 0.56), Vector3(0.22, 0.16, 0.88), pc)
-			_box_c(ashlar, Vector3(0, -0.24, 0.3), Vector3(0.18, 0.18, 0.36), pc * 0.9)
+			var pd := pc * 0.9
+			# Top block: x +-0.11, y -0.16..0, z 0.38..1.0.
+			_face(ashlar, Vector3(0, -0.08, 1.0), Vector3.RIGHT * 0.11, Vector3.UP * 0.08, pc)
+			_face(ashlar, Vector3(0, -0.16, 0.74), Vector3.RIGHT * 0.11, Vector3.BACK * 0.26, pc * 0.8)
+			_face(ashlar, Vector3(0.11, -0.08, 0.69), Vector3.FORWARD * 0.31, Vector3.UP * 0.08, pc)
+			_face(ashlar, Vector3(-0.11, -0.08, 0.69), Vector3.BACK * 0.31, Vector3.UP * 0.08, pc)
+			# Drop: x +-0.09, y -0.33..-0.15, z 0.12..0.48.
+			_face(ashlar, Vector3(0, -0.24, 0.48), Vector3.RIGHT * 0.09, Vector3.UP * 0.09, pd)
+			_face(ashlar, Vector3(0, -0.33, 0.3), Vector3.RIGHT * 0.09, Vector3.BACK * 0.18, pd * 0.8)
+			_face(ashlar, Vector3(0.09, -0.24, 0.3), Vector3.FORWARD * 0.18, Vector3.UP * 0.09, pd)
+			_face(ashlar, Vector3(-0.09, -0.24, 0.3), Vector3.BACK * 0.18, Vector3.UP * 0.09, pd)
 		&"plinth":
 			# Dressed-stone pedestal for a district statue (big 0.6 m courses,
 			# not the facade's brick-sized ones): a chamfered base, a step
