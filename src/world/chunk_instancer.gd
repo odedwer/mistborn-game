@@ -18,6 +18,8 @@ const INSTANCE_RANGE := {
 	&"weathervane": 220.0, &"lightning_rod": 260.0, &"bollard": 130.0, &"stall": 160.0, &"well": 200.0,
 	# Keep gardens are seen from rooftops and from the air: keep them in view.
 	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0, &"carriage": 200.0,
+	&"plinth": 400.0, &"statue_marble": 400.0, &"modillion": 140.0,
+	&"shop_sign_board": 110.0, &"shop_sign_medallion": 110.0, &"shop_sign_coin": 110.0,
 }
 const DETAIL_RANGE := 150.0
 const WINDOW_RANGE := 420.0
@@ -25,7 +27,7 @@ const RIGID_RANGE := 110.0
 const SHAPES_PER_BODY := 48
 const NO_SHADOW_MATS := [M.WATER, M.WINDOW, M.LANTERN_GLASS]
 
-static var _lamp_shape: BoxShape3D
+static var _lamp_shapes := {}  # scale -> BoxShape3D, shared
 static var _checkpoint_shape: BoxShape3D
 
 var data: ChunkBuildData
@@ -233,7 +235,7 @@ func _build_multimeshes() -> void:
 			var lp: Dictionary = data.lamp_posts[i]
 			var d: Vector2 = lp["dir"]
 			var bx := Basis.looking_at(Vector3(d.x, 0, d.y)) if d.length() > 0.01 else Basis()
-			mm2.set_instance_transform(i, Transform3D(bx, lp["pos"]))
+			mm2.set_instance_transform(i, Transform3D(bx.scaled_local(Vector3.ONE * float(lp.get("scale", 1.0))), lp["pos"]))
 		var mmi2 := MultiMeshInstance3D.new()
 		mmi2.name = "MM_lamp_posts"
 		mmi2.multimesh = mm2
@@ -251,23 +253,26 @@ func _add_static_metal(i: int) -> void:
 
 
 func _add_lamp(i: int) -> void:
-	if _lamp_shape == null:
-		_lamp_shape = BoxShape3D.new()
-		_lamp_shape.size = Vector3(0.24, 4.2, 0.24)
 	var lp: Dictionary = data.lamp_posts[i]
+	var s := float(lp.get("scale", 1.0))
+	var shape: BoxShape3D = _lamp_shapes.get(s)
+	if shape == null:
+		shape = BoxShape3D.new()
+		shape.size = Vector3(0.24, 4.2 * s, 0.24)
+		_lamp_shapes[s] = shape
 	var body := StaticBody3D.new()
 	body.collision_layer = WORLD_LAYER
 	body.collision_mask = 0
 	body.position = lp["pos"]
 	body.add_to_group(&"lamp_post")
 	var cs := CollisionShape3D.new()
-	cs.shape = _lamp_shape
-	cs.position = Vector3(0, 2.1, 0)
+	cs.shape = shape
+	cs.position = Vector3(0, 2.1 * s, 0)
 	body.add_child(cs)
 	var met := Metallic.new()
 	met.metal_mass = 60.0
 	met.anchored = true
-	met.position = Vector3(0, 3.0, 0)
+	met.position = Vector3(0, 3.0 * s, 0)
 	body.add_child(met)
 	root.add_child(body)
 

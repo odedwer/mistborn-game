@@ -5,6 +5,7 @@ extends RefCounted
 
 const M := WorldMaterials.Mat
 const WIN_SPACING := 2.7
+const MODILLION_SPACING := 1.2
 
 
 ## Soot-graded wall colours for a lot: [ground, band, top, roof-top].
@@ -186,6 +187,38 @@ static func _facade_ornament(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: Ra
 			data.add_instance(&"balcony", Transform3D(bx, bp))
 			data.add_metal(bp + n * 0.76 + Vector3.UP * 0.45, 10.0)
 	_cornice(data, lot, dark)
+	_shop_sign(data, lot, rng)
+
+
+const SHOP_SIGNS: Array[StringName] = [&"shop_sign_board", &"shop_sign_medallion", &"shop_sign_coin"]
+
+
+## A hanging trade sign over a merchant shopfront (style key `shop_signs` is
+## the share of lots that get one): on the front face, at the pier between
+## the first two ground-floor window slots, above the window heads (2.7 m)
+## and below the first-floor sills (4.4 m). Purely visual, no collision: it
+## hangs from 3.45 m down to ~2.75 m, over the pavement, never into a street
+## the player runs at head height.
+static func _shop_sign(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumberGenerator) -> void:
+	var share := float(lot.style.get("shop_signs", 0.0))
+	# Always draw both, so the share never shifts which sign a lot gets.
+	var roll := rng.randf()
+	var pick := rng.randi_range(0, SHOP_SIGNS.size() - 1)
+	if roll >= share or lot.shared & lot.front:
+		return
+	var fr := _face_frame(lot.rect, lot.front)
+	var length: float = fr[3]
+	var count := int(floor((length - 1.0) / WIN_SPACING))
+	if count < 2:
+		return
+	var o: Vector3 = fr[0]
+	var rv: Vector3 = fr[1]
+	var n: Vector3 = fr[2]
+	var spacing := length / float(count)
+	# Left or right end pier, so neighbouring shops don't all line up.
+	var u := spacing if pick != 1 else length - spacing
+	var p := o + rv * u + Vector3.UP * 3.45
+	data.add_instance(SHOP_SIGNS[pick], Transform3D(Basis(rv, Vector3.UP, n), p))
 
 
 ## Merchant/noble cornice: a plain frieze band and a deep, projecting crown
@@ -236,6 +269,23 @@ static func _cornice(data: ChunkBuildData, lot: ChunkLayout.Lot, dark: Color) ->
 	# Soffit: the underside of the corona, seen from the street.
 	trim.add_quad(Vector3(lo.x, lo.y, lo.z), Vector3(hi.x, lo.y, lo.z), Vector3(hi.x, lo.y, hi.z),
 			Vector3(lo.x, lo.y, hi.z), Vector3.DOWN, dark * 0.45, dark * 0.45)
+	# Modillions: a row of stone brackets carrying the corona on every free
+	# face (one shared MultiMesh per chunk), which turns the slab into a
+	# classical cornice with a rhythm of light and shadow under the eaves.
+	for bit: int in [ChunkLayout.FACE_S, ChunkLayout.FACE_N, ChunkLayout.FACE_E, ChunkLayout.FACE_W]:
+		if sh & bit:
+			continue
+		var fr := _face_frame(r, bit)
+		var length: float = fr[3]
+		var k := int(floor((length - 0.6) / MODILLION_SPACING))
+		if k < 1:
+			continue
+		var step := (length - 0.6) / float(k)
+		var fo: Vector3 = fr[0]
+		var rv: Vector3 = fr[1]
+		var bx := Basis(rv, Vector3.UP, fr[2])
+		for i in k + 1:
+			data.add_instance(&"modillion", Transform3D(bx, fo + rv * (0.3 + step * float(i)) + Vector3.UP * bed_hi))
 
 
 static func _chimney(data: ChunkBuildData, rng: RandomNumberGenerator, x: float, z: float,

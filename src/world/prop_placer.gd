@@ -6,6 +6,7 @@ extends RefCounted
 
 const M := WorldMaterials.Mat
 const LAMP_LIGHT_COLOR := Color(1.0, 0.62, 0.3)
+const STATUE_SCALE := 1.35
 
 ## Loose prop kinds and their relative weights.
 const LOOSE_WEIGHTS := {
@@ -169,10 +170,22 @@ static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayou
 		var perp := Vector2(-dir.y, dir.x)
 		var off := st.width * 0.5 - 1.7
 		var n := int(floor((st.length() - 10.0) / 12.0))
+		var statue_slot := _statue_slot(plan, L, st, n)
 		for i in n:
 			for side: float in [1.0, -1.0]:
 				var t := 5.0 + 12.0 * float(i) + (6.0 if side < 0.0 else 0.0)
 				var p := st.a + dir * t + perp * side * off
+				if i == statue_slot and side > 0.0:
+					# Set 0.8 m further out from the kerb line (a wider base),
+					# with its own clearance test. The slot still makes the
+					# planting rng draws it would have, so every other tree
+					# and planter on the street stays exactly where it was.
+					var sp := p - perp * 0.8
+					if _street_spot_free(plan, L, p, 1.0) and _statue_spot_free(plan, L, sp):
+						rng.randf()
+						rng.randf()
+						_statue(data, sp, -perp)
+						continue
 				if not _street_spot_free(plan, L, p, 1.0):
 					continue
 				var yaw := rng.randf() * TAU
@@ -182,6 +195,48 @@ static func _avenue_planting(data: ChunkBuildData, plan: CityPlan, L: ChunkLayou
 				else:
 					data.add_instance(&"ash_planter", Transform3D(Basis(Vector3.UP, yaw), Vector3(p.x, 0.0, p.y)))
 					data.add_box_shape(Vector3(p.x, 0.3, p.y), Vector3(0.9, 0.6, 0.9))
+
+
+## Which avenue slot (on the +perp kerb) holds a statue, or -1. Style key
+## `statues` is the share of avenues that get one, at the middle slot; keyed
+## on the street's own geometry so it's the same whichever chunk asks.
+## Never inside the vertical slice (hand-tuned mission space).
+static func _statue_slot(plan: CityPlan, L: ChunkLayout, st: ChunkLayout.Street, n: int) -> int:
+	var share := float(L.style.get("statues", 0.0))
+	if share <= 0.0 or n < 3:
+		return -1
+	var mid := (st.a + st.b) * 0.5
+	if plan.slice_bounds.grow(24.0).has_point(mid):
+		return -1
+	if CityPlan.hash01(0x57A7, int(round(mid.x)), int(round(mid.y)), int(round(st.width * 10.0))) >= share:
+		return -1
+	return n / 2
+
+
+## A statue needs more room than a planter, and stays clear of every marker
+## (spawns, objectives, activity starts) so mission clearances are untouched.
+static func _statue_spot_free(plan: CityPlan, L: ChunkLayout, p: Vector2) -> bool:
+	if not _street_spot_free(plan, L, p, 1.8):
+		return false
+	for m in L.markers:
+		var mp: Vector3 = m["pos"]
+		if Vector2(mp.x, mp.z).distance_to(p) < 8.0:
+			return false
+	return true
+
+
+## A pale marble figure on an ashlar plinth, facing the avenue (stone, so not
+## an anchor): collision for the plinth and the figure, and a nav obstacle.
+static func _statue(data: ChunkBuildData, p: Vector2, facing: Vector2) -> void:
+	var b := Basis(Vector3.UP, atan2(facing.x, facing.y))
+	var base := Vector3(p.x, 0.0, p.y)
+	data.add_instance(&"plinth", Transform3D(b, base))
+	# Heroic scale: the 2.3 m figure at 1.35x (~3.1 m, standard to 4.2 m) on a
+	# 1.7 m die.
+	data.add_instance(&"statue_marble", Transform3D(b.scaled(Vector3.ONE * STATUE_SCALE), base + Vector3.UP * 1.7))
+	data.add_box_shape(base + Vector3(0, 0.85, 0), Vector3(1.7, 1.7, 1.7))
+	data.add_box_shape(base + Vector3(0, 1.7 + 1.55, 0), Vector3(1.0, 3.1, 1.0))
+	data.add_nav_box(base - Vector3(0.85, 0, 0.85), base + Vector3(0.85, 1.7, 0.85), false)
 
 
 ## Like `_free_spot`, but for points on a boundary street, which may lie just
