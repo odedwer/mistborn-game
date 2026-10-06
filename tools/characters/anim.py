@@ -433,14 +433,41 @@ def make_anims(style: str, S: Skel):
     add("land", 0.5, land)
 
     # ----------------------------------------------------------- one-shots
+    ARM_KEYS = ("abd", "flex", "elbow", "twist", "wrist", "wtwist", "shrug", "prot")
+
+    def free_hand(d, off=None):
+        """Mirrors a right-handed key onto the left (free) hand for armed styles.
+
+        Their weapon is in the right hand, so a right-handed throw cocked the
+        spear/axe back horizontally straight through the head. The weapon arm
+        keeps its base pose (no balancing swing), so the shaft stays upright.
+        Twists mirror at reduced strength: the twist only carries the upright
+        weapon round the body, and at full strength it swung it in front of
+        the face. `off` overrides keys of the mirrored pose only (as Push/Pull,
+        the off-hand release stays below the face for the 3/4 camera)."""
+        if not STYLES[style].get("weapon_r", False):
+            return d
+        out = {}
+        for key, v in dict(d, **(off or {})).items():
+            if key[:2] in ("r_", "l_") and key[2:] in ARM_KEYS:
+                if key[0] == "r":
+                    out["l" + key[1:]] = v
+            elif key in ("spine_twist", "hips_yaw"):
+                out[key] = -v * 0.5
+            else:
+                out[key] = v
+        return out
+
     def throw(t):
         return keyed([
             (0.0, {}),
-            (0.2, {"r_abd": 55, "r_flex": -20, "r_elbow": 105, "r_twist": 40, "spine_twist": -22, "spine_lean": -4,
-                   "l_flex": 35, "l_elbow": 40, "hips_yaw": -8}),
-            (0.34, {"r_abd": 30, "r_flex": 95, "r_elbow": 10, "r_twist": 0, "r_wrist": 20, "spine_twist": 18,
-                    "spine_lean": 8, "l_flex": -10, "hips_yaw": 6}),
-            (0.46, {"r_abd": 20, "r_flex": 70, "r_elbow": 20, "spine_twist": 14, "spine_lean": 6}),
+            (0.2, free_hand({"r_abd": 55, "r_flex": -20, "r_elbow": 105, "r_twist": 40, "spine_twist": -22,
+                             "spine_lean": -4, "l_flex": 35, "l_elbow": 40, "hips_yaw": -8})),
+            (0.34, free_hand({"r_abd": 30, "r_flex": 95, "r_elbow": 10, "r_twist": 0, "r_wrist": 20,
+                              "spine_twist": 18, "spine_lean": 8, "l_flex": -10, "hips_yaw": 6},
+                             off={"r_abd": 26, "r_flex": 80, "r_wrist": 0, "spine_lean": 12})),
+            (0.46, free_hand({"r_abd": 20, "r_flex": 70, "r_elbow": 20, "spine_twist": 14, "spine_lean": 6},
+                             off={"r_flex": 62})),
             (0.75, {}),
         ], t, base)
 
@@ -615,24 +642,57 @@ def make_anims(style: str, S: Skel):
     fist_back = {"r_abd": 2, "r_flex": -22, "r_elbow": 116, "r_twist": 15, "r_wrist": 22, "r_wtwist": 14,
                  "spine_twist": -18, "spine_lean": -8, "head_pitch": 7}  # eyes stay on the target
 
+    # The weapon arm of an armed style is left alone by arm(); `weapon` adds
+    # extra keys for it (see the off-hand Push below).
+    weapon = {}
+    if hand == "l":
+        # Off-hand Push (spear guard, axe Inquisitor). The 3/4 camera sits on
+        # the character's left, so the free left arm points nearly at the
+        # viewer. With the right-hand key (palm at shoulder height, fingers up
+        # to the chin) that foreshortened palm sat beside the face. The off-hand
+        # instead drives the palm to the sternum: the left shoulder is twisted
+        # and protracted into the thrust and the torso leans in, so the arm reads
+        # as reaching forward of the chest and the palm sits below the chin. The
+        # weapon arm swings back as a counterweight, which also keeps the spear
+        # shaft and axe haft behind the pushing hand.
+        palm_wind = dict(palm_wind, r_flex=30, r_elbow=105, r_wrist=50, spine_twist=-16)
+        palm_out = dict(palm_out, r_abd=28, r_flex=80, r_elbow=2, r_wrist=80, spine_twist=20, spine_lean=14,
+                        head_pitch=0, l_prot=12)
+        weapon = {"r_flex": base["r_flex"] - 18, "r_wrist": base["r_wrist"] + 30}  # wrist keeps the shaft upright
+
     def push(t):
+        hold = dict(palm_out, r_flex=palm_out["r_flex"] - 3, spine_twist=palm_out["spine_twist"] - 2,
+                    spine_lean=palm_out["spine_lean"] - 2)
         return keyed([
             (0.0, {}),
-            (0.14, dict(brace, **arm(palm_wind))),
-            (0.26, dict(brace, **arm(palm_out))),
-            (0.42, dict(brace, **arm(dict(palm_out, r_flex=89, spine_twist=8, spine_lean=6)))),
+            (0.14, dict(brace, **arm(palm_wind), **weapon)),
+            (0.26, dict(brace, **arm(palm_out), **weapon)),
+            (0.42, dict(brace, **arm(hold), **weapon)),
             (0.65, {}),
         ], t, base)
 
     add("push", 0.65, push)
 
+    weapon_pull = {}
+    if hand == "l":
+        # Off-hand Pull: the same problem as the Push. The reach (fist at
+        # shoulder height, pointing at the 3/4 camera) covered the Inquisitor's
+        # face, so the off-hand reaches to the sternum with the shoulder driven
+        # in. On the haul the spine twist swung the weapon arm across the chest
+        # (the spear shaft and the axe crossed the body), so the twist is
+        # smaller and the weapon arm is held out and back.
+        fist_reach = dict(fist_reach, r_abd=26, r_flex=80, r_elbow=2, r_wrist=-30, spine_twist=18, spine_lean=12,
+                          l_prot=10)
+        fist_back = dict(fist_back, spine_twist=-8)
+        weapon_pull = {"r_flex": base["r_flex"] - 15, "r_abd": base["r_abd"] + 8}
+
     def pull(t):
         back = dict(brace, hips_y=-0.04 * k)
         return keyed([
             (0.0, {}),
-            (0.18, dict(brace, **arm(fist_reach))),
-            (0.3, dict(back, **arm(dict(fist_reach, r_wrist=-40, spine_lean=-4)))),
-            (0.44, dict(back, **arm(fist_back))),
+            (0.18, dict(brace, **arm(fist_reach), **weapon)),
+            (0.3, dict(back, **arm(dict(fist_reach, r_wrist=fist_reach["r_wrist"] - 12, spine_lean=-4)), **weapon)),
+            (0.44, dict(back, **arm(fist_back), **weapon_pull)),
             (0.75, {}),
         ], t, base)
 
