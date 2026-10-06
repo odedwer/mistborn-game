@@ -236,7 +236,7 @@ def build_guard():
     b.hair_shell(hexcol("2e241c"), puff=1.0, jag=0.0, back_z=b.head_lm["chin_z"] + 0.06 * s, fringe_z=b.head_lm["top"])
     for side in (1, -1):
         b.arm(side, color=band(tunic, [(0, 0.66 * H, hexcol("3a2c20"))]))
-        b.hand(side, hexcol("3a2c20"))
+        b.hand(side, hexcol("3a2c20"), palm=hexcol("9a7a58"))
         b.leg(side, pants, boot_z=0.24 * H, boot_col=boots)
         b.foot(side, boots, sole=hexcol("120e0b"))
     # tunic skirt

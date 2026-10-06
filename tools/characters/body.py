@@ -653,7 +653,12 @@ class Body:
         bias = {"UpperChest": 0.3, side_name(side, "Shoulder"): 0.6, side_name(side, "Hand"): 0.5}
         tube(self.m, pts, rr, n=n, color=color, hint=(0, 1, 0), weights=self.W(bones, bias), cap1="flat")
 
-    def hand(self, side, color, n=8, scale=1.0, curl=1.0):
+    def hand(self, side, color, n=8, scale=1.0, curl=1.0, palm=None):
+        """Mitten hand. `palm` (optional) colours the palm side: the palm and
+        the inner faces of the curled fingers and thumb, judged against each
+        ring's own centre so the curled fingertips keep the back colour. A
+        dark glove with a pale leather palm reads as an open hand in a Push
+        instead of a fist."""
         S = self.S
         s = self.s * self.P["limb"] * scale
         hb = side_name(side, "Hand")
@@ -671,12 +676,29 @@ class Body:
         rr = [(a * s, b * s) for a, b in rad]
         fr = [(np.cross(g, norm(d)), g)] * len(pts)
         W = {hb: 1.0}
-        tube(self.m, pts, [(r[0], r[1]) for r in rr], n=n, color=color, hint=g, weights=W,
+        def sided(cs, nrm):
+            """Palm colour on the side of ring i facing nrm(i) (caps: the end ring's)."""
+            if palm is None:
+                return color
+
+            def f(p, i, th):
+                i = min(max(i, 0), len(cs) - 1)
+                return palm if float(np.dot(p - cs[i], nrm(i))) > 0.0 else color
+            return f
+
+        def finger_n(i):
+            # palm normal bent along the finger curl (the curled tips face back)
+            a = pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]
+            a = norm(a)
+            return norm(pn - a * float(np.dot(pn, a)))
+
+        tube(self.m, pts, [(r[0], r[1]) for r in rr], n=n, color=sided(pts, finger_n), hint=g, weights=W,
              cap1=0.01 * s, cap0=None, ex=2.4)
         # thumb
         tb = o + d * 0.2 * L + g * 0.03 * s
-        tube(self.m, [tb, tb + d * 0.25 * L + g * 0.02 * s + pn * 0.012 * s, tb + d * 0.45 * L + pn * 0.03 * s * curl],
-             [0.012 * s, 0.011 * s, 0.0095 * s], n=6, color=color, weights=W, cap1=0.007 * s)
+        tps = [tb, tb + d * 0.25 * L + g * 0.02 * s + pn * 0.012 * s, tb + d * 0.45 * L + pn * 0.03 * s * curl]
+        tube(self.m, tps, [0.012 * s, 0.011 * s, 0.0095 * s], n=6, color=sided(tps, lambda i: norm(pn - g * 0.6)),
+             weights=W, cap1=0.007 * s)
 
     def leg(self, side, color, n=14, scale=1.0, top_extra=0.0, boot_z=None, boot_col=None, boot_add=0.006,
             thigh=1.0):
