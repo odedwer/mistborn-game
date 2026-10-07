@@ -86,7 +86,7 @@ signal action_started(name) / action_finished(name)
 - **`play_action`** takes `jump, land, throw, melee, attack, hit, die, block, alert, push, pull, drink, talk`:
   - `throw, melee, push, pull, drink, talk` are upper-body one-shots (spine, arms and head filter), so they layer over running.
   - The others are full-body one-shots.
-  - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`.
+  - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`. The armed characters let the weapon fall flat beside them as they land (it used to stand straight up from the dead hand, and the spear and staff went 50–70 cm into the floor).
   - `attack` is character-specific: a dagger slash (vin), a spear thrust (guard), an overhead staff strike (hazekiller), a club smash (thug), a coin throw (coinshot) and a diagonal axe chop (inquisitor). Enemies strike with `attack`. Only the player plays `melee`.
   - `melee` is a wide one-handed swing: a dagger slash for Vin, a punch for the coinshot.
   - **Free hand.** The armed characters (guard, hazekiller, thug, Inquisitor) carry their weapon in the right hand. Their `melee`, `drink`, `talk`, `throw`, `push` and `pull` use the free left hand, while the weapon arm holds the weapon upright and clear of the head. In idle and the gaits, the Inquisitor carries his axe like the guard's spear, forearm level and haft upright (from the side and the front) beside the shoulder; in Push and Pull he holds it upright and low at his side. These poses are the right-handed keys mirrored by `free_hand()` and `arm()` in `anim.py`.
