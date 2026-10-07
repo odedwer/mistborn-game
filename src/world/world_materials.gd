@@ -137,8 +137,10 @@ static func _bronze() -> StandardMaterial3D:
 	var src := fnl.get_seamless_image(128, 128)
 	var alb := Image.create(128, 128, true, Image.FORMAT_RGB8)
 	var rough := Image.create(128, 128, true, Image.FORMAT_L8)
-	var metal := Color(0.24, 0.18, 0.12)
-	var patina := Color(0.22, 0.31, 0.26)
+	# Lighter than true statuary bronze (and only half metallic, below) so
+	# it still reads as bronze in shade, where it only gets ambient light.
+	var metal := Color(0.3, 0.225, 0.15)
+	var patina := Color(0.26, 0.33, 0.28)
 	for y in 128:
 		for x in 128:
 			var v := src.get_pixel(x, y).r
@@ -157,8 +159,12 @@ static func _bronze() -> StandardMaterial3D:
 	m.roughness = 1.0
 	m.roughness_texture = ImageTexture.create_from_image(rough)
 	m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
-	m.metallic = 0.45
-	m.metallic_specular = 0.4
+	m.metallic = 0.35
+	m.metallic_specular = 0.5
+	# A faint rim along the silhouette picks the figure out of a dark street.
+	m.rim_enabled = true
+	m.rim = 0.25
+	m.rim_tint = 0.6
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	return m
 

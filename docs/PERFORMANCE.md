@@ -167,6 +167,33 @@ in range replace one draw per chunk). The merchant street pose is back within
 2% of its count before pass 8 (357k). The "after" numbers also include the new
 statue figure (about 600 triangles per statue), which is negligible.
 
+## World pass 10: modillion fade
+
+Modillion cells used to pop at 54-74 m. `visibility_range_fade_mode` doesn't
+fix that: Forward+ alpha-blends the whole cell (into the transparent pass),
+and Compatibility ignores the mode and keeps the plain hysteresis. Instead,
+each bracket dithers out between 32 and 48 m with a per-pixel distance fade
+(`BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER` on a copy of the ashlar
+material). This stays in the opaque pass and looks the same in both
+renderers. The cells now only have to come and go out of sight. They have a
+68 m range with a 3 m margin, so a cell appears at 65 m and goes at 71 m,
+measured to its centre. No bracket of a 24 m cell is then nearer than 48 m.
+
+The statues also gained a head (about 950 triangles per figure, up from about
+680), and there are 55 of them instead of 47. Measured as in pass 9, with
+one cold process per pose:
+
+| Pose | Pass 9 (prims / draws) | Pass 10 (prims / draws) |
+|---|---|---|
+| merchant street `-374,2,-1990` | 364.6k / 304 | 365.3k / 305 |
+| merchant avenue from 13 m `-381,13,-1955` | 346.0k / 292 | 348.4k / 297 |
+| merchant cornice close-up `-381,3,-2040` | 432.7k / 332 | 433.8k / 334 |
+| noble street `-451,2,-1155` | 339.3k / 293 | 340.8k / 296 |
+
+That is 0.2-0.7% more primitives and up to 5 more draws, from the cells that
+now stay up to 65-71 m instead of 54 m on a cold shot. Forward+ (Vulkan on
+lavapipe) draws the same 348.1k primitives at the avenue pose.
+
 ## Fast preview shots (`tools/preview.gd`)
 
 The full game or `scenes/test/world_preview.tscn` streams a 260-400 m radius,

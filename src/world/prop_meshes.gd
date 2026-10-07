@@ -350,8 +350,32 @@ static func _build(kind: StringName) -> Mesh:
 					[0.95, 0.36, 0.29, 0.0, 0.88], [1.12, 0.31, 0.24, 0.0, 0.85], [1.18, 0.32, 0.25, 0.0, 0.92],
 					[1.36, 0.35, 0.25, 0.0, 1.0], [1.48, 0.41, 0.24, 0.0, 1.0], [1.55, 0.38, 0.21, 0.0, 0.98],
 					[1.61, 0.2, 0.15, 0.0, 0.92], [1.64, 0.085, 0.09, 0.01, 0.85], [1.72, 0.08, 0.085, 0.02, 0.88],
-					[1.74, 0.115, 0.125, 0.025, 0.95], [1.82, 0.145, 0.155, 0.025, 1.0], [1.91, 0.14, 0.15, 0.02, 1.0],
-					[1.98, 0.105, 0.115, 0.015, 1.0], [2.02, 0.045, 0.05, 0.01, 1.0]], 12, ic)
+					# Head: a jaw carried forward to the chin, the cheeks, the
+					# temples and the crown (no longer an egg).
+					[1.745, 0.085, 0.11, 0.045, 0.9], [1.785, 0.118, 0.135, 0.04, 0.95],
+					[1.84, 0.138, 0.15, 0.03, 1.0], [1.91, 0.138, 0.15, 0.02, 1.0],
+					[1.97, 0.11, 0.125, 0.01, 1.0], [2.01, 0.05, 0.06, 0.0, 1.0]], 12, ic)
+			# Hair massed at the back of the skull and the nape.
+			_lathe(fig, [[1.76, 0.1, 0.07, -0.05, 0.8], [1.84, 0.142, 0.115, -0.035, 0.9],
+					[1.94, 0.14, 0.12, -0.01, 0.95], [2.0, 0.08, 0.075, 0.0, 1.0]], 10, ic * 0.95)
+			# Face (+Z): a brow ridge over the eyes, a wedge of a nose, and a
+			# laurel wreath round the temples.
+			for sx: float in [-1.0, 1.0]:
+				_limb_n(fig, Vector3(0, 1.888, 0.156), Vector3(sx * 0.085, 1.892, 0.138), 0.017, 0.009, ic, 5)
+			_limb_n(fig, Vector3(0, 1.88, 0.162), Vector3(0, 1.832, 0.19), 0.02, 0.012, ic, 4, true)
+			_lathe(fig, [[1.9, 0.142, 0.153, 0.018, 0.85], [1.925, 0.156, 0.167, 0.018, 1.0],
+					[1.95, 0.142, 0.153, 0.014, 0.9]], 12, ic * 1.05, false)
+			for i in 10:
+				var a := TAU * (float(i) + 0.5) / 10.0
+				if cos(a) > 0.8:
+					continue  # the wreath parts over the brow
+				# Leaves lie along the band, pointing back, in two rows.
+				var radial := Vector3(sin(a), 0.0, cos(a))
+				var back := Vector3(cos(a), 0.0, -sin(a)) * (1.0 if a < PI else -1.0)
+				for row: float in [-1.0, 1.0]:
+					var on := Vector3(sin(a) * 0.155, 1.925 + row * 0.012, 0.018 + cos(a) * 0.166)
+					var dir := (back + radial * 0.3 + Vector3.UP * row * 0.35).normalized()
+					_limb_n(fig, on, on + dir * 0.06, 0.018, 0.004, ic * 1.05, 3)
 			# A cloak falling from the shoulders and spreading behind the hem.
 			_lathe(fig, [[0.19, 0.47, 0.14, -0.3, 0.6], [0.7, 0.47, 0.15, -0.27, 0.75], [1.2, 0.42, 0.15, -0.2, 0.88],
 					[1.52, 0.37, 0.13, -0.1, 0.95]], 10, ic, false)
