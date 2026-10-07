@@ -264,5 +264,5 @@ Merged:
 Follow-ups:
 - In idle and the base pose, the Inquisitor's axe still leans about 40° forward. Only the Push and Pull holds are upright.
 - The checker doesn't cover the legs, and models the shield as a flat disc without its boss.
-- CI's Ubuntu runner may lack numpy, which skips the clearance test. Install numpy in `.github/workflows/ci.yml` so it runs there too.
+- **Done:** CI installs `python3-numpy` before the test step, so the clearance test runs there.
 - Tightest remaining gaps: 3.6 cm from the guard's spear and the hazekiller's staff to their skirts (in `sprint` and `block`).

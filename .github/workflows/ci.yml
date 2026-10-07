@@ -47,6 +47,9 @@ jobs:
       - name: Import project
         run: godot --headless --import || true
 
+      - name: Install numpy (weapon clearance test)
+        run: sudo apt-get update && sudo apt-get install -y python3-numpy
+
       - name: Run tests
         run: bash tools/run_tests.sh
 
