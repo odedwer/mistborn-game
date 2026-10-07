@@ -18,7 +18,7 @@ const INSTANCE_RANGE := {
 	&"weathervane": 220.0, &"lightning_rod": 260.0, &"bollard": 130.0, &"stall": 160.0, &"well": 200.0,
 	# Keep gardens are seen from rooftops and from the air: keep them in view.
 	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0, &"carriage": 200.0,
-	&"plinth": 400.0, &"statue_bronze": 400.0, &"modillion": 64.0,
+	&"plinth": 400.0, &"statue_bronze": 400.0, &"modillion": 68.0,
 	&"shop_sign_board": 110.0, &"shop_sign_medallion": 110.0, &"shop_sign_coin": 110.0,
 }
 ## Kinds that are many and small (about 900 modillions per merchant/noble
@@ -27,6 +27,13 @@ const INSTANCE_RANGE := {
 ## range is measured to the instance's AABB centre, so a whole-chunk
 ## MultiMesh would vanish or stay as one block.
 const INSTANCE_CELL := {&"modillion": 24.0}
+## Visibility-range hysteresis (m) per kind; the default is 10. A cell appears
+## inside range - margin and goes beyond range + margin, both measured to its
+## centre. Modillions dither out by themselves (PropMeshes.MODILLION_FADE,
+## 32-48 m), so their cells only need to come and go out of sight: a cell
+## appearing at 65 m or going at 71 m has no bracket nearer than 48 m (a 24 m
+## cell reaches 17 m from its centre).
+const INSTANCE_MARGIN := {&"modillion": 3.0}
 const DETAIL_RANGE := 150.0
 const WINDOW_RANGE := 420.0
 const RIGID_RANGE := 110.0
@@ -243,7 +250,7 @@ func _add_multimesh(kind: StringName, xfs: Array, node_name: String) -> void:
 	var r: float = INSTANCE_RANGE.get(kind, 150.0)
 	if r > 0.0:
 		mmi.visibility_range_end = r
-		mmi.visibility_range_end_margin = 10.0
+		mmi.visibility_range_end_margin = INSTANCE_MARGIN.get(kind, 10.0)
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if kind in [&"lamp_post", &"lightning_rod", &"weathervane"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(mmi)
 	draw_meshes += mm.mesh.get_surface_count()
