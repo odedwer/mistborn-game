@@ -365,3 +365,20 @@ Follow-ups:
 - **Death pose:** lying on his back, the Inquisitor's robe rides up to his thighs and leaves his legs bare below it. It also flips up for a moment around 0.55 s. Weight the hem more toward the shins in `die`, or add a `die`-specific cloth settle.
 - **Not checked:** skirts on separate garment meshes, such as noble men's coat tails and the bustle.
 - **Hazekiller crouch:** the staff leans in front of his face from the front, which comes from the existing carry pose.
+
+## Review of world pass 11
+
+Merged:
+- **Statue face:** a displaced-grid head with eye sockets, brow, nose, mouth line, chin, cheekbones and ears, with recesses darkened in the vertex colour. The figure is 1,254 triangles. The Keep Venture fountain figure shares the mesh.
+- **Verdigris shader:** `assets/shaders/bronze.gdshader`. The patina gathers in recesses, on upward-facing surfaces, and in vertical runs below the shoulders, belt and chin that fade toward the hem. Placement is unchanged (55 statues).
+- **Traversal determinism, root-caused.**
+  - **Cause:** leg starts differed because `Player.respawn` kept the roll timer, jump buffer, coyote time and Pull tether. A hard landing left the next leg starting mid-roll.
+  - **Fix:** `respawn` now clears them, which is also correct gameplay behaviour (no roll or tether carried over after a death or checkpoint reload). The test's `_start_leg` drops the player 0.5 m and waits until it has stood for 5 frames.
+  - Every leg is now identical in the full route, on its own and from a fresh world, down to the landing position. Frames for the six legs: 190, 280, 250, 231, 391 and 377, all with 0 hops. Assertions and limits are unchanged.
+- **Short landing:** an obstacle-height probe in the terminal guidance changed none of 13 nudged courtyard starts, which now all land with 0 hops, so it was reverted.
+
+303 Godot tests and 15 clearance tests green, and the leg frame counts match the agent's report exactly. Reviewed p11w_faceclose34_t11_after and p11w_street34_t16_after (statue in frame in both).
+
+Follow-ups:
+- At about 1 m the head is still faceted, and the laurel leaves stick out sideways like spikes. Lay the wreath flat against the head.
+- Seen close, the verdigris runs on the chest are fairly straight and evenly spaced. Add per-run jitter in width and length.
