@@ -261,12 +261,14 @@ func test_lord_ruler_iron_pull_event_path() -> void:
 	var lr := _lord_ruler()
 	lr.set_phase(LordRuler.Phase.BRACERS)
 	var m := lr.bracer_metals[1]
-	Events.allomantic_line_used.emit(Node.new(), m, Metal.Type.IRON, 1.0)
+	var puller := Node.new()  # stands in for the player's Allomancer
+	add_child(puller)  # freed with the test
+	Events.allomantic_line_used.emit(puller, m, Metal.Type.IRON, 1.0)
 	assert_eq(lr.bracers_remaining(), 2, "no pull while he stands firm")
 	lr.stagger()
-	Events.allomantic_line_used.emit(Node.new(), m, Metal.Type.STEEL, 1.0)
+	Events.allomantic_line_used.emit(puller, m, Metal.Type.STEEL, 1.0)
 	assert_eq(lr.bracers_remaining(), 2, "a steel Push doesn't tear a bracer off")
-	Events.allomantic_line_used.emit(Node.new(), m, Metal.Type.IRON, 1.0)
+	Events.allomantic_line_used.emit(puller, m, Metal.Type.IRON, 1.0)
 	assert_eq(lr.bracers_remaining(), 1)
 
 
