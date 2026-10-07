@@ -324,3 +324,25 @@ Follow-ups:
 - The hazekiller's staff leans up to 21° in `sprint`, because it already leans 5–11° in idle.
 - The Inquisitor's one-shot clips (`attack`, `hit`, `throw`) start from the new carry pose. They pass the clearance check but haven't been screenshotted.
 - Skirt coverage uses rest-pose positions, so a thigh that swings past the hem mid-stride still counts as covered.
+
+## Review of world pass 10
+
+Merged:
+- **Fragile traversal leg, root-caused.** The bot was circling 10–50 m above the courtyard. Air control only adds speed along the input direction, so it never removed sideways speed, and every lamp push it chose came from below and off to one side, which added more. The bot now uses terminal guidance within 30 m of the goal: it works out the horizontal speed that drops it onto the goal, steers to correct the difference, and pushes only for what air control can't fix.
+  - The assertions, `LEG_FRAMES` and `REACH` are unchanged.
+  - New `test_courtyard_leg_from_a_fresh_world`.
+  - `cp_3 → keep_courtyard` takes 314 frames in the full route (it was 949) and 330 on its own. With the start nudged up to 1.2 m it takes 323–543.
+- **Modillion fade.** `visibility_range_fade_mode` doesn't work here: it moves Forward+ into the transparent pass and Compatibility ignores it. Each bracket now dithers out between 32 and 48 m using a per-pixel distance fade on its own copy of the material (`WorldMaterials.faded()`), which renders the same in both renderers. The cost is 0.2–0.7% more primitives.
+- **Statues:**
+  - A modelled head: brow, nose, jaw, hair and a laurel wreath (950 triangles).
+  - Lighter, less metallic bronze with a faint rim.
+  - The shares went to noble 0.38 / merchant 0.19, giving 55 statues with gaps of 220–1,232 m.
+
+303 Godot tests and 10 clearance tests green.
+
+**Review note:** none of the pass's statue "after" shots (`p10w_statue_*_after`, `p10w_statue_head*_after`) contains a statue. They were taken before the final share change moved the statues. I re-shot one myself from the merged tree, at (−1540.7, −1727.0), seed 1337: `rv10_statue_{front,34,west,east_close}`. The bronze reads brown with patina in daylight, and up close the face shows a brow, a nose and the wreath. To find statues, run ChunkGenerator over `plan.chunk_range()` and read `instances[&"statue_bronze"]`. Agents should screenshot from the final tree, and check that the subject is in frame.
+
+Follow-ups:
+- Statue faces are crude at eye level, and the patina blotches look a little like camouflage on the lighter bronze.
+- The `cp_1 → cp_2` push frames differ between the full route and the leg on its own (231 against 59), so the world isn't identical from leg to leg. It passes comfortably either way.
+- At one nudged start the bot landed short and hopped the fountain rim to reach the goal (543 frames).
