@@ -10,6 +10,8 @@ extends SceneTree
 ##       themselves.
 ##   --reverse, --shuffle=<seed>  run the files in another order (to check
 ##       that no file depends on what ran before it).
+##   --test=<text>  only the test methods whose name contains <text> (to
+##       bisect a failure or a leak at exit down to one test).
 ## Prints the time of every test over SLOW_TEST_MS, and a table of the
 ## slowest files and tests at the end (TEST_SLOWEST=<n> rows).
 
@@ -48,9 +50,12 @@ func _run() -> void:
 	var claim_dir := ""
 	var order := "name"
 	var shuffle_seed := 0
+	var test_filter := ""
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--claim-dir="):
 			claim_dir = a.trim_prefix("--claim-dir=")
+		elif a.begins_with("--test="):
+			test_filter = a.trim_prefix("--test=")
 		elif a == "--reverse":
 			order = "reverse"
 		elif a.begins_with("--shuffle="):
@@ -111,7 +116,7 @@ func _run() -> void:
 			continue
 		for m in script.get_script_method_list():
 			var name: String = m["name"]
-			if not name.begins_with("test_"):
+			if not name.begins_with("test_") or (test_filter != "" and not name.contains(test_filter)):
 				continue
 			var test_t0 := Time.get_ticks_msec()
 			var tc: TestCase = script.new()
@@ -140,6 +145,9 @@ func _run() -> void:
 	_print_timing(file_times, test_times, Time.get_ticks_msec() - suite_t0, claim_dir != "")
 	_remove_tree(run_dir)
 	DirAccess.remove_absolute("user://test_runs")  # only succeeds once empty
+	# Sounds still playing would otherwise leak at exit (see
+	# AudioManager.shutdown); tools/run_tests.sh fails a shard that leaks.
+	await root.get_node("AudioManager").call("shutdown")
 	quit(failed)
 
 
