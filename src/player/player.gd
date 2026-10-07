@@ -277,7 +277,19 @@ func respawn(xform: Transform3D) -> void:
 	health.revive(1.0)
 	global_transform = Transform3D(Basis.IDENTITY, xform.origin)
 	velocity = Vector3.ZERO
+	# Nothing from the previous life carries over: a landing roll, a buffered
+	# jump, coyote time or a Pull tether would change the first moments after
+	# the respawn (the traversal test's legs differed by whether the last
+	# landing was a roll).
+	_pre_move_velocity = Vector3.ZERO
+	_roll_timer = 0.0
+	_jump_buffer = 0.0
+	_coyote = 0.0
+	_jumping = false
+	_tether_len = -1.0
 	_stream_hold = false
+	_stream_hold_time = 0.0
+	_safe_timer = 0.0
 	_last_safe = xform.origin
 	camera_rig.yaw = xform.basis.get_euler().y
 	camera_rig.snap()
