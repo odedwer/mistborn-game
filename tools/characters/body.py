@@ -59,6 +59,15 @@ class Body:
         self.sockets: dict[str, tuple[str, np.ndarray]] = {}
         # optional garments: exported as separate meshes G_<name> on the same skeleton
         self.garments: dict[str, Mesh] = {}
+        # Clearance proxies for tools/characters/clearance.py, in the rest pose
+        # (they never reach the GLB): weapon capsules (bone, p0, p1, radius),
+        # shield discs (bone, centre, normal, radius, half thickness) and
+        # vertex ranges of tagged parts of the main mesh ("weapon", "shield",
+        # "skirt") as {name: [(start, end), ...]}.
+        self.weapon_caps: list[tuple[str, np.ndarray, np.ndarray, float]] = []
+        self.shields: list[tuple[str, np.ndarray, np.ndarray, float, float]] = []
+        self.parts: dict[str, list[tuple[int, int]]] = {}
+        self._main = self.m
         self._make_skel()
 
     @contextmanager
@@ -70,6 +79,17 @@ class Body:
             yield self.m
         finally:
             self.m = prev
+
+    @contextmanager
+    def part(self, name):
+        """Tags the main-mesh vertices built inside `with b.part("weapon"):`
+        (used by clearance.py; garment meshes are not tagged)."""
+        m, start = self.m, len(self.m.verts)
+        try:
+            yield
+        finally:
+            if m is self._main:
+                self.parts.setdefault(name, []).append((start, len(m.verts)))
 
     # ---------------------------------------------------------------- skeleton
     def _make_skel(self):
@@ -776,7 +796,8 @@ class Body:
                 w = {"Hips": 0.6, "Spine": 0.4}
             return clean_weights(w)
 
-        rings = tube(self.m, centers, radii, n=n, ex=ex, mat=mat, color=color, weights=weights, arc=arc)
+        with self.part("skirt"):
+            rings = tube(self.m, centers, radii, n=n, ex=ex, mat=mat, color=color, weights=weights, arc=arc)
         if jag > 0:
             rng = np.random.default_rng(seed + 11)
             for j, (idx, _, _) in enumerate(rings[-1]):

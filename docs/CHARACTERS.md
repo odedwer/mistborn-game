@@ -4,34 +4,36 @@ There are six procedurally generated combat characters: `vin` (player), `guard`,
 
 | id | height | tris | materials | notes |
 |---|---|---|---|---|
-| vin | 1.66 m | ~4.0k | Cloth, Cloak, Obsidian | mistcloak with 16 spring-simulated tassels; obsidian dagger in the right hand, a second one sheathed at the back |
-| guard | 1.80 m | ~4.3k | Cloth, Metal, Glow | steel cuirass, pauldrons, kettle helmet; spear; lantern in the left hand (it adds an unshadowed OmniLight) |
-| hazekiller | 1.79 m | ~3.7k | Cloth | leather and wooden armour, hood and mask, round wooden shield, staff (no metal) |
-| thug | 2.11 m | ~3.4k | Cloth | huge build, bare arms, open vest, wooden club |
-| coinshot | 1.81 m | ~4.2k | Cloth, Cloak, Metal | dark long coat and a shorter mistcloak variant (11 tassels) |
-| inquisitor | 1.99 m | ~3.5k | Cloth, Metal, Obsidian | tall and gaunt; grey robes with red and black accents; spikes through both eyes (points jut out of the back of the skull); a spike between the shoulder blades that pokes out of the chest; obsidian axe |
+| vin | 1.65 m | 6.2k | Cloth, Cloak, Obsidian | mistcloak with 16 spring-simulated tassels; obsidian dagger in the right hand, a second one sheathed at the back |
+| guard | 1.80 m | 5.2k | Cloth, Metal, Glow | steel cuirass, pauldrons, kettle helmet; spear; dark gloves with pale leather palms; lantern hung from the belt at the left hip (it adds an unshadowed OmniLight) |
+| hazekiller | 1.79 m | 4.7k | Cloth | leather and wooden armour, hood and mask, round wooden shield, staff (no metal) |
+| thug | 2.12 m | 4.3k | Cloth | huge build, bare arms, open vest, wooden club |
+| coinshot | 1.82 m | 5.1k | Cloth, Cloak, Metal | dark long coat and a shorter mistcloak variant (11 tassels) |
+| inquisitor | 1.99 m | 4.1k | Cloth, Metal, Obsidian | tall and gaunt; grey robes with red and black accents; spikes through both eyes (points jut out of the back of the skull); a spike between the shoulder blades that pokes out of the chest; obsidian axe |
+
+Heights and triangle counts are measured from the generated assets: `height` and `tris` in `assets/models/characters/<id>.json`. The triangle counts match the index counts in the GLBs.
 
 ### NPCs (`tools/characters/chars_npc.py`)
-Tris are body / body plus every optional garment. Every character is within 3–8k triangles and uses at most 3 materials.
+Tris are body / body plus every optional garment. Every character is within 3–8k triangles (currently 4.0k–6.2k) and uses at most 3 materials.
 
 | id | height | tris | notes |
 |---|---|---|---|
-| kelsier | 1.86 m | 4.1k | tall; mistcloak (18 tassels); sleeves rolled to the elbow over scarred forearms (Pits of Hathsin) |
-| dockson | 1.77 m | 3.8k | stocky; short beard; knee-length practical coat; satchel |
-| breeze | 1.75 m | 3.6k | portly; plum tailcoat, gold waistcoat, cravat, watch chain; dueling cane (aimed in the idle pose) |
-| ham | 1.88 m | 3.4k | muscular; sleeveless vest, bare arms, wrist wraps; staff across the back |
-| clubs | 1.66 m | 3.4k | old, balding with a grey fringe; stooped with a limp (`limp` gait style); leather apron and hammer |
-| spook | 1.79 m | 3.6k | lanky teen; baggy sleeves, scarf; oversized cap |
-| sazed | 2.01 m | 4.0k | very tall, bald; steward's robe with chevron V panels; stacked metal earrings and bracers (metalminds); hands clasped |
-| marsh | 1.85 m | 3.7k | gaunt, stern; dark obligator-style robe with a stole |
-| elend | 1.83 m | 3.6k | young noble; rumpled suit (skewed waistcoat, untucked shirt tail, loose cravat, one collar up); armful of books |
-| vin_gown | 1.66 m | 3.8k | Vin as Lady Valette: pale blue silk ball gown, gloves, hair flower |
-| noble_man | 1.81 m | 3.4k / 4.3k | garments `tails, longcoat, hat_top, hat_bowler, cape`; presets `noble_man_1..3` |
-| noble_woman | 1.67 m | 3.9k / 4.4k | gown; garments `bustle, hat_wide, hat_small, shawl`; presets `noble_woman_1..3` |
-| obligator | 1.81 m | 3.5k | senior: tall, grey robes, rank chain, dense eye tattoos, hands clasped in front |
-| obligator_2 | 1.73 m | 3.6k | junior: stout, darker robe, skullcap, fewer tattoo spikes, hands behind the back |
-| skaa_man | 1.75 m | 3.5k / 4.1k | ragged patched tunic, rope belt; garments `cap, hood, sack, scarf` |
-| skaa_woman | 1.63 m | 3.7k / 4.2k | ragged dress and apron; garments `headscarf, shawl, basket` |
+| kelsier | 1.87 m | 5.0k | tall; mistcloak (18 tassels); sleeves rolled to the elbow over scarred forearms (Pits of Hathsin) |
+| dockson | 1.78 m | 5.5k | stocky; short beard; knee-length practical coat; satchel |
+| breeze | 1.76 m | 5.3k | portly; plum tailcoat, gold waistcoat, cravat, watch chain; dueling cane (aimed in the idle pose) |
+| ham | 1.89 m | 4.7k | muscular; sleeveless vest, bare arms, wrist wraps; staff across the back |
+| clubs | 1.66 m | 4.7k | old, balding with a grey fringe; stooped with a limp (`limp` gait style); leather apron and hammer |
+| spook | 1.78 m | 4.6k | lanky teen; baggy sleeves, scarf; oversized cap |
+| sazed | 2.01 m | 4.9k | very tall, bald; steward's robe with chevron V panels; stacked metal earrings and bracers (metalminds); hands clasped |
+| marsh | 1.83 m | 4.0k | gaunt, stern; dark obligator-style robe with a stole |
+| elend | 1.84 m | 4.5k | young noble; rumpled suit (skewed waistcoat, untucked shirt tail, loose cravat, one collar up); armful of books |
+| vin_gown | 1.67 m | 4.8k | Vin as Lady Valette: pale blue silk ball gown, gloves, hair flower |
+| noble_man | 1.82 m | 4.4k / 5.3k | garments `tails, longcoat, hat_top, hat_bowler, cape`; presets `noble_man_1..3` |
+| noble_woman | 1.68 m | 4.8k / 5.3k | gown; garments `bustle, hat_wide, hat_small, shawl`; presets `noble_woman_1..3` |
+| obligator | 1.81 m | 4.4k | senior: tall, grey robes, rank chain, dense eye tattoos, hands clasped in front |
+| obligator_2 | 1.73 m | 4.5k | junior: stout, darker robe, skullcap, fewer tattoo spikes, hands behind the back |
+| skaa_man | 1.76 m | 4.4k / 5.0k | ragged patched tunic, rope belt; garments `cap, hood, sack, scarf` |
+| skaa_woman | 1.64 m | 4.7k / 5.1k | ragged dress and apron; garments `headscarf, shawl, basket` |
 
 **Variants (crowd variety).**
 - Optional garments are separate `G_<name>` meshes on the same skeleton.
@@ -85,7 +87,9 @@ signal action_started(name) / action_finished(name)
   - `throw, melee, push, pull, drink, talk` are upper-body one-shots (spine, arms and head filter), so they layer over running.
   - The others are full-body one-shots.
   - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`.
-  - `attack` is character-specific: a dagger slash (vin), a spear thrust (guard), an overhead staff strike (hazekiller), a club smash (thug), a coin throw (coinshot) and a diagonal axe chop (inquisitor).
+  - `attack` is character-specific: a dagger slash (vin), a spear thrust (guard), an overhead staff strike (hazekiller), a club smash (thug), a coin throw (coinshot) and a diagonal axe chop (inquisitor). Enemies strike with `attack`. Only the player plays `melee`.
+  - `melee` is a wide one-handed swing: a dagger slash for Vin, a punch for the coinshot.
+  - **Free hand.** The armed characters (guard, hazekiller, thug, Inquisitor) carry their weapon in the right hand. Their `melee`, `drink`, `talk`, `throw`, `push` and `pull` use the free left hand, while the weapon arm holds the weapon upright and clear of the head. In Push and Pull, the Inquisitor holds his axe upright and low at his side. These poses are the right-handed keys mirrored by `free_hand()` and `arm()` in `anim.py`.
 - **`set_aim`** uses a `CharacterAimModifier` (a `SkeletonModifier3D`) that spreads yaw and pitch over Spine→Head. It is clamped, smoothed, and fades out for targets behind the character. Pass `Vector3.ZERO` to turn it off.
 - **`get_attachment`** takes `hand_r`, `hand_l` (the grip centre), `chest` (front of the UpperChest, e.g. where the guard's metal sits), `head`, `lantern` (guard) or any bone name. It returns a `Node3D` under a `BoneAttachment3D`, created on first use.
 - **Cloak dynamics:** a `SpringBoneSimulator3D` has one setting per tassel chain, with capsule colliders on the hips and legs. It simulates in world space, so the tassels stream behind the character when it moves or turns. You can tune `cloak_stiffness`, `cloak_drag` and `cloak_gravity`, or turn it off with `cloak_physics = false`.
@@ -98,15 +102,38 @@ tools/characters/build.sh vin guard       # a subset
 The pipeline has these parts:
 - `meshkit.py`: lofted tubes, ribbons and boxes, with proximity-based skin weights.
 - `body.py`: the shared skeleton and the body-part builders (torso, head, hair, arms, hands, legs, feet, skirts, mistcloak and tassel chains).
+  - `Body.hand(side, color, palm=None)`: the optional `palm` colour paints the palm and the inner faces of the curled fingers and thumb. A dark glove with a pale leather palm (as on the guard) reads as an open hand in a Push instead of a fist.
+  - Clearance proxies, which never reach the GLB:
+    - weapons register capsules in `Body.weapon_caps`;
+    - shields register discs in `Body.shields`;
+    - `with b.part(name):` tags vertex ranges in `Body.parts`. Props are tagged `weapon` or `shield`, and `Body.skirt` tags `skirt`.
 - `chars.py`: the six combat designs and their props.
 - `chars_npc.py`: the NPC designs, hats and garments, plus the variant `POOLS` and `PRESETS`.
 - `anim.py`: semantic pose parameters, 2-bone leg IK, gaits and one-shot keyframes. It also holds the per-character styles (spear arm, lantern arm, hunch, and so on).
 - `build_characters.py`: builds the Blender armature, mesh and actions, then exports the GLB. Looping clips are named `-loop`, which makes the importer set the loop flag.
 - `godot_files.py`: writes the materials, `.tscn` and `.import` files.
+- `clearance.py`: the weapon clearance check (see below).
 
 Preview with `godot res://scenes/test/character_lineup.tscn -- <options>`. The options are documented at the top of `character_lineup.gd`, for example `--only=vin --anim=run --t=0.2 --cam=side --light=studio --shot=out.png`, or `--moving` for cloak dynamics.
 
 Tests are in `tests/test_characters.gd`.
+
+### Weapon clearance (`clearance.py`)
+The check poses each armed character (guard, hazekiller, thug, Inquisitor) frame by frame in every animation. It needs only numpy, not Blender. It skins the mesh the same way `build_characters.py` bakes it, then measures the surface gap between the weapon capsules and these parts of the body:
+- the head, neck and torso;
+- the arms: the free arm and the weapon arm's upper arm, but not the gripping hand and forearm;
+- robe, tunic and coat skirts;
+- the hazekiller's shield.
+
+The body is sampled at its vertices, face centroids and edge midpoints. A region fails when the weapon comes closer than 1 cm to the head, neck or torso, or when it penetrates the arms, skirts or shield.
+```bash
+python3 tools/characters/clearance.py                                  # all four, every clip: each region's minimum (m) and when it occurs
+python3 tools/characters/clearance.py inquisitor --anim=pull --frames  # per-frame table
+python3 tools/characters/clearance.py vin --threshold=head=0.02        # other characters or thresholds
+```
+It exits with status 1 when any region falls below its threshold.
+
+`tools/characters/test_clearance.py` runs the full check, plus a negative control and geometry tests. Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`; it takes about 15 s, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a style's arm pose or any one-shot.
 
 ## Licence
 All meshes, rigs, animations, shaders and generator scripts are original work created for this project, with no third-party assets. They are dedicated to the public domain under **CC0 1.0**. Mistborn names and designs belong to Brandon Sanderson / Dragonsteel Entertainment. This is a non-commercial fan project.

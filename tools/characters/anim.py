@@ -715,6 +715,11 @@ def make_anims(style: str, S: Skel):
                           l_prot=10)
         fist_back = dict(fist_back, spine_twist=-8)
         weapon_pull = {"r_flex": base["r_flex"] - 15, "r_abd": base["r_abd"] + 8}
+        if style == "inquisitor":
+            # The short axe keeps the Push's hold through the haul: arm down at
+            # the side, wrist standing the haft up. With the guard's
+            # held-out-and-back arm the haft leant ~43 degrees in the haul.
+            weapon_pull = dict(weapon)
 
     def pull(t):
         back = dict(brace, hips_y=-0.04 * k)

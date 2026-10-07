@@ -1,6 +1,7 @@
 """The six Mistborn character designs, built from body.py parts."""
 from __future__ import annotations
 
+import functools
 import math
 
 import numpy as np
@@ -56,6 +57,42 @@ def band(base, bands):
 
 
 # ----------------------------------------------------------------------- props
+def _tagged(part):
+    """Builds the prop inside `b.part(part)` so clearance.py can find its vertices."""
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapped(b, *a, **k):
+            with b.part(part):
+                return fn(b, *a, **k)
+        return wrapped
+    return deco
+
+
+def _cap(b: Body, side, p0, p1, r):
+    """Registers a weapon clearance capsule (rest pose) on the hand bone."""
+    b.weapon_caps.append((side_name(side, "Hand"), v3(p0), v3(p1), float(r)))
+
+
+def _blade_caps(b: Body, side, centers, half_w, thick, axis, step=0.015):
+    """Clearance capsules for a flat blade lofted along `centers` with half
+    width half_w[i] along `axis` and half thickness thick[i]: one capsule
+    across the blade every `step` (scaled) along it, plus the spine."""
+    pts, ws, ts = [], [], []
+    for i in range(len(centers) - 1):
+        a, c = centers[i], centers[i + 1]
+        k = max(1, int(math.ceil(np.linalg.norm(c - a) / (step * b.s))))
+        for j in range(k + (i == len(centers) - 2)):
+            f = j / k
+            pts.append(a + (c - a) * f)
+            ws.append(lerp(half_w[i], half_w[i + 1], f))
+            ts.append(lerp(thick[i], thick[i + 1], f))
+    for p, w, t in zip(pts, ws, ts):
+        _cap(b, side, p - axis * max(w - t, 0.0), p + axis * max(w - t, 0.0), t)
+    for i in range(len(centers) - 1):
+        _cap(b, side, centers[i], centers[i + 1], min(thick[i], thick[i + 1]))
+
+
+@_tagged("weapon")
 def dagger(b: Body, side, reverse=True, blade=0.2):
     o, M = b.hand_frame(side)
     s = b.s
@@ -72,8 +109,13 @@ def dagger(b: Body, side, reverse=True, blade=0.2):
     tube(b.m, [b0, b0 + g * blade * 0.45 * s, b0 + g * blade * 0.85 * s, b0 + g * blade * s],
          [(0.004 * s, 0.017 * s), (0.005 * s, 0.019 * s), (0.003 * s, 0.011 * s), (0.001 * s, 0.002 * s)],
          n=6, hint=d, mat=GLOSS, color=hexcol("121118"), weights=W, cap0="flat", smooth=False)
+    _cap(b, side, grip, grip + g * 0.115 * s, 0.012 * s)
+    _cap(b, side, grip + g * 0.12 * s - d * 0.019 * s, grip + g * 0.12 * s + d * 0.019 * s, 0.007 * s)
+    _blade_caps(b, side, [b0 + g * blade * f * s for f in (0, 0.45, 0.85, 1.0)],
+                [0.017 * s, 0.019 * s, 0.011 * s, 0.002 * s], [0.004 * s, 0.005 * s, 0.003 * s, 0.001 * s], d)
 
 
+@_tagged("weapon")
 def spear(b: Body, side):
     o, M = b.hand_frame(side)
     s = b.s
@@ -90,6 +132,10 @@ def spear(b: Body, side):
          n=6, hint=M[:, 1], mat=METAL, color=hexcol("b4bac2"), weights=W, smooth=False)
     tube(b.m, [o - g * 0.95 * s, o - g * 1.0 * s], [0.018 * s, 0.012 * s], n=6, mat=METAL,
          color=hexcol("6d7178"), weights=W, cap1="flat")
+    _cap(b, side, o - g * 1.0 * s, o + g * 1.2 * s, 0.016 * s)
+    _cap(b, side, o + g * 1.2 * s, o + g * 1.3 * s, 0.02 * s)
+    _blade_caps(b, side, [h + g * f * s for f in (0, 0.07, 0.17, 0.26)],
+                [0.016 * s, 0.038 * s, 0.026 * s, 0.002 * s], [0.006 * s, 0.008 * s, 0.005 * s, 0.001 * s], M[:, 1])
 
 
 def lantern(b: Body, side, *, belt=False):
@@ -127,6 +173,7 @@ def lantern(b: Body, side, *, belt=False):
     b.sockets["lantern"] = (bone, top - g * 0.12 * s)
 
 
+@_tagged("weapon")
 def staff(b: Body, side, lo=0.8, hi=1.0):
     o, M = b.hand_frame(side)
     s = b.s
@@ -138,8 +185,10 @@ def staff(b: Body, side, lo=0.8, hi=1.0):
     for t in (-(lo - 0.12), hi - 0.12):
         tube(b.m, [o + g * (t - 0.03) * s, o + g * (t + 0.03) * s], [0.024 * s, 0.024 * s], n=7,
              color=hexcol("2e2218"), weights=W)
+    _cap(b, side, o - g * lo * s, o + g * hi * s, 0.024 * s)
 
 
+@_tagged("weapon")
 def club(b: Body, side):
     o, M = b.hand_frame(side)
     s = b.s
@@ -151,8 +200,17 @@ def club(b: Body, side):
     for t in (0.5, 0.64):
         tube(b.m, [o + g * t * s, o + g * (t + 0.035) * s], [0.045 * s, 0.047 * s], n=8, color=hexcol("2a1e15"),
              weights=W)
+    # the club tapers from 2.2 cm at the grip to 5 cm: capsules every 10 cm at
+    # the larger radius of their span
+    prof = [(-0.14, 0.022), (0.1, 0.022), (0.45, 0.035), (0.5, 0.047), (0.535, 0.047), (0.72, 0.05), (0.8, 0.035)]
+    zs = np.arange(-0.14, 0.8 + 1e-6, 0.1)
+    zs = list(zs) + ([0.8] if zs[-1] < 0.8 - 1e-6 else [])
+    for z0, z1 in zip(zs[:-1], zs[1:]):
+        r = max(np.interp(z, [p[0] for p in prof], [p[1] for p in prof]) for z in np.linspace(z0, z1, 6))
+        _cap(b, side, o + g * z0 * s, o + g * z1 * s, r * s)
 
 
+@_tagged("weapon")
 def axe(b: Body, side):
     o, M = b.hand_frame(side)
     s = b.s
@@ -166,8 +224,12 @@ def axe(b: Body, side):
          n=6, hint=g, mat=GLOSS, color=hexcol("0e0d12"), weights=W, cap0="flat", smooth=False)
     tube(b.m, [top - d * 0.02 * s, top - d * 0.1 * s], [(0.01 * s, 0.02 * s), (0.004 * s, 0.006 * s)], n=6,
          hint=g, mat=GLOSS, color=hexcol("0e0d12"), weights=W, smooth=False)
+    _cap(b, side, o - g * 0.32 * s, o + g * 0.62 * s, 0.017 * s)
+    _blade_caps(b, side, [top + d * f * s for f in (-0.1, -0.02, 0.06, 0.15, 0.22)],
+                [0.006 * s, 0.035 * s, 0.05 * s, 0.09 * s, 0.13 * s], [0.004 * s, 0.014 * s, 0.011 * s, 0.007 * s, 0.003 * s], g)
 
 
+@_tagged("shield")
 def round_shield(b: Body, side):
     S, s = b.S, b.s
     la = side_name(side, "LowerArm")
@@ -189,6 +251,8 @@ def round_shield(b: Body, side):
          color=wood, weights=W, cap0="flat", cap1="flat")
     tube(b.m, [c + out * 0.015 * s, c + out * 0.05 * s], [0.075 * s, 0.04 * s], n=10, hint=M[:, 1],
          color=hexcol("4a3320"), weights=W, cap1=0.02 * s)
+    # (the boss is on the outer face, away from the weapon; the disc covers the board)
+    b.shields.append((la, c + out * 0.003 * s, out, R, 0.015 * s))
 
 
 # ------------------------------------------------------------------ characters
