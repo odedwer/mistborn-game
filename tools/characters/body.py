@@ -72,6 +72,10 @@ class Body:
         self.shields: list[tuple[str, np.ndarray, np.ndarray, float, float]] = []
         self.skirts: list[tuple[float, float, tuple[float, float] | None]] = []
         self.skirt_grids: list[tuple[np.ndarray, bool]] = []
+        # the same for the skirts of optional garments (coat tails, bustle):
+        # {garment: [(skirts entry, skirt_grids entry), ...]}, indices into
+        # that garment's mesh
+        self.garment_skirts: dict[str, list] = {}
         self.parts: dict[str, list[tuple[int, int]]] = {}
         self._main = self.m
         self._make_skel()
@@ -779,7 +783,7 @@ class Body:
 
     def skirt(self, z_top, z_bot, r_top, r_bot, color, *, mat=CLOTH, arc=None, n=18, rows=6,
               yc_top=0.0, yc_bot=0.0, leg_share=0.85, ex=2.2, front_scale=1.0, curve=0.9, jag=0.0, seed=0,
-              front_share=None, shin_share=0.0, ease=0.0):
+              front_share=None, shin_share=0.0, ease=0.0, settle=None):
         """Flared skirt / robe / coat tails with leg-following weights.
         `curve` < 1 flares early (hoop skirt), > 1 late (bell); `jag` (m) tatters the hem.
 
@@ -793,8 +797,18 @@ class Body:
         along the shin (and lifts with a heel kicked back) rather than flying
         up with the thigh. `ease` (m) widens every ring below the waist band
         for the hip and the top of the thigh. tools/characters/clearance.py
-        --cloth checks the result."""
+        --cloth checks the result.
+
+        `settle` (default: a long skirt, hem below 10% of the height) skins
+        the cloth below the waist band to the skirt bones (`settle_bones`)
+        instead of the hips, thighs and shins they are children of. They
+        stay at rest in every clip but `die`, so nothing else changes; there
+        they flatten the skirt over the legs as the body lies down (see
+        anim.SETTLE)."""
         s = self.s
+        if settle is None:
+            settle = z_bot <= 0.1 * self.H
+        bone_map = self.settle_bones() if settle else {}
         z_knee = float(self.S.head("RightLowerLeg")[2])
         zs = np.linspace(z_top, z_bot, rows)
         centers, radii = [], []
@@ -826,8 +840,8 @@ class Body:
             w = {"Hips": 1 - a, "RightUpperLeg": a * R * (1 - sh), "LeftUpperLeg": a * (1 - R) * (1 - sh),
                  "RightLowerLeg": a * R * sh, "LeftLowerLeg": a * (1 - R) * sh}
             if i == 0:
-                w = {"Hips": 0.6, "Spine": 0.4}
-            return clean_weights(w)
+                return clean_weights({"Hips": 0.6, "Spine": 0.4})
+            return {bone_map.get(k, k): v for k, v in clean_weights(w).items()}
 
         with self.part("skirt"):
             rings = tube(self.m, centers, radii, n=n, ex=ex, mat=mat, color=color, weights=weights, arc=arc)
@@ -836,12 +850,35 @@ class Body:
             for j, (idx, _, _) in enumerate(rings[-1]):
                 d = jag * s * (0.25 + 0.75 * rng.random()) * (1.0 if j % 2 else 0.3)
                 self.m.verts[idx] = self.m.verts[idx] + v3(0, 0, -d)
+        # (the highest hem point: a tattered hem only counts where it is shortest)
+        info = (max(float(self.m.verts[idx][2]) for idx, _, _ in rings[-1]), float(yc_bot),
+                None if arc is None else (float(arc[0]), float(arc[1])))
+        grid = (np.array([[idx for idx, _, _ in ring] for ring in rings]), arc is None)
         if self.m is self._main:
-            # (the highest hem point: a tattered hem only counts where it is shortest)
-            self.skirts.append((max(float(self.m.verts[idx][2]) for idx, _, _ in rings[-1]), float(yc_bot),
-                                None if arc is None else (float(arc[0]), float(arc[1]))))
-            self.skirt_grids.append((np.array([[idx for idx, _, _ in ring] for ring in rings]), arc is None))
+            self.skirts.append(info)
+            self.skirt_grids.append(grid)
+        else:
+            name = next(n for n, gm in self.garments.items() if gm is self.m)
+            self.garment_skirts.setdefault(name, []).append((info, grid))
         return centers, radii
+
+    def settle_bones(self):
+        """Adds (once) the skirt bones of a settling skirt and returns
+        {parent bone: skirt bone}. Each is a child of the hips, a thigh or a
+        shin that hangs straight down from its parent's head, so its local
+        axes are the armature's (X sideways, Z forward once
+        build_characters.py rolls it): anim.py squashes the cloth front to
+        back with a scale along them."""
+        S = self.S
+        pairs = {"Hips": "SkirtHips"}
+        for side in (1, -1):
+            pairs[side_name(side, "UpperLeg")] = side_name(side, "SkirtThigh")
+            pairs[side_name(side, "LowerLeg")] = side_name(side, "SkirtShin")
+        for par, name in pairs.items():
+            if name not in S.bones:
+                h = S.head(par)
+                S.add(name, par, h, h - v3(0, 0, 0.12 * self.s))
+        return pairs
 
     def mistcloak(self, *, z_hem, z_collar, n_strips, len_range, color, color_dark, arc=(128, 412),
                   cape_scale=1.0, tassel_w=0.9, seed=1, flare=0.14, segs=8, chain=4, cloak_rows=None,

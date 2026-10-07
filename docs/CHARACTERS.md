@@ -62,7 +62,7 @@ Tris are body / body plus every optional garment. Every character is within 3–
 ## Conventions
 - **Facing:** the `CharacterModel` root faces **+Z**, which matches `player.gd` and `enemy_base.gd` (`yaw = atan2(dir.x, dir.z)`), so `model_yaw_offset_deg = 0`. Inside, the glTF faces -Z and the `Model` child is rotated 180°.
 - **Feet** are at the origin. Everything is in metres. Animations are in place, with no root motion.
-- **Skeleton:** there is one `Skeleton3D` per character. It uses the Godot humanoid bone names: `Root, Hips, Spine, Chest, UpperChest, Neck, Head, Left/Right{Shoulder, UpperArm, LowerArm, Hand, UpperLeg, LowerLeg, Foot, Toes}`, so it can be retargeted. Cloak characters add `Tassel_NN_k` chains under `Chest`.
+- **Skeleton:** there is one `Skeleton3D` per character. It uses the Godot humanoid bone names: `Root, Hips, Spine, Chest, UpperChest, Neck, Head, Left/Right{Shoulder, UpperArm, LowerArm, Hand, UpperLeg, LowerLeg, Foot, Toes}`, so it can be retargeted. Cloak characters add `Tassel_NN_k` chains under `Chest`. The long robes and gowns add five skirt bones (`SkirtHips`, `Left/RightSkirtThigh`, `Left/RightSkirtShin`, see *Skirt weights*).
 - **Materials** are shared `ShaderMaterial`s in `assets/models/characters/materials/`: cloth, cloak (double-sided), metal, obsidian and glow. They are mapped at import time through `_subresources` in the `.glb.import` files. Albedo comes from vertex colours (stored as sRGB). Surface detail (weave/grain/grime) is procedural in UV space, where UVs are in metres. A rim term keeps silhouettes readable at night.
 - **LOD:** `meshes/generate_lods=true` is set on import (automatic mesh LODs), plus shadow meshes.
 
@@ -86,7 +86,7 @@ signal action_started(name) / action_finished(name)
 - **`play_action`** takes `jump, land, throw, melee, attack, hit, die, block, alert, push, pull, drink, talk`:
   - `throw, melee, push, pull, drink, talk` are upper-body one-shots (spine, arms and head filter), so they layer over running.
   - The others are full-body one-shots.
-  - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`. The armed characters let the weapon fall flat beside them as they land (it used to stand straight up from the dead hand, and the spear and staff went 50–70 cm into the floor).
+  - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`. The armed characters let the weapon fall flat beside them as they land (it used to stand straight up from the dead hand, and the spear and staff went 50–70 cm into the floor). The long robes and gowns settle over the legs (see *Death settle*).
   - `attack` is character-specific: a dagger slash (vin), a spear thrust (guard), an overhead staff strike (hazekiller), a club smash (thug), a coin throw (coinshot) and a diagonal axe chop (inquisitor). Enemies strike with `attack`. Only the player plays `melee`.
   - `melee` is a wide one-handed swing: a dagger slash for Vin, a punch for the coinshot.
   - **Free hand.** The armed characters (guard, hazekiller, thug, Inquisitor) carry their weapon in the right hand. Their `melee`, `drink`, `talk`, `throw`, `push` and `pull` use the free left hand, while the weapon arm holds the weapon upright and clear of the head. In idle and the gaits, the Inquisitor carries his axe like the guard's spear, forearm level and haft upright (from the side and the front) beside the shoulder; in Push and Pull he holds it upright and low at his side. These poses are the right-handed keys mirrored by `free_hand()` and `arm()` in `anim.py`.
@@ -106,12 +106,16 @@ The pipeline has these parts:
   - Clearance proxies, which never reach the GLB:
     - weapons register capsules in `Body.weapon_caps`;
     - shields register discs in `Body.shields` (the board and its boss);
-    - `Body.skirt` records its hem in `Body.skirts` and its vertex grid (rings by columns, hem last) in `Body.skirt_grids`, so the checks can rebuild the cloth surface in any pose;
+    - `Body.skirt` records its hem in `Body.skirts` and its vertex grid (rings by columns, hem last) in `Body.skirt_grids`, so the checks can rebuild the cloth surface in any pose. A skirt on a garment mesh goes to `Body.garment_skirts[garment]` instead;
     - `with b.part(name):` tags vertex ranges in `Body.parts`. Props are tagged `weapon` or `shield`, and `Body.skirt` tags `skirt`.
   - **Skirt weights.** `Body.skirt` weights the cloth to the hips and, more and more towards the hem, to the thighs (`leg_share`). Every robe, gown, tunic and coat also sets:
     - `front_share`: over the front, the cloth follows the thighs from the upper thigh down, so a crouch or a sprint's knee lift carries it forward. It fades to a quarter at the sides and is off at the back;
     - `shin_share`: below the knee, this share of the leg weight goes to the shin, so the cloth hangs along it rather than flying up with the thigh;
     - `ease`: the rings below the waist band are this much wider, for the hip and the top of the thigh.
+
+    The skirts of the optional garment meshes (noble men's tails and long coat) use the same shares; the cloth check found the knees 15 cm through the long coat without them.
+
+    **Death settle (skirt bones).** A long skirt (hem below 10% of the height: the Inquisitor, Sazed, Marsh, both obligators, `vin_gown`, `noble_woman` and her bustle, `settle=` in `Body.skirt`) is skinned below its waist band to the skirt bones instead of the hips, thighs and shins. Each skirt bone is a child of the bone it replaces, so the weights are unchanged and the bones stay at rest in every clip but `die` (they are still keyed there, so a blend out of the death pose drops the squash). In `die` they scale (front to back and sideways) and shift (`SKIRT_CLASS` and `SETTLE` in `anim.py`): lying down, the robe flattens over the legs, strongly below the knee, less over the thighs and little round the hips. The robed styles also fold their legs less as they sit down (the thighs carried the robe's front past horizontal and showed its open hem around 0.55 s) and lie with them nearly flat, feet pointed. Before art pass 16, the lying robe stayed a stiff 50 cm tube: it stood 31–53 cm off the floor over the feet, open, with its back 14–40 cm under the floor. Now the hem lies 15–18 cm off the floor (the gowns 28 cm, over the upturned feet). The `SETTLE` values were fitted so the lower half of the cloth lies as low as it can while every leg and hip point it covers stays 1 cm inside it, allowing the cloth up to 2 cm under the floor. Only rotation and the Hips' location were keyed before; the skirt bones also key scale and location (`bake_actions`).
 
     Before art pass 15, the legs showed through every long skirt. The knees came 24 cm through the Inquisitor's robe in the sprint and 31–37 cm in the crouch, 22–30 cm through the gowns in the crouch, and 28–38 cm through the obligators', Marsh's and Sazed's robes.
 - `chars.py`: the six combat designs and their props.
@@ -140,31 +144,36 @@ python3 tools/characters/clearance.py inquisitor --anim=pull --frames  # per-fra
 python3 tools/characters/clearance.py vin --threshold=head=0.02        # other characters or thresholds
 python3 tools/characters/clearance.py --cloth                          # cloth check, every skirted character
 python3 tools/characters/clearance.py --cloth sazed --anim=crouch_walk --frames
+python3 tools/characters/clearance.py --cloth noble_man:longcoat    # a garment mesh's skirt
+python3 tools/characters/clearance.py --settle                     # robes and gowns lying down in `die`
 ```
 It exits with status 1 when any region falls below its threshold.
 
-Closest gaps after art pass 15 (all clips clear):
-- legs: guard `land` 4.1 cm, guard `jump` and hazekiller `land` 5.0 cm, guard `fall` 5.6 cm; sprint and crouch about 7 cm. Posed coverage found no new contacts;
-- skirts: Inquisitor `push` 1.9 cm and `land` 2.1 cm, crouch 3.1 cm; guard `attack` and hazekiller `block` 3.5 cm. The robes and tunics are fuller and follow the knees now, so these fell from 5.6–6.5 cm;
+Closest gaps after art pass 16 (all clips clear):
+- legs: guard `land` 4.1 cm, guard `jump` and hazekiller `land` 5.0 cm, guard `fall` 5.6 cm; sprint and crouch about 7 cm;
+- skirts: hazekiller `push` 5.0 cm, guard `land` 5.1 cm, guard `attack` 5.7 cm; the Inquisitor's closest is `land` 6.9 cm. Art pass 15's fuller robes and tunics had brought these down to 1.9 cm (Inquisitor `push`), 2.1 cm (`land`), 3.1 cm (crouch) and 3.5 cm (guard `attack`, hazekiller `block`). The fixes: the Inquisitor's upper arm turns out 8° in his base carry (the haft stays upright: within 1° from the front in idle) and his weapon arm hangs 4° wider in Push and Pull; the guard's thrust wind-up holds the spear arm 6° wider; the hazekiller's block holds the staff arm 5° wider;
 - head: Inquisitor `attack` 7.6 cm, guard Push and Pull 7.9 cm;
 - shield: hazekiller `melee` 11 cm.
 
-**Cloth clearance (`--cloth`).** This check covers every character whose main mesh has a skirt: the guard, hazekiller, coinshot, Inquisitor, Dockson, Breeze, Clubs (apron), Sazed, Marsh, Elend, `vin_gown`, `noble_woman`, both obligators, and the skaa man and woman. The garment-mesh skirts (noble coats, tails, bustle) are left out. For each frame of every clip, it skins the legs and the skirt grids:
+**Cloth clearance (`--cloth`).** This check covers every character whose main mesh has a skirt: the guard, hazekiller, coinshot, Inquisitor, Dockson, Breeze, Clubs (apron), Sazed, Marsh, Elend, `vin_gown`, `noble_woman`, both obligators, and the skaa man and woman. Name a garment as `<character>:<garment>` (`noble_man:tails`, `noble_man:longcoat`, `noble_woman:bustle`; all three are checked by default) to check its skirt against the legs. For each frame of every clip, it skins the legs and the skirt grids:
 - **Cloth surface.** The skirt's posed cloth surface is sampled at its vertices, quad centres and boundary edge midpoints, each with an outward normal. The boundary samples (hem, waist band, the edges of an open arc) also carry a tangent pointing off the cloth.
 - **Inside or outside.** A leg point is outside the cloth by its distance along the nearest sample's normal. If it is past a boundary sample's tangent, it has left the cloth below the hem or through a front slit, which leaves it uncovered rather than clipping. Where the cloth folds over itself, the closed tube's winding number decides inside from outside.
 - **What must stay covered.** The leg vertices that the cloth covers in the rest pose, from 8 cm above the hem up, must stay inside it. Feet step out from under a long hem, as they would under real cloth.
 
-A clip fails when a leg shows through by more than 1.5 cm (`CLOTH_THRESHOLD`). After art pass 15, the deepest are about 1.2 cm, on Clubs' apron in `sprint`, at the edge of Dockson's coat front in `crouch_walk` and at the hazekiller's waist band. None of them shows in the lineup. The robes and gowns all stay within 0.7 cm.
+A clip fails when a leg shows through by more than 1.5 cm (`CLOTH_THRESHOLD`). After art pass 15, the deepest are about 1.2 cm, on Clubs' apron in `sprint`, at the edge of Dockson's coat front in `crouch_walk` and at the hazekiller's waist band. None of them shows in the lineup. The robes and gowns all stay within 0.3 cm, through the death settle too, and the garment skirts within 0.7 cm (the bustle stays 5 cm clear; it also stays outside the gown).
 
-**Carried weapons.** The guard, hazekiller and Inquisitor carry their weapon upright in a held (`arm_lock`) right arm. In the gaits the wrist takes back 60% of the run's forward lean and half the arm's sway (`CARRY_K` in `anim.py`), and the arm swings out a little as the knee lift grows (`CARRY_ABD`), so the shaft stays within about 20° of upright from idle to sprint (the axe within 14°) and clears the thigh. In the crouch the arm swings 6° wider; only the Inquisitor (`crouch_carry`) also stands his short axe upright there, since a long spear stood up this way drives its butt into the shin.
+**Death settle (`--settle`).** For each long robe or gown, from about 0.95 s into `die` (lying down), the hem may rise at most 32 cm off the floor (for a 1.75 m character, `SETTLE_HEM`), and no cloth may sink more than 3 cm under it (`SETTLE_FLOOR`).
 
-`tools/characters/test_clearance.py` holds 15 tests:
+**Carried weapons.** The guard, hazekiller and Inquisitor carry their weapon upright in a held (`arm_lock`) right arm. In the gaits the wrist takes back 60% of the run's forward lean and half the arm's sway (`CARRY_K` in `anim.py`), and the arm swings out a little as the knee lift grows (`CARRY_ABD`), so the shaft stays within about 20° of upright from idle to sprint (the axe within 14°) and clears the thigh. In the crouch the arm swings 6° wider; only the Inquisitor (`crouch_carry`) also stands his short axe upright there, since a long spear stood up this way drives its butt into the shin. The hazekiller's staff leant 21° in across the body in the crouch, so from the front its top crossed his face; his `crouch_hold` turns the arm and forearm out and stands the wrist up a little, and it passes 27 cm outside his face (it was 3 cm).
+
+`tools/characters/test_clearance.py` holds 21 tests:
 - the full weapon check, and the cloth check on every second frame;
-- negative controls: a club through the torso and arm, a spear into the thigh, and a hips-only robe that shows the crouching Inquisitor's knees;
-- checks that every exported clip and every skirted character is scanned;
+- the death settle check;
+- negative controls: a club through the torso and arm, a spear into the thigh, a hips-only robe that shows the crouching Inquisitor's knees, a hips-only noble long coat (a garment mesh), and the Inquisitor's robe lying without its skirt bone poses (its back 20 cm under the floor);
+- checks that every exported clip, every skirted character and garment, and every settling character is scanned, and that the skirt bones rest in every clip but `die`;
 - geometry tests: capsule and disc distance, skirt coverage (inside, outside, below the hem, through a slit), the winding number, posed coverage (a knee raised past the guard's hem is exposed), and the shield boss.
 
-Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`. It takes about a minute, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a skirt, a style's arm pose, a gait or any one-shot.
+Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`. It takes about 75 s, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a skirt, a style's arm pose, a gait or any one-shot.
 
 ## Licence
 All meshes, rigs, animations, shaders and generator scripts are original work created for this project, with no third-party assets. They are dedicated to the public domain under **CC0 1.0**. Mistborn names and designs belong to Brandon Sanderson / Dragonsteel Entertainment. This is a non-commercial fan project.

@@ -22,7 +22,7 @@ import bpy  # noqa: E402
 import mathutils  # noqa: E402
 import numpy as np  # noqa: E402
 
-from anim import ANIM_NAMES, FPS, LOOPING, Rig, make_anims  # noqa: E402
+from anim import ANIM_NAMES, FPS, LOOPING, SKIRT_CLASS, Rig, make_anims  # noqa: E402
 from body import MAT_NAMES  # noqa: E402
 import chars  # noqa: E402
 import chars_npc  # noqa: E402
@@ -158,8 +158,18 @@ def bake_actions(arm_obj, rig: Rig, anims):
             for b in body_bones:
                 R = rest[b]
                 L = R.T @ Q[b] @ R
-                q = mathutils.Matrix(L.tolist()).to_quaternion()
                 pb = arm_obj.pose.bones[b]
+                if b in SKIRT_CLASS:
+                    # skirt bones (Body.settle_bones) also scale and shift: they
+                    # are keyed in every clip (at rest outside `die`), so a
+                    # blend out of the death pose doesn't keep the squash
+                    _, q, sc = mathutils.Matrix(L.tolist()).to_4x4().decompose()
+                    pb.scale = sc
+                    pb.location = mathutils.Vector((R.T @ rig.loc.get(b, np.zeros(3))).tolist())
+                    pb.keyframe_insert("scale", frame=f, group=b)
+                    pb.keyframe_insert("location", frame=f, group=b)
+                else:
+                    q = mathutils.Matrix(L.tolist()).to_quaternion()
                 # keep quaternion continuity
                 if pb.rotation_quaternion.dot(q) < 0:
                     q.negate()
@@ -176,6 +186,7 @@ def bake_actions(arm_obj, rig: Rig, anims):
         for pb in arm_obj.pose.bones:
             pb.rotation_quaternion = (1, 0, 0, 0)
             pb.location = (0, 0, 0)
+            pb.scale = (1, 1, 1)
 
 
 def build(name):
