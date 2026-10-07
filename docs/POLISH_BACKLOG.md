@@ -346,3 +346,22 @@ Follow-ups:
 - Statue faces are crude at eye level, and the patina blotches look a little like camouflage on the lighter bronze.
 - The `cp_1 → cp_2` push frames differ between the full route and the leg on its own (231 against 59), so the world isn't identical from leg to leg. It passes comfortably either way.
 - At one nudged start the bot landed short and hopped the fountain rim to reach the goal (543 frames).
+
+## Review of art pass 15
+
+Merged:
+- **Cloth check:** `clearance.py --cloth` covers all 16 characters with a skirt on the main mesh. Each frame it measures how far each leg vertex the cloth covers at rest sits outside the posed cloth. It counts legs leaving below the hem or through a slit as uncovered, not clipping, and fails anything showing through by more than 1.5 cm.
+  - **Before:** the Inquisitor's knees came 24–37 cm through his robe in `sprint` and `crouch`. Sazed, Marsh and the obligators were at 28–38 cm, the gowns at 22–30 cm, and the coats and aprons at 11–22 cm.
+  - **Fix:** skirt fronts follow the thighs, cloth below the knee partly follows the shins, and each skirt has 1–4 cm more room below the waistband.
+  - **After:** about 1.2 cm at worst (not visible), and every robe and gown is within 0.7 cm.
+- **Death clip:** armed characters let the weapon fall nearly flat beside the body. It used to stand straight up from the dead hand, and the spear and staff went 50–70 cm into the floor.
+- **Weapon check:** leg coverage now uses posed positions.
+- 15 clearance tests (they were 10). They now take about 70 s, and the comment in `tools/run_tests.sh` is updated to match.
+
+303 Godot tests and 15 clearance tests green. Reviewed p15_cmp_inquisitor (crouch, sprint and crouch walk, before and after) and cmp_die.
+
+Follow-ups:
+- **Narrower weapon-to-cloth gaps:** the fuller robes and tunics bring weapons closer. The Inquisitor's axe passes 1.9 cm from his robe in `push` (it was 6.5 cm). The guard's `attack` and the hazekiller's `block` are at 3.5 cm. These pass, but the margin is thin.
+- **Death pose:** lying on his back, the Inquisitor's robe rides up to his thighs and leaves his legs bare below it. It also flips up for a moment around 0.55 s. Weight the hem more toward the shins in `die`, or add a `die`-specific cloth settle.
+- **Not checked:** skirts on separate garment meshes, such as noble men's coat tails and the bustle.
+- **Hazekiller crouch:** the staff leans in front of his face from the front, which comes from the existing carry pose.

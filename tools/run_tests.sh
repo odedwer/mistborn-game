@@ -6,7 +6,7 @@ GODOT="${GODOT:-godot}"
 # Import once so class_name globals and resources are registered.
 "$GODOT" --headless --import >/dev/null 2>&1 || true
 "$GODOT" --headless -s res://tests/run_tests.gd -- "${1:-}"
-# Weapon clearance check of the generated characters (numpy only, ~15 s;
+# Weapon and cloth clearance checks of the generated characters (numpy only, ~1 min;
 # see tools/characters/clearance.py). Skipped when numpy is missing.
 if [ -z "${1:-}" ]; then
 	if python3 -c "import numpy" >/dev/null 2>&1; then
