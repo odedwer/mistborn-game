@@ -242,3 +242,27 @@ Follow-ups:
 - In the Pull haul, the Inquisitor's axe still leans about 43° inward. It doesn't clip.
 - The clearance scan (scratchpad only) checks the weapon against the head, neck and torso, but not against the arms, the hazekiller's shield or robe skirts. Consider committing it as `tools/characters/clearance.py`, with a test.
 - `docs/CHARACTERS.md` still describes `melee` as a dagger swing for everyone, and its triangle counts are out of date.
+
+## Review of art pass 13
+
+Merged:
+- **Weapon clearance checker:** `tools/characters/clearance.py` needs only numpy and takes about 12 s.
+  - It poses the guard, hazekiller, thug and Inquisitor frame by frame through all 20 clips.
+  - Thresholds: 1 cm for the head, neck and torso; no overlap allowed with the arms (excluding the gripping hand and forearm), robe skirts, or the hazekiller's shield.
+  - Each weapon builder in `chars.py` records its own capsules, so the check stays in sync with the models. None of this reaches the GLBs.
+  - `tools/characters/test_clearance.py` includes a deliberate bad pose that the checker must catch. It runs from `tools/run_tests.sh` after the Godot suite, only with no filter and only when numpy is present. `set -e` still makes a Godot failure fail the run.
+- **Inquisitor Pull:** the axe stays 8–11° from vertical through the haul (it was 43°), with no new clips.
+- **docs/CHARACTERS.md:**
+  - Free-hand actions for armed characters, and enemies strike with `attack`.
+  - The `palm=` option on `Body.hand` and the clearance tool.
+  - Measured triangle counts (4.0k–6.2k).
+  - The guard's belt lantern.
+- Also fixed the outdated `melee` comment in `scenes/test/character_lineup.gd`.
+
+302 Godot tests and 5 clearance tests green. Reviewed p13_after_inq_pull_haul_34.
+
+Follow-ups:
+- In idle and the base pose, the Inquisitor's axe still leans about 40° forward. Only the Push and Pull holds are upright.
+- The checker doesn't cover the legs, and models the shield as a flat disc without its boss.
+- CI's Ubuntu runner may lack numpy, which skips the clearance test. Install numpy in `.github/workflows/ci.yml` so it runs there too.
+- Tightest remaining gaps: 3.6 cm from the guard's spear and the hazekiller's staff to their skirts (in `sprint` and `block`).

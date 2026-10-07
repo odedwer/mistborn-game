@@ -41,7 +41,7 @@ const POSES := {
 	"pull_reach": ["pull", 0.3],  # reaching out, fist closing
 	# combat
 	"attack": ["attack", 0.4],  # the style's own weapon strike, near contact
-	"melee": ["melee", 0.28],  # unarmed/dagger swing at contact
+	"melee": ["melee", 0.28],  # contact frame; armed characters strike with the free hand
 	"throw": ["throw", 0.34],  # coin throw release
 	"hit": ["hit", 0.08],  # flinch peak
 	"fall": ["die", 0.55],  # mid death fall
