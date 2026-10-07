@@ -259,9 +259,9 @@ One shard peaks at about 580 MB (the story sweep).
 
 | | Before | After |
 |---|---|---|
-| `tools/run_tests.sh`, wall | about 8 min (423 s Godot, then 78 s Python) | 68-76 s (6 runs); 68-70 s (3 runs) since the clearance scans are split |
+| `tools/run_tests.sh`, wall | about 8 min (423 s Godot, then 78 s Python) | 68-76 s (6 runs); 68-77 s (6 runs) since the clearance scans are split, the Godot shards now last |
 | Godot suite in one process | 423 s | 178 s |
-| Python clearance tests | 70-78 s, after the Godot suite | 37 s idle, 64-71 s next to the shards in 2 processes; 51 s in 3 since the split, so the Godot shards (55-63 s) now finish last |
+| Python clearance tests | 70-78 s, after the Godot suite | 37 s idle, 64-71 s next to the shards in 2 processes. Since the split: 25 s idle and 51-58 s next to the shards in 3 processes, before the Godot shards (55-69 s) |
 
 Slowest files, one process, before -> after:
 

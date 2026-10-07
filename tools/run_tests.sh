@@ -8,7 +8,7 @@
 # - Python clearance tests (tools/characters, numpy only; see
 #   tools/characters/clearance.py) run at the same time, without a filter
 #   only, split over CLEARANCE_JOBS processes by
-#   tools/characters/run_parallel.py (about 50 s next to the shards with 3;
+#   tools/characters/run_parallel.py (25 s idle, 50-58 s next to the shards;
 #   65 s in one process). Skipped when numpy is missing.
 #
 # Each shard's output is printed when the suite finishes (a shard at a time,
@@ -23,7 +23,7 @@
 # TEST_SLOWEST=<n>  rows in the slowest files/tests tables (default 10).
 #
 # Wall time on the 4-core dev container (see docs/PERFORMANCE.md "Test
-# suite"): about 70 s with the defaults (4 shards; the Godot shards finish
+# suite"): about 70-75 s with the defaults (4 shards; the Godot shards finish
 # last), about 3 min with TEST_JOBS=1. It was about 8 min before
 # the suite was sharded and a 20 s wait on freeing a world mid-bake was fixed.
 set -euo pipefail

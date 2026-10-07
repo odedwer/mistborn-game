@@ -437,7 +437,7 @@ Merged. `tools/run_tests.sh` now takes about 70–80 s (it took about 505 s). In
 - The docs are in `docs/PERFORMANCE.md` ("Test suite") and the README.
 
 Follow-ups:
-- ~~**Python tests finish last:**~~ Done: the weapon and cloth scans are one test class per character (the Inquisitor's and guard's weapon scans per share of clips), in 3 processes. The clearance tests take about 51 s next to the shards, the Godot shards finish last, and the run takes 68–70 s.
+- ~~**Python tests finish last:**~~ Done: the weapon and cloth scans are one test class per character (the Inquisitor's and guard's weapon scans per share of clips), in 3 processes. The clearance tests take 25 s idle (was 37 s) and 51–58 s next to the shards, so the Godot shards (55–69 s) now finish last. The run took 68–77 s over 6 runs (80 s in a baseline run the same day).
 - **Real-time tests set the floor:** `test_story_sweep` (41 s), `test_traversal` (40 s) and `test_soak` (31 s) run at 60 physics frames per second. Running them faster than real time would need a fixed-step, fast-forward test mode.
 - ~~**Leaks at exit:**~~ Done: sounds still playing at quit (`AudioManager.shutdown`), a `MassBattle` soldier target cycle, and three unfreed nodes in `test_act3_missions`. The suite exits clean and `tools/run_tests.sh` now fails on Godot's leak report; see "Leaks at exit" in `docs/PERFORMANCE.md`. Two more intermittent failures found on the way, both real streaming races, are fixed with regression tests: `load_now` skipping units still instancing, and a streamed-in checkpoint area missed before `unit_loaded`.
 - **`FILE_WEIGHTS`:** the table in `tests/run_tests.gd` is maintained by hand. If it goes stale, only the shard balance suffers, never correctness.

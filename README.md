@@ -108,7 +108,7 @@ A 3D action game exploring the allomantic magic system from the Mistborn series,
 ### Running Tests
 
 ```bash
-bash tools/run_tests.sh            # everything, about 70 s on 4 cores
+bash tools/run_tests.sh            # everything, about 70-75 s on 4 cores
 bash tools/run_tests.sh traversal  # only tests/test_*traversal*.gd
 TEST_JOBS=1 bash tools/run_tests.sh  # one Godot process, output streamed live
 ```
