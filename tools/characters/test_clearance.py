@@ -1,5 +1,6 @@
 """Clearance regression tests (numpy only): the armed characters' weapons
-against their bodies, and every skirted character's legs against its cloth.
+against their bodies, every skirted character's legs against its cloth, and
+everyone lying dead on the floor.
 
 Run: python3 -m unittest discover -s tools/characters -p 'test_*.py'
      (or pytest tools/characters/test_clearance.py). About a minute.
@@ -17,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import clearance  # noqa: E402
 import chars  # noqa: E402
+import anim  # noqa: E402
 from anim import ANIM_NAMES, SKIRT_CLASS, base_params, make_anims  # noqa: E402
 
 
@@ -233,6 +235,53 @@ class SettleTest(unittest.TestCase):
         robe lies as a stiff tube, its back 20 cm under the floor."""
         rows = clearance.settle_scan("inquisitor", step=4, settle={"fall": {}, "lie": {}})
         self.assertLess(min(z for _, _, z in rows), -0.15)
+
+
+class DeadTest(unittest.TestCase):
+    def test_everyone_lies_on_the_floor(self):
+        """At the end of `die` every character's legs rest on the floor (the
+        robed ones under their robes aside), and no part of anyone's body
+        sinks through it."""
+        fails = clearance.check_dead(step=3)
+        self.assertEqual(fails, [], "\n".join(f"{n} {w}: {v:+.3f} at t={t:.2f} (limit {lim:+.3f})"
+                                              for n, w, v, t, lim in fails))
+
+    def test_detects_raised_legs(self):
+        """Negative control: the old lying legs (left knee raised, feet
+        pointed up off the floor) leave Vin's shins and feet 7-12 cm up."""
+        old = dict(r_lflex=8, l_lflex=24, r_knee=12, l_knee=40, r_labd=12, l_labd=9, r_ltwist=0, l_ltwist=0,
+                   r_ankle=25, l_ankle=25)
+        legs = clearance.dead_scan("vin", step=99, params=old)[-1][3]
+        self.assertGreater(legs["left shin"], 0.07)
+        self.assertGreater(legs["right foot"], 0.05)
+
+    def test_detects_a_head_through_the_floor(self):
+        """Negative control: without his DIE_LIE correction the guard's
+        helmet brim sinks 8 cm into the floor."""
+        saved = anim.DIE_LIE.pop("guard")
+        try:
+            rows = clearance.dead_scan("guard", step=3)
+        finally:
+            anim.DIE_LIE["guard"] = saved
+        t, z, where, _ = min(rows, key=lambda r: r[1])
+        self.assertLess(z, -0.06)
+        self.assertEqual(where, "Head")
+
+    def test_thighs_turn_out(self):
+        """ltwist turns each thigh out about its own axis: the bent leg's foot
+        swings away from the body's midline."""
+        b, info = clearance.BUILDERS["vin"]()
+        rig = clearance.Rig(b.S)
+        p = base_params(info["style"])
+        p.update(leg_fk=1.0, l_knee=40, r_knee=40)
+        feet = []
+        for tw in (0.0, 30.0):
+            p.update(l_ltwist=tw, r_ltwist=tw)
+            Q, off = rig.solve(p)
+            _, Hd = clearance._pose(b.S, Q, off)
+            feet.append((Hd["LeftFoot"][0], Hd["RightFoot"][0]))
+        self.assertLess(feet[1][0], feet[0][0] - 0.05)
+        self.assertGreater(feet[1][1], feet[0][1] + 0.05)
 
 
 if __name__ == "__main__":

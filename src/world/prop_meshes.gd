@@ -211,6 +211,52 @@ static func _statue_head(b: WorldMeshBuilder, col: Color) -> void:
 		_ellipsoid(b, Vector3(0.149 * s, 1.858, 0.002), basis, 6, col * 0.92)
 
 
+## Laurel leaves on the statue's wreath band (y 1.9-1.95, see the `statue`
+## lathe): two rows of flat, pointed leaves lying along the band and pointing
+## back from the brow, where the wreath parts. Each leaf follows the band's
+## curve, tip tucked against the head, with a low midrib ridge (4 triangles).
+## (They were 3-sided cones that stood off the head like spikes.)
+const LAUREL_RX := 0.151
+const LAUREL_RZ := 0.162
+const LAUREL_Z := 0.018
+
+
+static func _laurel_pt(a: float, y: float, out: float) -> Vector3:
+	return Vector3(sin(a) * (LAUREL_RX + out), y, LAUREL_Z + cos(a) * (LAUREL_RZ + out))
+
+
+static func _laurel(b: WorldMeshBuilder, col: Color) -> void:
+	var n := 12
+	for i in n:
+		var a := TAU * (float(i) + 0.5) / float(n)
+		if cos(a) > 0.85:
+			continue  # the wreath parts over the brow
+		var s := 1.0 if a < PI else -1.0  # leaves point back, away from the brow
+		for row: float in [-1.0, 1.0]:
+			# (alternate rows overlap half a leaf, like a woven wreath)
+			var a0 := a + s * row * 0.06
+			var a1 := a0 + s * 0.42  # ~6.5 cm along the band
+			var am := (a0 + a1) * 0.5
+			var y0 := 1.925 + row * 0.01
+			var y1 := y0 + row * 0.006  # the tips splay a little up or down
+			var base := _laurel_pt(a0, y0, 0.004)
+			var tip := _laurel_pt(a1, y1, 0.0)
+			var mid := _laurel_pt(am, (y0 + y1) * 0.5, 0.009)  # the midrib, proud of the band
+			var e0 := _laurel_pt(am, (y0 + y1) * 0.5 + 0.011, 0.003)
+			var e1 := _laurel_pt(am, (y0 + y1) * 0.5 - 0.011, 0.003)
+			# Wind each triangle so its normal faces out from the head.
+			for tri: Array in [[base, e0, mid], [mid, e0, tip], [base, mid, e1], [mid, tip, e1]]:
+				var p0: Vector3 = tri[0]
+				var p1: Vector3 = tri[1]
+				var p2: Vector3 = tri[2]
+				var c := (p0 + p1 + p2) / 3.0
+				var outward := Vector3(c.x, 0.0, c.z - LAUREL_Z)
+				if (p1 - p0).cross(p2 - p0).dot(outward) < 0.0:
+					b.add_tri(p0, p2, p1, col)
+				else:
+					b.add_tri(p0, p1, p2, col)
+
+
 ## Forward offset (x) and shade (y) of the face at lateral `x` and height `y`.
 static func _face_relief(x: float, y: float) -> Vector2:
 	var ax := absf(x)
@@ -463,17 +509,7 @@ static func _build(kind: StringName) -> Mesh:
 			# A laurel wreath round the temples.
 			_lathe(fig, [[1.9, 0.142, 0.153, 0.018, 0.85], [1.925, 0.156, 0.167, 0.018, 1.0],
 					[1.95, 0.142, 0.153, 0.014, 0.9]], 12, ic * 1.05, false)
-			for i in 10:
-				var a := TAU * (float(i) + 0.5) / 10.0
-				if cos(a) > 0.8:
-					continue  # the wreath parts over the brow
-				# Leaves lie along the band, pointing back, in two rows.
-				var radial := Vector3(sin(a), 0.0, cos(a))
-				var back := Vector3(cos(a), 0.0, -sin(a)) * (1.0 if a < PI else -1.0)
-				for row: float in [-1.0, 1.0]:
-					var on := Vector3(sin(a) * 0.155, 1.925 + row * 0.012, 0.018 + cos(a) * 0.166)
-					var dir := (back + radial * 0.3 + Vector3.UP * row * 0.35).normalized()
-					_limb_n(fig, on, on + dir * 0.06, 0.018, 0.004, ic * 1.05, 3)
+			_laurel(fig, ic * 1.05)
 			# A cloak falling from the shoulders and spreading behind the hem.
 			_lathe(fig, [[0.19, 0.47, 0.14, -0.3, 0.6], [0.7, 0.47, 0.15, -0.27, 0.75], [1.2, 0.42, 0.15, -0.2, 0.88],
 					[1.52, 0.37, 0.13, -0.1, 0.95]], 10, ic, false)

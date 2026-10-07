@@ -14,7 +14,7 @@ RES = "res://assets/models/characters"
 
 MATERIALS = {
     # file: (shader, params)
-    "cloth": ("character.gdshader", dict(roughness=0.93, metallic=0.0, specular=0.28, detail_strength=0.14,
+    "cloth": ("character_cloth.gdshader", dict(roughness=0.93, metallic=0.0, specular=0.28, detail_strength=0.14,
                                          grime_strength=0.18, rim_strength=0.3)),
     "cloak": ("character_cloak.gdshader", dict(roughness=0.92, metallic=0.0, specular=0.3, detail_strength=0.18,
                                                grime_strength=0.2, rim_strength=0.45)),

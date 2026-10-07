@@ -56,7 +56,7 @@ def default_params():
                   f"{s}_wtwist": 0.0, f"{s}_shrug": 0.0, f"{s}_prot": 0.0,
                   f"{s}_fx": 0.0, f"{s}_fy": 0.0, f"{s}_fz": 0.0, f"{s}_fpitch": 0.0, f"{s}_toe": 0.0,
                   f"{s}_kneeout": 0.0,
-                  f"{s}_lflex": 0.0, f"{s}_labd": 0.0, f"{s}_knee": 0.0, f"{s}_ankle": 0.0})
+                  f"{s}_lflex": 0.0, f"{s}_labd": 0.0, f"{s}_ltwist": 0.0, f"{s}_knee": 0.0, f"{s}_ankle": 0.0})
     return p
 
 
@@ -138,7 +138,9 @@ class Rig:
         off = v3(p["hips_x"], p["hips_y"], p["hips_z"])
         if p.get("leg_fk", 0.0) > 0.5:
             for s, side in SIDES:
-                Q[sname(side, "UpperLeg")] = Rx(p[f"{s}_lflex"]) @ Ry(-side * p[f"{s}_labd"])
+                # (ltwist: the thigh turns out about its own axis, knee and toes outwards)
+                ul = sname(side, "UpperLeg")
+                Q[ul] = Rx(p[f"{s}_lflex"]) @ Ry(-side * p[f"{s}_labd"]) @ rot_axis(S.dir(ul), -side * p[f"{s}_ltwist"])
                 Q[sname(side, "LowerLeg")] = Rx(-p[f"{s}_knee"])
                 Q[sname(side, "Foot")] = Rx(p[f"{s}_ankle"])
                 Q[sname(side, "Toes")] = Rx(p[f"{s}_toe"])
@@ -279,15 +281,34 @@ def _lie(hips_fb, hips_lift, thigh_fb, thigh_lift, shin_fb, shin_lift, lat=(1.1,
 # hip) point it covers stays at least 1 cm inside it; the hem now rises
 # 15-18 cm off the floor over the feet (the gowns 28 cm), where it stood
 # 31-36 cm high and open.
+# Refit with tools/characters/fit_robe_settle.py.
 SETTLE = {
     "inquisitor": {"fall": {}, "lie": _lie(0.84, -0.017, 0.335, 0.035, 0.108, -0.006)},
     "sazed": {"fall": {}, "lie": _lie(0.88, -0.006, 0.374, 0.031, 0.115, -0.004)},
     "marsh": {"fall": {}, "lie": _lie(0.93, -0.016, 0.364, 0.05, 0.118, -0.001)},
     "obligator": {"fall": {}, "lie": _lie(0.76, -0.041, 0.292, 0.054, 0.108, -0.01)},
-    "obligator_b": {"fall": {}, "lie": _lie(0.64, -0.061, 0.376, 0.149, 0.1, -0.04)},
+    "obligator_b": {"fall": {}, "lie": _lie(0.772, -0.038, 0.383, 0.132, 0.106, -0.061)},
     # (the hoop skirts flatten further, and are fitted to stay over the feet:
     # their hems reach the floor, and the toes poked through)
     "gown": {"fall": {}, "lie": _lie(0.196, -0.082, 0.416, 0.142, 0.107, 0.149, lat=(1.0, 0.93, 0.91))},
+}
+
+
+# Corrections of the lying pose at the end of `die` (added to its 0.95 s and
+# 1.3 s keys; hips_z in m for a 1.75 m character), so no part of the body
+# sinks into the floor (clearance.py --dead): the bulkier hips and thighs lift
+# the body, a helmet, hood or the Inquisitor's spikes tip the head forward
+# (and the shoulders with it), and a hand pressed into the floor rises.
+DIE_LIE = {
+    "guard": {"head_pitch": 12.0, "spine_lean": 5.0},  # the kettle helmet's brim
+    "haze": {"head_pitch": 10.0, "spine_lean": 6.0},  # the hood
+    "thug": {"hips_z": 0.02},
+    "dockson": {"hips_z": 0.015},
+    "breeze": {"hips_z": 0.022},
+    "ham": {"hips_z": 0.02},
+    "elend": {"l_flex": 10.0},  # (the books' hand)
+    "obligator_b": {"hips_z": 0.02, "l_flex": 5.0},
+    "inquisitor": {"head_yaw": 15.0, "head_pitch": 15.0},  # the spikes out of the back of his skull
 }
 
 
@@ -675,9 +696,16 @@ def make_anims(style: str, S: Skel):
             return {"r_flex": flex - 30.0 * f, "r_wtwist": base.get("r_wtwist", 0.0) - 60.0 * f,
                     "r_wrist": base.get("r_wrist", 0.0) - 20.0 * f}
 
+        # He lies with his legs relaxed on the floor: nearly straight, the
+        # left knee a little bent and both thighs turned out (so the bent knee
+        # falls sideways instead of standing up), the feet resting on their
+        # heels, pointed. (The legs used to lie 7-13 cm off the floor, the
+        # left knee raised.) Checked with clearance.py --dead.
         legs = [dict(r_lflex=85, l_lflex=75, r_knee=120, l_knee=110, r_ankle=30, l_ankle=25),
-                dict(r_lflex=12, l_lflex=28, r_knee=20, l_knee=45, r_labd=10, l_labd=8, r_ankle=30, l_ankle=30),
-                dict(r_lflex=8, l_lflex=24, r_knee=12, l_knee=40, r_labd=12, l_labd=9, r_ankle=25, l_ankle=25)]
+                dict(r_lflex=6, l_lflex=10, r_knee=10, l_knee=22, r_labd=10, l_labd=8, r_ltwist=10, l_ltwist=25,
+                     r_ankle=32, l_ankle=30),
+                dict(r_lflex=-1.0, l_lflex=2.5, r_knee=4, l_knee=14, r_labd=10, l_labd=8, r_ltwist=15, l_ltwist=35,
+                     r_ankle=38, l_ankle=34)]
         cloth = [{}, {}, {}]
         if settle:
             # A long robe or gown: the legs fold less as he sits down (the
@@ -691,6 +719,14 @@ def make_anims(style: str, S: Skel):
                     dict(r_lflex=-2, l_lflex=2, r_knee=2, l_knee=8, r_labd=6, l_labd=5, r_ankle=55, l_ankle=50)]
             cloth = [{kk: v * k if kk.endswith("_lift") else v for kk, v in d.items()}
                      for d in (settle["fall"], settle["lie"], settle["lie"])]
+        lie = DIE_LIE.get(style, {})
+
+        def lying(d):
+            # the style's corrections of the lying pose (hips_z in m for a 1.75 m character)
+            for kk, v in lie.items():
+                d[kk] = d.get(kk, base.get(kk, 0.0)) + (v * k if kk == "hips_z" else v)
+            return d
+
         return keyed([
             (0.0, stand),
             (0.2, dict(fk, spine_lean=-10, head_pitch=-20, r_abd=35, l_abd=35, r_elbow=40, l_elbow=40,
@@ -698,12 +734,12 @@ def make_anims(style: str, S: Skel):
             (0.55, dict(fk, hips_z=-0.42 * leg_h, hips_lean=-35, hips_y=-0.1 * k, spine_lean=-10, head_pitch=-15,
                         r_abd=45, l_abd=40,
                         l_flex=20, r_elbow=50, l_elbow=40, **drop(0.0, 30), **legs[0], **cloth[0])),
-            (0.95, dict(fk, hips_z=-leg_h + 0.12 * k, hips_lean=-88, hips_y=-0.3 * k, spine_lean=-4,
-                        head_pitch=10, head_yaw=25, r_abd=80, l_abd=70, l_flex=-5,
-                        r_elbow=30, l_elbow=45, **drop(1.0, 10), **legs[1], **cloth[1])),
-            (1.3, dict(fk, hips_z=-leg_h + 0.11 * k, hips_lean=-90, hips_y=-0.32 * k, spine_lean=0,
-                       head_pitch=12, head_yaw=30, r_abd=85, l_abd=72, l_flex=-8,
-                       r_elbow=25, l_elbow=40, **drop(1.0, 5), **legs[2], **cloth[2])),
+            (0.95, lying(dict(fk, hips_z=-leg_h + 0.12 * k, hips_lean=-88, hips_y=-0.3 * k, spine_lean=-4,
+                              head_pitch=10, head_yaw=25, r_abd=80, l_abd=70, l_flex=-5,
+                              r_elbow=30, l_elbow=45, **drop(1.0, 10), **legs[1], **cloth[1]))),
+            (1.3, lying(dict(fk, hips_z=-leg_h + 0.11 * k, hips_lean=-90, hips_y=-0.32 * k, spine_lean=0,
+                             head_pitch=12, head_yaw=30, r_abd=85, l_abd=72, l_flex=-8,
+                             r_elbow=25, l_elbow=40, **drop(1.0, 5), **legs[2], **cloth[2]))),
         ], t, base)
 
     add("die", 1.3, die)

@@ -636,8 +636,9 @@ def build_ham():
     # fighting staff slung across the back
     c = v3(0, -0.14 * s, 0.72 * H)
     d = norm(v3(0.7, 0, 1))
-    tube(b.m, [c - d * 0.55 * s, c + d * 0.55 * s], [0.017 * s, 0.017 * s], n=6, color=hexcol("6e4e30"),
-         weights=b.W(["Chest", "UpperChest"]), cap0=0.008 * s, cap1=0.008 * s)
+    with b.part("prop"):  # (clearance.py --dead: lying on his back, the slung staff sinks into the floor)
+        tube(b.m, [c - d * 0.55 * s, c + d * 0.55 * s], [0.017 * s, 0.017 * s], n=6, color=hexcol("6e4e30"),
+             weights=b.W(["Chest", "UpperChest"]), cap0=0.008 * s, cap1=0.008 * s)
     return b, dict(mats={CLOTH: "Cloth", METAL: "Metal"}, style="ham")
 
 

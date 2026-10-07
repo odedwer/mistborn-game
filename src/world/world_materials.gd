@@ -125,11 +125,12 @@ static func _create(id: int) -> Material:
 
 ## Weathered statuary bronze (`bronze.gdshader`): dark brown-bronze with
 ## verdigris that gathers in the recesses the mesh's vertex colour marks, on
-## the ledges, and in thin runs down from the shoulders and the belt, rather
-## than a random mottle. Both textures are built here, synchronously, from
-## fixed noise seeds: vertical runs (a 128x16 seamless noise stretched to
-## 128x128, so the features are eight times taller than wide) and a fine
-## grain.
+## the ledges, and in runs down from the shoulders and the belt, rather than
+## a random mottle. The shader places the runs itself, each with its own
+## width, length and spacing. Both textures are built here, synchronously,
+## from fixed noise seeds: vertical streak noise (a 128x16 seamless noise
+## stretched to 128x128, so the features are eight times taller than wide),
+## which breaks the runs up along their length, and a fine grain.
 static func _bronze() -> ShaderMaterial:
 	var fnl := FastNoiseLite.new()
 	fnl.seed = 0xB21
