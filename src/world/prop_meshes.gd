@@ -16,6 +16,9 @@ const RIGID := {
 	&"cart": [120.0, 25.0, "box", Vector3(2.2, 0.8, 1.3), Vector3(0, -0.2, 0.62)],
 }
 
+## Modillions dither out between these distances (m) from the camera.
+const MODILLION_FADE := Vector2(32.0, 48.0)
+
 static var _meshes: Dictionary = {}
 static var _shapes: Dictionary = {}
 
@@ -24,6 +27,10 @@ static func mesh(kind: StringName) -> Mesh:
 	if _meshes.has(kind):
 		return _meshes[kind]
 	var m := _build(kind)
+	if kind == &"modillion":
+		# Brackets dither out instead of popping when their cell culls (see
+		# ChunkInstancer.INSTANCE_MARGIN). Past 48 m one covers 2-3 px.
+		(m as ArrayMesh).surface_set_material(0, WorldMaterials.faded(M.ASHLAR, MODILLION_FADE.x, MODILLION_FADE.y))
 	_meshes[kind] = m
 	return m
 

@@ -163,6 +163,24 @@ static func _bronze() -> StandardMaterial3D:
 	return m
 
 
+## A copy of material `id` that dithers out between `fade_from` and `fade_to`
+## metres from the camera, per pixel (StandardMaterial3D distance fade,
+## pixel dither). It stays in the opaque pass and looks the same in Forward+
+## and Compatibility, unlike `visibility_range_fade_mode`, which alpha-blends
+## in Forward+ and is ignored by Compatibility.
+static func faded(id: int, fade_from: float, fade_to: float) -> Material:
+	var key := "faded_%d_%.1f_%.1f" % [id, fade_from, fade_to]
+	if _cache.has(key):
+		return _cache[key]
+	var m := (get_mat(id) as BaseMaterial3D).duplicate() as BaseMaterial3D
+	m.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
+	# Max < min reverses the fade: opaque up to `fade_from`, gone at `fade_to`.
+	m.distance_fade_max_distance = fade_from
+	m.distance_fade_min_distance = fade_to
+	_cache[key] = m
+	return m
+
+
 static func _shader_mat(file: String) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = load(SHADER_DIR + file) as Shader
