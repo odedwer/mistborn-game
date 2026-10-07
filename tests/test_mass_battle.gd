@@ -130,3 +130,19 @@ func test_drilling_soldiers_stay_put() -> void:
 		b.step(0.05)
 	assert_lt(s.pos.distance_to(Vector3(3, 0, 3)), 0.6)
 	assert_eq(s.state, MassBattle.SoldierState.DRILL)
+
+
+## Regression: two soldiers fighting each other hold each other in `target`,
+## a RefCounted cycle that outlived the freed battle (leaked at exit).
+func test_freed_battle_releases_soldiers_fighting_each_other() -> void:
+	var b := _battle()
+	var r := b.spawn(REBEL, Vector3.ZERO)
+	var g := b.spawn(GARRISON, Vector3(0, 0, 1))
+	b.step(0.05)
+	assert_true(r.target == g and g.target == r, "the two soldiers target each other")
+	var refs := [weakref(r), weakref(g)]
+	r = null
+	g = null
+	b.free()
+	for w: WeakRef in refs:
+		assert_true(w.get_ref() == null, "soldier freed with the battle")
