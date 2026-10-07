@@ -90,6 +90,7 @@ signal action_started(name) / action_finished(name)
   - `throw, melee, push, pull, drink, talk` are upper-body one-shots (spine, arms and head filter), so they layer over running.
   - The others are full-body one-shots.
   - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`. The armed characters let the weapon fall flat beside them as they land (it used to stand straight up from the dead hand, and the spear and staff went 50–70 cm into the floor). The long robes and gowns settle over the legs (see *Death settle*).
+  - Lying dead, the legs rest on the floor, relaxed: nearly straight, the left knee bent 14° and both thighs turned out (`ltwist`, 15° and 35°), so the bent knee falls sideways instead of standing up, with the feet on their heels, pointed. They used to lie 7–13 cm off the floor with the left knee raised. `DIE_LIE` in `anim.py` corrects the lying pose per style so nothing sinks into the floor: the bulkier hips and thighs (the thug, Ham, Dockson, Breeze, the junior obligator) lift the body 1.5–2.2 cm; the guard's helmet brim, the hazekiller's hood and the Inquisitor's skull spikes tip the head forward (they went 4–8 cm into the floor); Elend's and the junior obligator's left hands rise off it. `clearance.py --dead` checks it.
   - `attack` is character-specific: a dagger slash (vin), a spear thrust (guard), an overhead staff strike (hazekiller), a club smash (thug), a coin throw (coinshot) and a diagonal axe chop (inquisitor). Enemies strike with `attack`. Only the player plays `melee`.
   - `melee` is a wide one-handed swing: a dagger slash for Vin, a punch for the coinshot.
   - **Free hand.** The armed characters (guard, hazekiller, thug, Inquisitor) carry their weapon in the right hand. Their `melee`, `drink`, `talk`, `throw`, `push` and `pull` use the free left hand, while the weapon arm holds the weapon upright and clear of the head. In idle and the gaits, the Inquisitor carries his axe like the guard's spear, forearm level and haft upright (from the side and the front) beside the shoulder; in Push and Pull he holds it upright and low at his side. These poses are the right-handed keys mirrored by `free_hand()` and `arm()` in `anim.py`.
@@ -149,6 +150,7 @@ python3 tools/characters/clearance.py --cloth                          # cloth c
 python3 tools/characters/clearance.py --cloth sazed --anim=crouch_walk --frames
 python3 tools/characters/clearance.py --cloth noble_man:longcoat    # a garment mesh's skirt
 python3 tools/characters/clearance.py --settle                     # robes and gowns lying down in `die`
+python3 tools/characters/clearance.py --dead                       # everyone lying on the floor at the end of `die`
 ```
 It exits with status 1 when any region falls below its threshold.
 
@@ -167,12 +169,15 @@ A clip fails when a leg shows through by more than 1.5 cm (`CLOTH_THRESHOLD`). A
 
 **Death settle (`--settle`).** For each long robe or gown, from about 0.95 s into `die` (lying down), the hem may rise at most 32 cm off the floor (for a 1.75 m character, `SETTLE_HEM`), and no cloth may sink more than 3 cm under it (`SETTLE_FLOOR`).
 
+**Lying dead (`--dead`).** For every character, from about 0.95 s into `die`, no part of the body may sink more than 1 cm under the floor (`DEAD_FLOOR`), and in the final pose the lowest point of each thigh, shin and foot must lie within 5 cm of it (for a 1.75 m character, `DEAD_LIFT`; not under the long robes, which `--settle` covers). The body is the main mesh without the soft or loose parts in `DEAD_SOFT`, which would flatten or push aside: props (`weapon`, `shield`, and `prop`, Ham's slung staff), skirts, tied hair tails (`hair`) and the mistcloak (its tassels and back panel). After art pass 17, the lowest body point of every character lies between -0.6 and +0.9 cm, and the legs of the characters without robes rest 0.1–4.7 cm off the floor at their lowest (Breeze's, lifted with his hips, are the highest).
+
 **Carried weapons.** The guard, hazekiller and Inquisitor carry their weapon upright in a held (`arm_lock`) right arm. In the gaits the wrist takes back 60% of the run's forward lean and half the arm's sway (`CARRY_K` in `anim.py`), and the arm swings out a little as the knee lift grows (`CARRY_ABD`), so the shaft stays within about 20° of upright from idle to sprint (the axe within 14°) and clears the thigh. In the crouch the arm swings 6° wider; only the Inquisitor (`crouch_carry`) also stands his short axe upright there, since a long spear stood up this way drives its butt into the shin. The hazekiller's staff leant 21° in across the body in the crouch, so from the front its top crossed his face; his `crouch_hold` turns the arm and forearm out and stands the wrist up a little, and it passes 27 cm outside his face (it was 3 cm).
 
-`tools/characters/test_clearance.py` holds 21 tests:
+`tools/characters/test_clearance.py` holds 25 tests:
 - the full weapon check, and the cloth check on every second frame;
-- the death settle check;
-- negative controls: a club through the torso and arm, a spear into the thigh, a hips-only robe that shows the crouching Inquisitor's knees, a hips-only noble long coat (a garment mesh), and the Inquisitor's robe lying without its skirt bone poses (its back 20 cm under the floor);
+- the death settle and lying dead checks;
+- negative controls: a club through the torso and arm, a spear into the thigh, a hips-only robe that shows the crouching Inquisitor's knees, a hips-only noble long coat (a garment mesh), the Inquisitor's robe lying without its skirt bone poses (its back 20 cm under the floor), Vin's old raised death legs, and the guard's helmet in the floor without his `DIE_LIE`;
+- a check that `ltwist` turns the thighs out;
 - checks that every exported clip, every skirted character and garment, and every settling character is scanned, and that the skirt bones rest in every clip but `die`;
 - geometry tests: capsule and disc distance, skirt coverage (inside, outside, below the hem, through a slit), the winding number, posed coverage (a knee raised past the guard's hem is exposed), and the shield boss.
 

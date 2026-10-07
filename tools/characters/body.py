@@ -651,8 +651,9 @@ class Body:
                anchor + v3(0, -0.05 * s, -0.22 * s), anchor + v3(0.005 * s, -0.06 * s, -0.3 * s)]
         radii = [(0.024 * s, 0.03 * s), (0.022 * s, 0.026 * s), (0.018 * s, 0.02 * s),
                  (0.013 * s, 0.014 * s), (0.006 * s, 0.006 * s)]
-        tube(self.m, pts, radii, n=10, hint=(1, 0, 0), color=color,
-             weights=self.W(["Head", "Neck"], {"Neck": 0.5}), cap1=0.004 * s)
+        with self.part("hair"):  # (soft: clearance.py --dead lets it flatten under the lying head)
+            tube(self.m, pts, radii, n=10, hint=(1, 0, 0), color=color,
+                 weights=self.W(["Head", "Neck"], {"Neck": 0.5}), cap1=0.004 * s)
 
     def _hair_bun(self, color, top_z, s):
         """A rounded knot of hair pinned at the back of the crown."""

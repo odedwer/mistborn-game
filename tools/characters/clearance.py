@@ -39,6 +39,7 @@ Usage:
   tools/characters/clearance.py --cloth sazed --anim=crouch_walk --frames
   tools/characters/clearance.py --cloth noble_man:longcoat     # a garment's skirt
   tools/characters/clearance.py --settle                      # robes lying down in `die`
+  tools/characters/clearance.py --dead                        # everyone lying on the floor at the end of `die`
 Exit status: 0 when every region clears its threshold, 1 otherwise.
 """
 from __future__ import annotations
@@ -54,6 +55,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import chars  # noqa: E402
 import chars_npc  # noqa: E402
+from body import MAT_NAMES  # noqa: E402
 from anim import ANIM_NAMES, FPS, LOOPING, Rig, make_anims  # noqa: E402
 
 BUILDERS = {**chars.BUILDERS, **chars_npc.BUILDERS}
@@ -616,6 +618,84 @@ def check_settle(names=None, step=1, report=None):
     return fails
 
 
+# Lying dead (`--dead`, every character): from DEAD_FROM s into `die`, no part
+# of the body may sink more than DEAD_FLOOR under the floor (m; the skin gives
+# a little), and in the final pose the lowest point of each thigh, shin and
+# foot must rest within DEAD_LIFT of it (m, for a 1.75 m character), so the
+# legs lie on the floor rather than above it (except under a long robe, whose
+# lying cloth --settle checks). The body is the main mesh minus
+# the parts in DEAD_SOFT: props (`weapon`, `shield`, and `prop`, Ham's slung
+# staff), skirts (the long robes' cloth is checked by --settle) and tied hair
+# tails, and minus the mistcloak (its spring-simulated tassels, and its back
+# panel, which the body would squash flat).
+DEAD_FROM = 0.95
+DEAD_SOFT = ("weapon", "shield", "skirt", "hair", "prop")  # Body.parts left out
+DEAD_FLOOR = -0.01
+DEAD_LIFT = 0.05
+DEAD_SEGMENTS = {f"{s} {part}": [side + b for b in bones] for s, side in (("left", "Left"), ("right", "Right"))
+                 for part, bones in (("thigh", ["UpperLeg"]), ("shin", ["LowerLeg"]), ("foot", ["Foot", "Toes"]))}
+
+
+def dead_scan(name, step=1, params=None):
+    """[(t, lowest body z, where, {leg segment: lowest z})] of `name` in the
+    lying part of `die`. `params` overrides pose parameters in every frame (a
+    test)."""
+    b, info = _built(name)
+    A = make_anims(info["style"], b.S)
+    V, Wm, bones = _skin_matrix(b)
+    keep = np.ones(len(V), dtype=bool)
+    for part in DEAD_SOFT:
+        for s0, s1 in b.parts.get(part, []):
+            keep[s0:s1] = False
+    dom = np.array([bones[j] for j in Wm.argmax(axis=1)])
+    keep &= ~np.char.startswith(dom.astype(str), "Tassel")
+    # (the mistcloak, tassels and back panel, is cloth that the body squashes flat)
+    cloak = MAT_NAMES.index("Cloak")
+    solid = np.zeros(len(V), dtype=bool)
+    for face, mat in zip(b.m.faces, b.m.face_mat):
+        if mat != cloak:
+            solid[list(face)] = True
+    keep &= solid
+    V, Wm, dom = V[keep], Wm[keep], dom[keep]
+    segs = {k: np.isin(dom, bs) for k, bs in DEAD_SEGMENTS.items()}
+    rig = Rig(b.S)
+    n = A["die"][0]
+    rows = []
+    frames = list(range(int(round(DEAD_FROM * FPS)), n + 1, step))
+    if frames[-1] != n:  # (the final pose is always measured)
+        frames.append(n)
+    for f in frames:
+        p = A["die"][1](f / FPS)
+        p.update(params or {})
+        Q, off = rig.solve(p)
+        D, Hd = _pose(b.S, Q, off, rig.loc)
+        z = _skin(b.S, D, Hd, bones, V, Wm)[:, 2]
+        i = int(np.argmin(z))
+        rows.append((f / FPS, float(z[i]), str(dom[i]), {k: float(z[m].min()) for k, m in segs.items()}))
+    return rows
+
+
+def check_dead(names=None, step=1, report=None):
+    """Returns failures (name, what, value, t, limit)."""
+    fails = []
+    for name in names or list(BUILDERS):
+        rows = dead_scan(name, step)
+        if report:
+            report(name, rows)
+        t, z, where, _ = min(rows, key=lambda r: r[1])
+        if z < DEAD_FLOOR:
+            fails.append((name, f"floor ({where})", z, t, DEAD_FLOOR))
+        b = _built(name)[0]
+        if "SkirtHips" in b.S.bones:
+            continue  # (the long robes lie over the legs: see --settle)
+        lift = DEAD_LIFT * b.H / 1.75
+        t, _, _, legs = rows[-1]
+        for seg, z in legs.items():
+            if z > lift:
+                fails.append((name, seg, z, t, lift))
+    return fails
+
+
 def check(names=None, anims=None, step=1, thresholds=None, report=None):
     """Scans the characters; returns a list of failures
     (name, anim, region, clearance, t, threshold). `report(name, anim, rows)`
@@ -649,7 +729,11 @@ def main(argv=None):
                     help="cloth check instead: legs against skirts (default: every skirted character)")
     ap.add_argument("--settle", action="store_true",
                     help="death settle check instead: long robes and gowns lying down")
+    ap.add_argument("--dead", action="store_true",
+                    help="lying dead check instead: the body on the floor at the end of `die` (default: everyone)")
     a = ap.parse_args(argv)
+    if a.dead:
+        return _main_dead(a)
     if a.settle:
         return _main_settle(a)
     if a.cloth:
@@ -739,6 +823,27 @@ def _main_settle(a):
             print(f"  {name} {what}: {v:.3f} m at t={t:.2f} (limit {lim:.3f})")
         return 1
     print("\nall settled")
+    return 0
+
+
+def _main_dead(a):
+    def report(name, rows):
+        if a.frames:
+            print(f"== {name} die (lowest body point / each leg segment's lowest, m)")
+            for t, z, where, legs in rows:
+                print(f"  t={t:4.2f}  low {z:+6.3f} ({where})  " + "  ".join(f"{k} {v:+.3f}" for k, v in legs.items()))
+        else:
+            t, z, where, _ = min(rows, key=lambda r: r[1])
+            legs = rows[-1][3]
+            print(f"{name:<12}low {z:+6.3f}@{t:4.2f} {where:<14}legs {min(legs.values()):+.3f}..{max(legs.values()):+.3f}")
+
+    fails = check_dead(a.chars or None, a.step, report)
+    if fails:
+        print(f"\n{len(fails)} failure(s):")
+        for name, what, v, t, lim in fails:
+            print(f"  {name} {what}: {v:+.3f} m at t={t:.2f} (limit {lim:+.3f})")
+        return 1
+    print("\nall lying on the floor")
     return 0
 
 
