@@ -251,8 +251,11 @@ def round_shield(b: Body, side):
          color=wood, weights=W, cap0="flat", cap1="flat")
     tube(b.m, [c + out * 0.015 * s, c + out * 0.05 * s], [0.075 * s, 0.04 * s], n=10, hint=M[:, 1],
          color=hexcol("4a3320"), weights=W, cap1=0.02 * s)
-    # (the boss is on the outer face, away from the weapon; the disc covers the board)
+    # the board, then the boss on the outer face as stacked discs, each at the
+    # widest radius of its slice of the cone and its dome
     b.shields.append((la, c + out * 0.003 * s, out, R, 0.015 * s))
+    for z0, z1, r in ((0.015, 0.027, 0.075), (0.027, 0.039, 0.0625), (0.039, 0.05, 0.051), (0.05, 0.07, 0.04)):
+        b.shields.append((la, c + out * (z0 + z1) / 2 * s, out, r * s, (z1 - z0) / 2 * s))
 
 
 # ------------------------------------------------------------------ characters

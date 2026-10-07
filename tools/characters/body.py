@@ -63,9 +63,12 @@ class Body:
         # (they never reach the GLB): weapon capsules (bone, p0, p1, radius),
         # shield discs (bone, centre, normal, radius, half thickness) and
         # vertex ranges of tagged parts of the main mesh ("weapon", "shield",
-        # "skirt") as {name: [(start, end), ...]}.
+        # "skirt") as {name: [(start, end), ...]}, and each main-mesh skirt's
+        # coverage (hem z, centre y at the hem, arc or None) so the legs it
+        # hides are left to the skirt check.
         self.weapon_caps: list[tuple[str, np.ndarray, np.ndarray, float]] = []
         self.shields: list[tuple[str, np.ndarray, np.ndarray, float, float]] = []
+        self.skirts: list[tuple[float, float, tuple[float, float] | None]] = []
         self.parts: dict[str, list[tuple[int, int]]] = {}
         self._main = self.m
         self._make_skel()
@@ -803,6 +806,10 @@ class Body:
             for j, (idx, _, _) in enumerate(rings[-1]):
                 d = jag * s * (0.25 + 0.75 * rng.random()) * (1.0 if j % 2 else 0.3)
                 self.m.verts[idx] = self.m.verts[idx] + v3(0, 0, -d)
+        if self.m is self._main:
+            # (the highest hem point: a tattered hem only counts where it is shortest)
+            self.skirts.append((max(float(self.m.verts[idx][2]) for idx, _, _ in rings[-1]), float(yc_bot),
+                                None if arc is None else (float(arc[0]), float(arc[1]))))
         return centers, radii
 
     def mistcloak(self, *, z_hem, z_collar, n_strips, len_range, color, color_dark, arc=(128, 412),

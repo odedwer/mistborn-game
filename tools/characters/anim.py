@@ -189,9 +189,15 @@ STYLES = {
                        "spine_lean": 9, "head_pitch": -6, "r_shrug": 6, "l_shrug": 6},
                  stride=1.1, swing=0.8, hunch=9.0, wide=0.035, weapon_r=True),
     "coinshot": dict(base={"r_elbow": 20, "l_elbow": 18, "r_abd": 6, "l_abd": 6}, stride=1.0, swing=1.0, hunch=0.0),
-    "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 58, "r_flex": 6, "l_elbow": 20, "spine_lean": 6,
-                             "head_pitch": 8, "r_wrist": -10},
-                       stride=1.12, swing=0.7, hunch=6.0, robe=True, weapon_r=True),
+    # The axe is carried like the guard's spear: forearm level, haft upright
+    # beside the shoulder, arm held (not swung) in the gaits. With the old
+    # half-bent elbow (58) the haft leant ~40 degrees forward in idle and
+    # swung 10-54 degrees through walk and run. The forearm twist stands it
+    # upright from the front too (it leant ~12 degrees in towards the face).
+    "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 85, "r_flex": 6, "l_elbow": 20, "spine_lean": 6,
+                             "head_pitch": 8, "r_wrist": 0, "r_wtwist": 12},
+                       arm_lock={"r"}, crouch_carry=True, stride=1.12, swing=0.7, hunch=6.0, robe=True,
+                       weapon_r=True),
     # ---- NPCs (crew, nobles, obligators, skaa)
     "kelsier": dict(base={"r_elbow": 16, "l_elbow": 14, "r_abd": 9, "l_abd": 9, "head_pitch": -4, "spine_lean": -2},
                     stride=1.06, swing=1.0, hunch=0.0),
@@ -241,6 +247,17 @@ def base_params(style):
 
 
 # --------------------------------------------------------------------- gaits
+CARRY_K = 0.6  # share of the torso's forward lean a carried weapon's wrist takes back
+CARRY_ABD = 0.2  # extra abduction of a carried weapon's arm (deg per deg of gait lean)
+CROUCH_CARRY_ABD = 6.0  # extra abduction of a carried weapon's arm in the crouch
+
+
+def carry_tilt(lean):
+    """Wrist extension (deg) that keeps a carried weapon's tilt when the torso
+    leans `lean` degrees further forward than in idle."""
+    return CARRY_K * lean
+
+
 WEAPON_PUMP = 0.45  # share of the run/sprint elbow pump on a swinging weapon arm
 WEAPON_TIP = 0.6  # wrist tip (deg per deg of forward swing) on a swinging weapon arm
 
@@ -280,6 +297,15 @@ def gait(t, T, base, S: Skel, *, stride, lift, duty, bob, drop, lean, arm_amp, e
         else:
             sw = -math.cos(2 * math.pi * (ph + (0.0 if side > 0 else 0.5))) * arm_amp * 0.15
             p[f"{s}_flex"] = base.get(f"{s}_flex", 0.0) + sw
+            if s == "r" and st.get("weapon_r", False):
+                # A carried weapon (spear, staff, axe) stays near upright: the
+                # wrist takes back the run's forward lean and half the arm's
+                # sway, so the shaft doesn't tip 20-35 degrees forward in a
+                # sprint and the clip blends with idle without a snap.
+                p[f"{s}_wrist"] = (base.get(f"{s}_wrist", 0.0) + carry_tilt(lean + st.get("hunch", 0.0) * 0.3)
+                                   - 0.5 * sw)
+                # and swings a little wider as the knee lift grows
+                p[f"{s}_abd"] = base.get(f"{s}_abd", 8.0) + CARRY_ABD * lean
     mid = duty / 2
     p["hips_z"] = -drop + bob * math.cos(4 * math.pi * (ph - mid))
     p["hips_x"] = sway * math.cos(2 * math.pi * (ph - mid))
@@ -364,6 +390,15 @@ def make_anims(style: str, S: Skel):
                 p[f"{s}_flex"] = base.get(f"{s}_flex", 0.0) + 22
                 p[f"{s}_elbow"] = base.get(f"{s}_elbow", 12.0) + 30
                 p[f"{s}_abd"] = base.get(f"{s}_abd", 8.0) + 6
+            elif s == "r" and STYLES[style].get("weapon_r", False):
+                # The carried weapon swings a little wider so the rising thigh
+                # clears the spear and staff (it came within 7 mm).
+                p[f"{s}_abd"] = base.get(f"{s}_abd", 8.0) + CROUCH_CARRY_ABD
+                if STYLES[style].get("crouch_carry", False):
+                    # the short axe stays upright in the crouch too (a long
+                    # spear or staff stood up this way drove its butt into the
+                    # shin)
+                    p[f"{s}_wrist"] = p.get(f"{s}_wrist", 0.0) + carry_tilt(p["hips_lean"] + 12)
         return p
 
     def crouch_idle(t, T=3.0):
@@ -592,13 +627,17 @@ def make_anims(style: str, S: Skel):
 
     blocks = {
         "haze": {"l_flex": 70, "l_abd": 25, "l_elbow": 95, "l_twist": 75, "spine_twist": 10, "spine_lean": 6,
-                 "r_flex": -10, "hips_z": -0.05 * k, "l_fy": 0.12 * k},
+                 "r_flex": -10, "r_wrist": 8, "hips_z": -0.05 * k, "l_fy": 0.12 * k},
         "guard": {"r_flex": 35, "r_abd": 40, "r_elbow": 80, "r_twist": 60, "r_wrist": -10, "l_flex": 40,
                   "l_elbow": 90, "l_abd": 30, "spine_lean": 4, "hips_z": -0.05 * k, "l_fy": 0.12 * k},
     }
-    bk = blocks.get(style, {"r_flex": 65, "l_flex": 70, "r_abd": 28, "l_abd": 28, "r_elbow": 115,
-                            "l_elbow": 118, "r_twist": 50, "l_twist": 50, "spine_lean": 8, "head_pitch": 12,
-                            "hips_z": -0.06 * k, "l_fy": 0.1 * k, "r_fy": -0.05 * k})
+    guard_up = {"r_flex": 65, "l_flex": 70, "r_abd": 28, "l_abd": 28, "r_elbow": 115, "l_elbow": 118,
+                "r_twist": 50, "l_twist": 50, "spine_lean": 8, "head_pitch": 12, "hips_z": -0.06 * k,
+                "l_fy": 0.1 * k, "r_fy": -0.05 * k}
+    # (the Inquisitor keeps the wrist of his old carry, so the raised axe stays
+    # where it was, clear of his head)
+    blocks["inquisitor"] = dict(guard_up, r_wrist=-10)
+    bk = blocks.get(style, guard_up)
 
     def block(t):
         return keyed([(0.0, {}), (0.12, bk), (0.6, bk), (0.85, {})], t, base)
@@ -688,7 +727,9 @@ def make_anims(style: str, S: Skel):
             # at chest height beside the body, below the shoulder and the
             # pushing forearm (held up by the shoulder, the blade overlapped
             # the jaw from the side).
-            weapon = {"r_abd": 8, "r_flex": 0, "r_elbow": 20, "r_twist": 0, "r_wrist": 60}
+            # (no forearm twist here: the carry's twist swung the haft's butt
+            # to within 1 cm of the robe)
+            weapon = {"r_abd": 8, "r_flex": 0, "r_elbow": 20, "r_twist": 0, "r_wrist": 60, "r_wtwist": 0}
 
     def push(t):
         hold = dict(palm_out, r_flex=palm_out["r_flex"] - 3, spine_twist=palm_out["spine_twist"] - 2,
