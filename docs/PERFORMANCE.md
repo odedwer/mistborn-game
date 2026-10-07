@@ -214,3 +214,97 @@ looks straight down. `--time` is read by the TimeOfDay autoload (11 = day,
 (0.3 s world setup, 11 units, 236k primitives). Each shot prints its unit
 count, primitives and draw calls. Distant skyline and mist are
 missing by design, so use the full preview for skyline shots.
+
+## Test suite
+
+`tools/run_tests.sh` runs everything CI runs (`.github/workflows/ci.yml`
+calls it as is):
+
+- the Godot suite, `tests/test_*.gd` through `tests/run_tests.gd`, split
+  over `TEST_JOBS` headless Godot processes ("shards", default: CPU cores,
+  at most 4). The shards share a claim directory: each takes the next test
+  file nobody has claimed (an atomic `mkdir`), heaviest first by the
+  runner's `FILE_WEIGHTS`, so they balance themselves. A file always runs
+  whole, its tests in order, in one process;
+- at the same time, the Python clearance tests (`tools/characters`, numpy
+  only), split over 2 processes by `tools/characters/run_parallel.py`.
+
+The shard logs are printed one after the other at the end, then the
+failures again, the totals and the merged tables of the slowest files and
+tests. The run fails on any failed test, a shard that exits non-zero or
+prints no summary (a crash), a test file that no shard ran, or a failed
+Python test.
+
+| Command | What it does |
+|---|---|
+| `tools/run_tests.sh` | The whole suite, sharded. |
+| `tools/run_tests.sh <filter>` | Only the Godot test files whose name contains `<filter>`. No Python tests. |
+| `TEST_JOBS=1 tools/run_tests.sh` | The Godot suite in one process, its output streamed live (the old behaviour). |
+| `TEST_SLOWEST=<n> tools/run_tests.sh` | `<n>` rows in the slowest files/tests tables (default 10). |
+| `godot --headless -s res://tests/run_tests.gd -- [filter] [--reverse \| --shuffle=<seed>]` | One runner. `--reverse` and `--shuffle` change the file order, to check that no file depends on what ran before it. |
+
+Every test that takes 2 s or more prints its time under its `ok` line.
+
+### Timing
+
+Measured on the 4-core dev container. The GitHub `ubuntu-latest` runner for
+this public repository also has 4 vCPUs (and 16 GB), so CI uses 4 shards.
+One shard peaks at about 580 MB (the story sweep).
+
+| | Before | After |
+|---|---|---|
+| `tools/run_tests.sh`, wall | about 8 min (423 s Godot, then 78 s Python) | 68-76 s (6 runs) |
+| Godot suite in one process | 423 s | 178 s |
+| Python clearance tests | 70-78 s, after the Godot suite | 37 s idle, 64-71 s next to the shards |
+
+Slowest files, one process, before -> after:
+
+| File | Before | After |
+|---|---|---|
+| `test_story_sweep.gd` | 124.0 s | 41.5 s |
+| `test_world_gen.gd` | 64.4 s | 4.2 s |
+| `test_traversal.gd` | 60.6 s | 40.4 s |
+| `test_soak.gd` | 50.9 s | 30.7 s |
+| `test_open_world_content.gd` | 44.3 s | 3.2 s |
+| `test_e2e_mission.gd` | 29.3 s | 7.2 s |
+| `test_crowd_member.gd` | 9.7 s | 9.7 s |
+| `test_characters.gd` | 8.8 s | 8.7 s |
+
+The slowest tests are now `test_story_sweep` (41 s: every story mission in
+the real game scene), `test_soak_full_game` (31 s: 1800 frames) and
+`test_route_is_traversable_with_steel_jumps` (32 s: about 1900 frames of
+flight). The headless runner keeps real time, so a test that waits N physics
+frames takes at least N / 60 s: these three are bound by their frame counts,
+not by the CPU, and they set the floor of a sharded run (about 45-65 s with
+four shards sharing the CPU).
+
+### What made it faster
+
+- **A 20 s wait whenever a world was freed mid-bake.** `ChunkInstancer.wait_for_bake`
+  waited for `NavigationServer3D.is_baking_navigation_mesh` to clear, but
+  that flag only clears when the server syncs on the main thread, which the
+  wait was blocking: it always ran to its 10 s timeout, twice (the streamer's
+  `_exit_tree`, then `unload_all`). It now waits for the baked polygons,
+  which the worker stores into the mesh when it is done (about 70 ms). That
+  was most of `test_world_gen`, `test_open_world_content`,
+  `test_e2e_mission` and `test_story_sweep`, and also a 20 s freeze in the
+  game when a world was freed during a bake.
+- **Sharding and running the Python tests alongside**, as above.
+
+### Bugs the faster runs found
+
+Running the shards in parallel changed the timing and which test file ran
+last in a process, and showed two latent bugs (each now has a regression
+test):
+
+- **The camera's landing dip blew up in a long frame during atium.** It is
+  an explicit spring step on `delta / time_scale`, unstable past about
+  0.1 s: under CPU load the soak's camera went to y = 1e30, then NaN, and a
+  coin throw aimed along a zero vector. It now integrates in steps of at
+  most 1/60 s (one step at 60 fps, as before).
+- **`WorldStreamer.load_now` dropped the streamer's other in-flight tasks.**
+  It cleared every task id, so units still generating in the background
+  were never waited for (Godot aborted at exit after a fast travel, about 1
+  run in 5 when `test_open_world_content` was the last file of a process)
+  and were generated again; and it skipped wanted units that were already
+  generating, so they did not load synchronously.

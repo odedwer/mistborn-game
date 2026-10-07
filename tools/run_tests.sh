@@ -8,7 +8,8 @@
 # - Python clearance tests (tools/characters, numpy only; see
 #   tools/characters/clearance.py) run at the same time, without a filter
 #   only, split over 2 processes by tools/characters/run_parallel.py (about
-#   40 s; 70 s in one process). Skipped when numpy is missing.
+#   37 s on an idle machine, 65-70 s next to the shards; 70 s in one
+#   process). Skipped when numpy is missing.
 #
 # Each shard's output is printed when the suite finishes (a shard at a time,
 # so it stays readable), then the failures again, the totals and the slowest
@@ -18,8 +19,10 @@
 #                sequential run, its output streamed live).
 # TEST_SLOWEST=<n>  rows in the slowest files/tests tables (default 10).
 #
-# Wall time on a 4-core machine (see docs/PERFORMANCE.md "Test suite"):
-# about 2 min with the defaults; about 4.5 min with TEST_JOBS=1.
+# Wall time on the 4-core dev container (see docs/PERFORMANCE.md "Test
+# suite"): about 75 s with the defaults (4 shards; the Python tests are the
+# last to finish), about 3 min with TEST_JOBS=1. It was about 8 min before
+# the suite was sharded and a 20 s wait on freeing a world mid-bake was fixed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 GODOT="${GODOT:-godot}"
@@ -33,16 +36,15 @@ t_start=$(date +%s)
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/mistborn_tests.XXXXXX")
 py_pid=""
+pids=()
 cleanup() {
-	[ -n "$py_pid" ] && kill "$py_pid" 2>/dev/null || true
+	# Interrupted: stop whatever is still running.
+	for p in "${pids[@]}" $py_pid; do kill "$p" 2>/dev/null || true; done
 	rm -rf "$work"
 }
 trap cleanup EXIT
 
-# Import once so class_name globals and resources are registered.
-"$GODOT" --headless --import >/dev/null 2>&1 || true
-
-# Python clearance tests, in the background.
+# Python clearance tests, in the background (first: they need no import).
 py_status=0
 py_ran=0
 if [ -z "$FILTER" ]; then
@@ -55,13 +57,15 @@ if [ -z "$FILTER" ]; then
 	fi
 fi
 
+# Import once so class_name globals and resources are registered.
+"$GODOT" --headless --import >/dev/null 2>&1 || true
+
 godot_status=0
 if [ "$TEST_JOBS" -eq 1 ]; then
 	"$GODOT" --headless -s res://tests/run_tests.gd -- "$FILTER" || godot_status=$?
 else
 	echo "Godot suite: $TEST_JOBS shards${FILTER:+, filter '$FILTER'}..."
 	mkdir "$work/claims"
-	pids=()
 	for i in $(seq 1 "$TEST_JOBS"); do
 		"$GODOT" --headless -s res://tests/run_tests.gd -- "$FILTER" --claim-dir="$work/claims" \
 			>"$work/shard$i.log" 2>&1 &
@@ -73,6 +77,7 @@ else
 		wait "${pids[$((i - 1))]}" || code=$?
 		codes+=("$code")
 	done
+	pids=()
 	passed=0
 	failed=0
 	files_run=0
