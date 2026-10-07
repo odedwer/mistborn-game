@@ -464,9 +464,15 @@ func poll_navigation() -> bool:
 
 
 ## Blocks until an in-flight navmesh bake finishes (used on shutdown).
+## `is_baking_navigation_mesh` only clears when the NavigationServer syncs on
+## the main thread, which this loop is blocking: it never clears here. The
+## worker stores the baked polygons into `nav_mesh` when it is done, so wait
+## for those instead (it used to spin the full `max_msec`, twice per world
+## freed mid-bake: 20 s).
 func wait_for_bake(max_msec := 10000) -> void:
 	var t0 := Time.get_ticks_msec()
-	while nav_mesh != null and NavigationServer3D.is_baking_navigation_mesh(nav_mesh):
+	while nav_mesh != null and NavigationServer3D.is_baking_navigation_mesh(nav_mesh) \
+			and nav_mesh.get_polygon_count() == 0:
 		if Time.get_ticks_msec() - t0 > max_msec:
 			break
 		OS.delay_msec(2)

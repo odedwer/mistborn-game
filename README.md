@@ -108,10 +108,12 @@ A 3D action game exploring the allomantic magic system from the Mistborn series,
 ### Running Tests
 
 ```bash
-bash tools/run_tests.sh
+bash tools/run_tests.sh            # everything, about 75 s on 4 cores
+bash tools/run_tests.sh traversal  # only tests/test_*traversal*.gd
+TEST_JOBS=1 bash tools/run_tests.sh  # one Godot process, output streamed live
 ```
 
-Tests are GDScript headless tests in `tests/test_*.gd`, extending `res://tests/test_case.gd`.
+Tests are GDScript headless tests in `tests/test_*.gd`, extending `res://tests/test_case.gd`, plus the Python clearance tests in `tools/characters` (numpy). The Godot files are split over up to 4 headless processes and the Python tests run alongside; the run prints the slowest files and tests at the end. See "Test suite" in `docs/PERFORMANCE.md`.
 
 ## Project Layout
 

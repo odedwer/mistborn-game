@@ -116,3 +116,17 @@ func test_impact_damage_and_pewter() -> void:
 	player.velocity = Vector3(0, -32, 0)
 	await physics_frames(90)
 	assert_almost(player.health.current, hp, 0.5, "pewter prevents fall damage")
+
+
+## A long frame during atium (real_dt = delta / time_scale) must not blow up
+## the landing-dip spring: it once sent the camera to y = 1e30, then NaN, and
+## a coin throw then aimed along a zero vector.
+func test_camera_dip_stays_bounded_in_a_hitch_during_atium() -> void:
+	var cam := player.camera_rig
+	Engine.time_scale = 0.2
+	cam.add_dip(0.5)
+	for i in 30:
+		cam._process(0.05)  # 0.25 s of real time per frame
+	Engine.time_scale = 1.0
+	assert_lt(absf(cam._dip), 0.05, "dip settled back (%f)" % cam._dip)
+	assert_true(is_finite(cam.aim_origin().y), "camera stays finite")

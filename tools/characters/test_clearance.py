@@ -4,7 +4,8 @@ everyone lying dead on the floor.
 
 Run: python3 -m unittest discover -s tools/characters -p 'test_*.py'
      (or pytest tools/characters/test_clearance.py). About a minute.
-tools/run_tests.sh runs it after the Godot suite when numpy is installed.
+tools/run_tests.sh runs it (split over 2 processes by run_parallel.py) alongside
+the Godot suite when numpy is installed.
 """
 from __future__ import annotations
 

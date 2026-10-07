@@ -186,3 +186,38 @@ func test_navigation_bakes() -> void:
 	assert_gt(float(path.size()), 1.0, "street path found")
 	w.queue_free()
 	await get_tree().process_frame
+
+
+## load_now while the streamer is generating units in the background: the
+## wanted units already generating are loaded too (they used to be skipped),
+## and the other in-flight tasks are still tracked (their ids used to be
+## dropped, so they were never waited for: a crash at exit after a fast
+## travel).
+func test_load_now_during_background_streaming() -> void:
+	var w := _make_world()
+	var far := Vector3(900, 0, 400)  # the docks, far from the spawn
+	w.streamer.fallback_focus = far
+	w.streamer.update_interval = 0.0
+	var inflight: Array = []
+	for i in 600:
+		await get_tree().process_frame
+		if w.streamer._tasks.size() >= 2:
+			inflight = w.streamer._tasks.keys()
+			break
+	assert_true(inflight.size() >= 2, "background generation started")
+	# Load one of the units being generated, plus its neighbours.
+	var key: String = inflight[0]
+	var parts := key.substr(2).split(",")
+	var p := far
+	if key.begins_with("c:"):
+		var r := w.plan.chunk_rect(Vector2i(int(parts[0]), int(parts[1])))
+		p = Vector3(r.get_center().x, 0.0, r.get_center().y)
+	var wanted: Array = w.streamer.wanted_units(p, 1.0).keys()
+	w.streamer.load_now(p, 1.0)
+	for k: String in wanted:
+		assert_true(w.streamer.is_loaded(k), "%s loaded by load_now" % k)
+	for k: String in inflight:
+		assert_true(w.streamer.is_loaded(k) or w.streamer._tasks.has(k),
+				"%s: still tracked (or loaded) after load_now" % k)
+	w.queue_free()
+	await get_tree().process_frame

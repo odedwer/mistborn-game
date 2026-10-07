@@ -180,14 +180,19 @@ func load_now(p: Vector3, radius: float) -> void:
 	for k: String in keys:
 		if not _units.has(k):
 			todo.append(k)
-	var ids: Array[int] = []
+	# Wait for the units already generating in the background too (they used
+	# to be skipped, so they did not load here), and forget only the tasks
+	# waited for: clearing every task lost the ids of other units still
+	# generating, which were then never waited for (a crash at exit after a
+	# fast travel) and generated a second time.
+	var ids: Dictionary = {}
 	for k: String in todo:
-		if _prebuilt.has(k) or _tasks.has(k):
+		if _prebuilt.has(k):
 			continue
-		ids.append(_start_task(k))
-	for id in ids:
-		WorkerThreadPool.wait_for_task_completion(id)
-	_tasks.clear()
+		ids[k] = _tasks[k] if _tasks.has(k) else _start_task(k)
+	for k: String in ids:
+		WorkerThreadPool.wait_for_task_completion(ids[k])
+		_tasks.erase(k)
 	for k: String in todo:
 		var data := _take_result(k)
 		if data == null:
