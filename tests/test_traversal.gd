@@ -7,7 +7,9 @@ extends TestCase
 ##    air control and landing) is placed at the start of each leg, and a small
 ##    autopilot holds Push on the best anchor through the Allomancer API
 ##    (anchor chosen with LineTargeting's traversal scoring, like the game's
-##    traversal assist) until the player lands on the next objective.
+##    traversal assist) until the player lands on the next objective. Near
+##    the goal it switches to terminal guidance: it steers and Pushes to fix
+##    its velocity error rather than pointing at the goal, so it can't orbit.
 
 const ROUTE: Array[StringName] = [&"player_spawn", &"rooftop_lesson_1", &"rooftop_lesson_2", &"cp_1",
 		&"cp_2", &"cp_3", &"keep_courtyard"]
@@ -18,6 +20,10 @@ const MAX_ANCHOR_GAP := 22.0
 const LEG_FRAMES := 1500
 ## Objective triggers are 4 m spheres; the capsule must reach inside.
 const REACH := 3.5
+## Terminal guidance (see `_fly_leg`) within this horizontal distance of the
+## goal, aiming to arrive at no more than this horizontal speed.
+const TERMINAL_RADIUS := 30.0
+const TERMINAL_SPEED := 14.0
 
 var world: LuthadelWorld
 var player: Player
@@ -100,6 +106,20 @@ func test_route_is_traversable_with_steel_jumps() -> void:
 			return
 
 
+## The last leg once took ~950 frames inside the full route but timed out on
+## its own: the bot orbited the courtyard and landed by chance, so the result
+## hung on what the earlier legs had left behind. Fly it from a fresh world too.
+func test_courtyard_leg_from_a_fresh_world() -> void:
+	var pts := await _setup()
+	var i := ROUTE.find(&"cp_3")
+	player.respawn(Transform3D(Basis.IDENTITY, pts[i] + Vector3.UP * 0.1))
+	await physics_frames(2)
+	var result := await _fly_leg(pts[i + 1])
+	print("    %s -> %s (fresh world): %s" % [ROUTE[i], ROUTE[i + 1], result["log"]])
+	assert_true(result["ok"], "steel-jumped %s -> %s from a fresh world (%s)" % [ROUTE[i], ROUTE[i + 1], result["log"]])
+	assert_false(player.dead, "survived %s -> %s" % [ROUTE[i], ROUTE[i + 1]])
+
+
 ## Distance from `target` to the player's capsule axis.
 func _capsule_distance(target: Vector3) -> float:
 	var p := player.global_position
@@ -132,35 +152,66 @@ func _fly_leg(goal: Vector3) -> Dictionary:
 		if _capsule_distance(goal) < REACH:
 			Input.action_release(&"move_forward")
 			return {"ok": true, "log": "%d frames, %d push frames, apex %.1f m, landed %s" % [f, pushes, max_h, p]}
-		# Face and steer toward the goal (air control brakes an overshoot).
+		var v := player.velocity
+		var hv := Vector2(v.x, v.z)
+		var dirh := Vector2(to.x, to.z) / maxf(h, 0.001)
+		# Terminal guidance: close to the goal and above it, aim for the
+		# horizontal velocity that drops us onto it (`want`) instead of just
+		# pointing at it. Air control only adds speed along the input, so
+		# steering at the goal never removes sideways speed, and a Push
+		# picked to point at the goal from off-axis adds more: the bot used
+		# to orbit the courtyard for hundreds of frames, landing (or timing
+		# out) by chance.
+		var t_fall := _fall_time(p.y, v.y, goal.y + 0.8)
+		var terminal := not on_floor and h < TERMINAL_RADIUS and is_finite(t_fall)
+		var err := Vector2.ZERO
+		if terminal:
+			err = dirh * minf(h / maxf(t_fall, 0.25), TERMINAL_SPEED) - hv
+		# Face and steer: toward the goal, or along the velocity error near it.
+		var steer := err if terminal and err.length() > 0.5 else Vector2(to.x, to.z)
 		if h > 0.3:
-			player.camera_rig.yaw = atan2(-to.x, -to.z)
+			player.camera_rig.yaw = atan2(-steer.x, -steer.y)
 			Input.action_press(&"move_forward")
 		else:
 			Input.action_release(&"move_forward")
 		# On the right level and close: just walk/drop in.
 		var level := p.y >= goal.y - 0.6
 		# Blocked on the ground (a parapet, a kerb): hop.
-		if on_floor and Vector2(player.velocity.x, player.velocity.z).length() < 1.0 and h > 1.0 \
-				and f - last_jump > 20:
+		if on_floor and hv.length() < 1.0 and h > 1.0 and f - last_jump > 20:
 			Input.action_press(&"jump")
 			last_jump = f
 		if on_floor and level and h < 12.0:
 			continue
-		if not on_floor and not _needs_push(p, player.velocity, goal):
-			continue
-		if on_floor and launched and h < 4.0:
-			continue
-		var dir := Vector3(to.x, 0.0, to.z).normalized() if h > 0.5 else Vector3.ZERO
-		var climb := clampf((goal.y + 4.0 - p.y) / 6.0, 0.2, 1.6)
-		var desired := (dir + Vector3.UP * climb).normalized()
+		var desired: Vector3
+		var intensity := 1.0
+		if terminal:
+			# Push only for what air control can't fix before we land, and
+			# only as hard as needed: every anchor in reach is below us, so a
+			# Push also lifts us, and a full one sends us round again.
+			var fixable := player.air_accel * t_fall * 0.7
+			if err.length() <= fixable:
+				continue
+			var need := err.length() - fixable
+			intensity = clampf(need / 10.0, 0.25, 1.0)
+			var e := err / err.length()
+			# Short of airtime for this distance: climb as well; else keep low.
+			var rise := 0.3 if h / maxf(t_fall, 0.25) > TERMINAL_SPEED else -0.4
+			desired = Vector3(e.x, rise, e.y).normalized()
+		else:
+			if not on_floor and not _needs_push(p, v, goal):
+				continue
+			if on_floor and launched and h < 4.0:
+				continue
+			var dir := Vector3(dirh.x, 0.0, dirh.y) if h > 0.5 else Vector3.ZERO
+			var climb := clampf((goal.y + 4.0 - p.y) / 6.0, 0.2, 1.6)
+			desired = (dir + Vector3.UP * climb).normalized()
 		var anchor := _pick.pick_traversal_anchor(al.lines_in_range(), al.line_origin(), desired,
 				al.current_range(), player.mass_kg)
 		if anchor == null:
 			continue
 		# Flare for long legs when an ordinary Push can't carry us.
-		al.set_flaring(h > 45.0 and player.velocity.length() < 20.0)
-		if al.push(anchor, 1.0, get_physics_process_delta_time()) > 0.0:
+		al.set_flaring(h > 45.0 and v.length() < 20.0)
+		if al.push(anchor, intensity, get_physics_process_delta_time()) > 0.0:
 			pushes += 1
 			launched = true
 	al.set_flaring(false)
@@ -187,3 +238,13 @@ func _needs_push(p: Vector3, v: Vector3, goal: Vector3) -> bool:
 	# Air control adds up to ~8 m/s toward the goal.
 	var reach := along * t + minf(8.0 - minf(along, 8.0), 14.0 * t) * t * 0.5
 	return reach < h - 1.0
+
+
+## Seconds until a body at height `y` moving up at `vy` falls to `floor_y`
+## (INF if it can't get down there: it is below it and can't climb that far).
+static func _fall_time(y: float, vy: float, floor_y: float) -> float:
+	var disc := vy * vy + 2.0 * 9.81 * (y - floor_y)
+	if disc < 0.0:
+		return INF
+	var t := (vy + sqrt(disc)) / 9.81
+	return t if t > 0.0 else INF
