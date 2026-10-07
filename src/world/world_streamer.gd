@@ -180,6 +180,14 @@ func load_now(p: Vector3, radius: float) -> void:
 	for k: String in keys:
 		if not _units.has(k):
 			todo.append(k)
+			continue
+		# Already instancing over several frames: finish it now (it used to be
+		# skipped, so load_now could return with a wanted unit half built).
+		var building: ChunkInstancer = _units[k]
+		if not building.is_done() and _building.has(building):
+			_building.erase(building)
+			building.step(1 << 30)
+			_on_instanced(building)
 	# Wait for the units already generating in the background too (they used
 	# to be skipped, so they did not load here), and forget only the tasks
 	# waited for: clearing every task lost the ids of other units still

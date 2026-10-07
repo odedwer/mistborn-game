@@ -193,6 +193,31 @@ func test_navigation_bakes() -> void:
 ## and the other in-flight tasks are still tracked (their ids used to be
 ## dropped, so they were never waited for: a crash at exit after a fast
 ## travel).
+## Regression: load_now skipped a wanted unit that was already instancing over
+## several frames, so it returned with that unit half built.
+func test_load_now_finishes_a_unit_still_instancing() -> void:
+	var w := _make_world()
+	var far := Vector3(900, 0, 400)
+	w.streamer.fallback_focus = far
+	w.streamer.update_interval = 0.0
+	w.streamer.frame_budget_usec = 1  # one build step per frame
+	var wanted: Array = w.streamer.wanted_units(far, 1.0).keys()
+	var partial := ""
+	for i in 600:
+		await get_tree().process_frame
+		for k: String in wanted:
+			if w.streamer.get_unit(k) != null and not w.streamer.is_loaded(k):
+				partial = k
+		if partial != "":
+			break
+	assert_true(partial != "", "a wanted unit is instancing over several frames")
+	w.streamer.load_now(far, 1.0)
+	for k: String in wanted:
+		assert_true(w.streamer.is_loaded(k), "%s loaded by load_now" % k)
+	w.queue_free()
+	await get_tree().process_frame
+
+
 func test_load_now_during_background_streaming() -> void:
 	var w := _make_world()
 	var far := Vector3(900, 0, 400)  # the docks, far from the spawn
