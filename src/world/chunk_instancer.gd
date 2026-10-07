@@ -278,6 +278,16 @@ func _add_static_metal(i: int) -> void:
 	static_body.add_child(met)
 
 
+## Height of a lamp post's Metallic anchor: the iron at 3 m, as on a full
+## post, or the lantern (3.75 m x scale) when the post is too short for that.
+## A 0.8 garden lamp keeps its anchor at 3 m. Scaling the anchor down to
+## 2.4 m with the post cost test_traversal's cp_3 -> keep_courtyard jump 140
+## frames: the bot, dropping onto Keep Venture's approach walk, pushed off the
+## low anchor from 4 m above it and was thrown back over the goal.
+static func lamp_anchor_height(s: float) -> float:
+	return minf(3.0, 3.75 * s)
+
+
 func _add_lamp(i: int) -> void:
 	var lp: Dictionary = data.lamp_posts[i]
 	var s := float(lp.get("scale", 1.0))
@@ -298,7 +308,7 @@ func _add_lamp(i: int) -> void:
 	var met := Metallic.new()
 	met.metal_mass = 60.0
 	met.anchored = true
-	met.position = Vector3(0, 3.0 * s, 0)
+	met.position = Vector3(0, lamp_anchor_height(s), 0)
 	body.add_child(met)
 	root.add_child(body)
 

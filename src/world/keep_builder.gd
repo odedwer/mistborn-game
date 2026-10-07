@@ -350,6 +350,7 @@ static func _courtyard_layout(data: ChunkBuildData, o: Vector3) -> void:
 	# doesn't have a lantern filling the lower frame. The inner pair stays at
 	# z -162: test_traversal's cp_3 -> keep_courtyard steel jump uses it to
 	# come down onto the walk (at -164.5 the bot hung in the air pushing).
+	# Their anchors stay at a full post's 3 m (ChunkInstancer.lamp_anchor_height).
 	for z: float in [-157.0, -162.0]:
 		_lamp(data, o + Vector3(-3.6, 0, z), Vector2(1, 0), true, false, 0.8)
 		_lamp(data, o + Vector3(3.6, 0, z), Vector2(-1, 0), true, false, 0.8)
