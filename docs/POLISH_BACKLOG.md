@@ -266,3 +266,25 @@ Follow-ups:
 - The checker doesn't cover the legs, and models the shield as a flat disc without its boss.
 - **Done:** CI installs `python3-numpy` before the test step, so the clearance test runs there.
 - Tightest remaining gaps: 3.6 cm from the guard's spear and the hazekiller's staff to their skirts (in `sprint` and `block`).
+
+## Review of world pass 9
+
+Merged:
+- **Statues:**
+  - Weathered dark bronze with verdigris (not a Metallic anchor), on a smooth lathed figure: robe, cloak, bent arms, and a standard with a banner.
+  - The plinth is dressed stone with mouldings. Keep Venture's fountain uses the same figure in iron.
+  - **Spacing:** only every other qualifying avenue segment gets a statue, and the slot is jittered ±24 m. Gaps on a line now run 232–1,780 m (they were a fixed 128 m), and the planting draws are untouched.
+- **Modillion cost:**
+  - Modillions are grouped in 24 m cells, each culled beyond 64 m, on a 16-triangle mesh.
+  - Primitives fell 11–12% at all four test poses with draw calls flat. The merchant street is within 2% of its count before pass 8.
+  - `tools/preview.gd` now prints draw calls.
+- **Steel-jump margin:** `cp_3 → keep_courtyard` takes 949 of 1500 frames again (it was 1087). The cause was that scaling a lamp lowered its Metallic anchor. Scaled lamps now keep the anchor at full post height.
+- **Shop signs:** 1,078 of 4,480 signs were clashing with balconies or door lanterns. Clashing lots now try the other pier or get no sign. The merchant share went from 0.45 to 0.52, giving 4,351 signs and 0 clashes.
+
+302 Godot tests and 5 clearance tests green. Reviewed p9w_statue_close_after and p9w_shop_sign_close_after.
+
+Follow-ups:
+- **Fragile traversal leg:** run on its own, `cp_3 → keep_courtyard` times out, and its frame count swings by about 150 with small courtyard changes. Make that leg's start state deterministic, or route it through a reliable anchor, so it doesn't depend on the previous leg's landing.
+- **Statue count:** down from 58 to 47 after the every-other rule. Raise the `statues` shares slightly if density matters.
+- **Modillion popping:** they pop out at 60–90 m with no fade. It is small, but a distance fade (`visibility_range_fade_mode`) would hide it.
+- **Statue head:** still a featureless egg. In shade, the bronze statue reads as a dark silhouette.
