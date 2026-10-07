@@ -135,7 +135,37 @@ These are all MultiMesh instances, with no new merged geometry. A noble or merch
 | noble | 10.6-10.8 ms | 11.4-12.5 ms |
 | merchant | 12.3 ms | 12.7-13.2 ms |
 
-A merchant preview frame draws about 15% more primitives (357k -> 414k at street level), and most of that is the modillions.
+A merchant preview frame draws about 15% more primitives (357k -> 414k at street level), and most of that is the modillions. World pass 9 brings most of that back (next section).
+
+## World pass 9: modillion cost
+
+Modillions were one MultiMesh per chunk with a 140 m range. A visibility range
+is measured to the AABB centre, so a whole-chunk MultiMesh can't use a short
+range: it would drop brackets right next to the camera or keep the whole
+chunk's set. Two changes:
+
+- **Cells.** `ChunkInstancer.INSTANCE_CELL` splits a kind into 24 m cells, one
+  MultiMesh each. Modillions use a 64 m range (plus the usual 10 m margin)
+  measured to each cell's centre, so every bracket within about 50 m is drawn
+  and none beyond about 90 m. Past 60 m a 0.2 m bracket covers 2-3 px.
+- **Mesh.** Only the eight faces that can be seen: 16 triangles instead of 24.
+  The tops sit on the soffit and the backs sit against the bed moulding and
+  the frieze.
+
+Measured with `tools/preview.gd` at `--time=11`, one process per pose so each
+count is a cold first shot. The tool now also prints draw calls.
+
+| Pose | Before (prims / draws) | After (prims / draws) |
+|---|---|---|
+| merchant street `-374,2,-1990` (the pass 8 pose) | 413.6k / 306 | 364.6k / 304 |
+| merchant avenue from 13 m `-381,13,-1955` | 393.3k / 291 | 346.0k / 292 |
+| merchant cornice close-up `-381,3,-2040` | 480.1k / 326 | 432.7k / 332 |
+| noble street `-451,2,-1155` | 385.0k / 292 | 339.3k / 293 |
+
+That is 11-12% fewer primitives at every pose, with draw calls flat (the cells
+in range replace one draw per chunk). The merchant street pose is back within
+2% of its count before pass 8 (357k). The "after" numbers also include the new
+statue figure (about 600 triangles per statue), which is negligible.
 
 ## Fast preview shots (`tools/preview.gd`)
 
@@ -154,5 +184,6 @@ plane:
 Yaw and pitch are in degrees: yaw 0 looks -Z, -90 looks +X, and pitch -90
 looks straight down. `--time` is read by the TimeOfDay autoload (11 = day,
 22 = night). A Keep Venture courtyard shot takes about 17 s end to end
-(0.3 s world setup, 11 units, 236k primitives). Distant skyline and mist are
+(0.3 s world setup, 11 units, 236k primitives). Each shot prints its unit
+count, primitives and draw calls. Distant skyline and mist are
 missing by design, so use the full preview for skyline shots.

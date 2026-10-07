@@ -73,8 +73,9 @@ func _run() -> void:
 			await process_frame
 		var img := root.get_viewport().get_texture().get_image()
 		img.save_png(s[3])
-		print("preview: %s in %d ms (%d units, %d prims)" % [s[3], Time.get_ticks_msec() - t1,
+		print("preview: %s in %d ms (%d units, %d prims, %d draws)" % [s[3], Time.get_ticks_msec() - t1,
 				world.streamer.call("unit_count"),
-				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)])
+				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)])
 	print("preview: total %d ms" % (Time.get_ticks_msec() - t0))
 	quit()

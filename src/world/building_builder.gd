@@ -196,7 +196,8 @@ const SHOP_SIGNS: Array[StringName] = [&"shop_sign_board", &"shop_sign_medallion
 ## A hanging trade sign over a merchant shopfront (style key `shop_signs` is
 ## the share of lots that get one): on the front face, at the pier between
 ## the first two ground-floor window slots, above the window heads (2.7 m)
-## and below the first-floor sills (4.4 m). Purely visual, no collision: it
+## and below the first-floor sills (4.4 m), never under the balcony or
+## against a door lantern. Purely visual, no collision: it
 ## hangs from 3.45 m down to ~2.75 m, over the pavement, never into a street
 ## the player runs at head height.
 static func _shop_sign(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumberGenerator) -> void:
@@ -215,10 +216,27 @@ static func _shop_sign(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNu
 	var rv: Vector3 = fr[1]
 	var n: Vector3 = fr[2]
 	var spacing := length / float(count)
-	# Left or right end pier, so neighbouring shops don't all line up.
-	var u := spacing if pick != 1 else length - spacing
-	var p := o + rv * u + Vector3.UP * 3.45
-	data.add_instance(SHOP_SIGNS[pick], Transform3D(Basis(rv, Vector3.UP, n), p))
+	# Left or right end pier, so neighbouring shops don't all line up; the
+	# other end if that one is taken by the balcony (centred on the face,
+	# its slab at 3.5 m) or a door lantern (2.9 m, 1.05 m beside the door),
+	# none if both are. A quarter of signs used to hang into one of them.
+	var ends := [spacing, length - spacing] if pick != 1 else [length - spacing, spacing]
+	for u: float in ends:
+		var p := o + rv * u + Vector3.UP * 3.45
+		if _sign_spot_clear(data, p):
+			data.add_instance(SHOP_SIGNS[pick], Transform3D(Basis(rv, Vector3.UP, n), p))
+			return
+
+
+## True if no balcony or wall lantern hangs where a shop sign at `p` would.
+static func _sign_spot_clear(data: ChunkBuildData, p: Vector3) -> bool:
+	for kc: Array in [[&"balcony", 1.45], [&"wall_lantern", 1.1]]:
+		var r: float = kc[1]
+		for xf: Transform3D in data.instances.get(kc[0], []):
+			var q := xf.origin
+			if absf(q.y - p.y) < 1.2 and Vector2(q.x - p.x, q.z - p.z).length() < r:
+				return false
+	return true
 
 
 ## Merchant/noble cornice: a plain frieze band and a deep, projecting crown

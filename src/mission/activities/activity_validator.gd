@@ -79,7 +79,7 @@ func _load_unit(key: String, data: ChunkBuildData) -> void:
 	for m: Dictionary in data.static_metals:
 		anchors.append(m["pos"])
 	for lp: Dictionary in data.lamp_posts:
-		anchors.append((lp["pos"] as Vector3) + Vector3.UP * 3.0 * float(lp.get("scale", 1.0)))
+		anchors.append((lp["pos"] as Vector3) + Vector3.UP * ChunkInstancer.lamp_anchor_height(float(lp.get("scale", 1.0))))
 	_anchors[key] = anchors
 
 

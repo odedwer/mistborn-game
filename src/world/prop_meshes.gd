@@ -94,6 +94,67 @@ static func _limb(b: WorldMeshBuilder, a: Vector3, e: Vector3, r0: float, r1: fl
 		b.add_quad(a + o0 * r0, a + o1 * r0, e + o1 * r1, e + o0 * r1, nm, col, col * 0.85)
 
 
+## Tapered `sides`-gon tube from `a` to `e` (radii r0 -> r1) with smooth
+## normals; `cap` closes the `e` end (a hand, a finial).
+static func _limb_n(b: WorldMeshBuilder, a: Vector3, e: Vector3, r0: float, r1: float, col: Color,
+		sides: int, cap := false) -> void:
+	var d := (e - a).normalized()
+	var u := d.cross(Vector3.UP if absf(d.y) < 0.95 else Vector3.RIGHT).normalized()
+	var v := u.cross(d)
+	var slope := (r0 - r1) / maxf(a.distance_to(e), 0.001)
+	for k in sides:
+		var a0 := TAU * float(k) / float(sides)
+		var a1 := TAU * float(k + 1) / float(sides)
+		var o0 := u * sin(a0) + v * cos(a0)
+		var o1 := u * sin(a1) + v * cos(a1)
+		var n0 := (o0 + d * slope).normalized()
+		var n1 := (o1 + d * slope).normalized()
+		b.add_quad_smooth(a + o0 * r0, a + o1 * r0, e + o1 * r1, e + o0 * r1, n0, n1, n1, n0, col * 0.9, col)
+		if cap:
+			b.add_tri(e + o0 * r1, e + o1 * r1, e + d * r1 * 0.6, col)
+
+
+## A lathed solid around Y with smooth normals. Each ring is
+## [y, rx, rz, z offset, shade]: elliptical cross-sections (wider across the
+## shoulders than front to back) whose centres can lean (a cloak). The top
+## ring is capped unless `cap` is false.
+static func _lathe(b: WorldMeshBuilder, rings: Array, sides: int, col: Color, cap := true) -> void:
+	var n := rings.size()
+	for k in n - 1:
+		var r0: Array = rings[k]
+		var r1: Array = rings[k + 1]
+		var rp: Array = rings[maxi(k - 1, 0)]
+		var rn: Array = rings[mini(k + 2, n - 1)]
+		for i in sides:
+			var a0 := TAU * float(i) / float(sides)
+			var a1 := TAU * float(i + 1) / float(sides)
+			b.add_quad_smooth(_ring_pt(r0, a0), _ring_pt(r0, a1), _ring_pt(r1, a1), _ring_pt(r1, a0),
+					_ring_n(rp, r0, r1, a0), _ring_n(rp, r0, r1, a1), _ring_n(r0, r1, rn, a1), _ring_n(r0, r1, rn, a0),
+					col * float(r0[4]), col * float(r1[4]))
+	if cap:
+		var top: Array = rings[n - 1]
+		var c := Vector3(0, float(top[0]), float(top[3]))
+		for i in sides:
+			var a0 := TAU * float(i) / float(sides)
+			var a1 := TAU * float(i + 1) / float(sides)
+			b.add_tri(_ring_pt(top, a0), _ring_pt(top, a1), c, col * float(top[4]))
+
+
+static func _ring_pt(r: Array, a: float) -> Vector3:
+	return Vector3(sin(a) * float(r[1]), float(r[0]), float(r[3]) + cos(a) * float(r[2]))
+
+
+## Smooth normal at angle `a` of ring `cur`, from the profile slope between
+## its neighbours `prev` and `next`.
+static func _ring_n(prev: Array, cur: Array, next: Array, a: float) -> Vector3:
+	var h := Vector3(sin(a) / float(cur[1]), 0.0, cos(a) / float(cur[2])).normalized()
+	var dr := (_ring_pt(next, a) - _ring_pt(prev, a))
+	var dy := dr.y
+	var out := Vector3(dr.x, 0.0, dr.z).dot(h)
+	var nm := h * dy - Vector3.UP * out
+	return nm.normalized() if nm.length() > 0.0001 else h
+
+
 ## An upright disc (a wheel) facing +-X: `sides`-gon of `radius`, `width` thick.
 static func _prism_x(b: WorldMeshBuilder, center: Vector3, radius: float, width: float, sides: int, col: Color) -> void:
 	for i in sides:
@@ -106,6 +167,12 @@ static func _prism_x(b: WorldMeshBuilder, center: Vector3, radius: float, width:
 		b.add_quad(center + p1 - h, center + p0 - h, center + p0 + h, center + p1 + h, n, col, col)
 		b.add_tri(center + h, center + p0 + h, center + p1 + h, col)
 		b.add_tri(center - h, center + p1 - h, center + p0 - h, col)
+
+
+## One rectangular face centred on `c`, spanning +-`r` (right) and +-`u`
+## (up) as seen from the front; the outward normal is r x u.
+static func _face(b: WorldMeshBuilder, c: Vector3, r: Vector3, u: Vector3, col: Color) -> void:
+	b.add_quad(c - r - u, c + r - u, c + r + u, c - r + u, r.cross(u).normalized(), col, col)
 
 
 static func _box_c(b: WorldMeshBuilder, center: Vector3, size: Vector3, col: Color) -> void:
@@ -121,6 +188,8 @@ static func _build(kind: StringName) -> Mesh:
 	var stone := WorldMeshBuilder.new()
 	var ashlar := WorldMeshBuilder.new()
 	var paint := WorldMeshBuilder.new()
+	var bronze := WorldMeshBuilder.new()
+	var dressed := WorldMeshBuilder.new()
 	match kind:
 		&"lamp_post":
 			_prism(stone, Vector3.ZERO, 0.28, 0.45, 8, Color(0.5, 0.5, 0.5))
@@ -256,28 +325,44 @@ static func _build(kind: StringName) -> Mesh:
 			_prism(stone, Vector3.ZERO, 0.32, 0.18, 8, Color(0.45, 0.43, 0.4))
 			_prism(stone, Vector3(0, 0.18, 0), 0.42, 0.55, 8, Color(0.25, 0.28, 0.18))
 			_prism(stone, Vector3(0, 0.73, 0), 0.3, 0.4, 8, Color(0.28, 0.31, 0.2))
-		&"statue", &"statue_marble":
-			# A figure on a plinth cap: a robe flaring to the ground, a
-			# narrower torso under broad shoulders, a head, one arm raising a
-			# tall standard and one hanging, so it reads as a person (not a
-			# post). Faces +Z. `statue` is cast iron (the courtyard fountain),
-			# `statue_marble` smooth pale stone (untextured: the ashlar courses read
-			# as brickwork on a figure), which stands out against sooty facades.
-			var fig := iron if kind == &"statue" else paint
-			var ic := Color(0.85, 0.85, 0.85) if kind == &"statue" else Color(0.74, 0.72, 0.68)
-			_prism(stone, Vector3.ZERO, 0.6, 0.2, 8, Color(0.5, 0.48, 0.45))
-			_limb(fig, Vector3(0, 0.2, 0), Vector3(0, 0.95, 0), 0.5, 0.36, ic)
-			_limb(fig, Vector3(0, 0.95, 0), Vector3(0, 1.55, 0), 0.36, 0.3, ic)
-			_box_c(fig, Vector3(0, 1.56, -0.02), Vector3(0.78, 0.18, 0.36), ic)
-			_prism(fig, Vector3(0, 1.65, 0), 0.08, 0.1, 6, ic)
-			_prism(fig, Vector3(0, 1.74, 0.02), 0.15, 0.28, 8, ic)
-			# A cloak falling down the back.
-			_limb(fig, Vector3(0, 1.5, -0.2), Vector3(0, 0.25, -0.38), 0.24, 0.4, ic * 0.9)
-			# Raised arm holding a standard; the other at the side.
-			_limb(fig, Vector3(0.36, 1.52, 0), Vector3(0.5, 2.2, 0.12), 0.09, 0.07, ic)
-			_limb(fig, Vector3(0.52, 1.1, 0.14), Vector3(0.52, 3.1, 0.14), 0.035, 0.03, ic)
-			_box_c(fig, Vector3(0.52, 2.85, 0.28), Vector3(0.03, 0.42, 0.28), ic)
-			_limb(fig, Vector3(-0.36, 1.52, 0), Vector3(-0.44, 0.85, 0.08), 0.09, 0.07, ic)
+		&"statue", &"statue_bronze":
+			# A robed figure raising a standard, faces +Z. Lathed with smooth
+			# normals (robe flaring to a bevelled hem, belted waist, sloping
+			# shoulders, neck and a rounded head) and tapered eight-sided arms
+			# bent at the elbow, so the silhouette reads as cast, not boxed.
+			# `statue` is cast iron (Keep Venture's fountain, a Push/Pull
+			# anchor); `statue_bronze` weathered verdigris bronze (the avenue
+			# statues), dark enough not to glow against sooty streets.
+			var fig := iron if kind == &"statue" else bronze
+			var ic := Color(0.85, 0.85, 0.85) if kind == &"statue" else Color(1, 1, 1)
+			# Cast base plate with a chamfered edge.
+			_prism(fig, Vector3.ZERO, 0.54, 0.13, 8, ic * 0.7, false)
+			_lathe(fig, [[0.13, 0.54, 0.54, 0.0, 0.75], [0.19, 0.49, 0.49, 0.0, 0.8]], 8, ic)
+			# Body: [y, rx, rz, z offset, shade].
+			_lathe(fig, [[0.19, 0.46, 0.4, 0.0, 0.62], [0.28, 0.45, 0.38, 0.0, 0.7], [0.6, 0.41, 0.34, 0.0, 0.8],
+					[0.95, 0.36, 0.29, 0.0, 0.88], [1.12, 0.31, 0.24, 0.0, 0.85], [1.18, 0.32, 0.25, 0.0, 0.92],
+					[1.36, 0.35, 0.25, 0.0, 1.0], [1.48, 0.41, 0.24, 0.0, 1.0], [1.55, 0.38, 0.21, 0.0, 0.98],
+					[1.61, 0.2, 0.15, 0.0, 0.92], [1.64, 0.085, 0.09, 0.01, 0.85], [1.72, 0.08, 0.085, 0.02, 0.88],
+					[1.74, 0.115, 0.125, 0.025, 0.95], [1.82, 0.145, 0.155, 0.025, 1.0], [1.91, 0.14, 0.15, 0.02, 1.0],
+					[1.98, 0.105, 0.115, 0.015, 1.0], [2.02, 0.045, 0.05, 0.01, 1.0]], 12, ic)
+			# A cloak falling from the shoulders and spreading behind the hem.
+			_lathe(fig, [[0.19, 0.47, 0.14, -0.3, 0.6], [0.7, 0.47, 0.15, -0.27, 0.75], [1.2, 0.42, 0.15, -0.2, 0.88],
+					[1.52, 0.37, 0.13, -0.1, 0.95]], 10, ic, false)
+			# Raised arm holding the standard, and the other at the side.
+			_limb_n(fig, Vector3(0.37, 1.47, 0), Vector3(0.5, 1.8, 0.1), 0.095, 0.075, ic, 8)
+			_limb_n(fig, Vector3(0.5, 1.8, 0.1), Vector3(0.53, 2.12, 0.14), 0.075, 0.055, ic, 8)
+			_limb_n(fig, Vector3(0.53, 2.08, 0.14), Vector3(0.53, 2.24, 0.14), 0.065, 0.045, ic, 8, true)
+			_limb_n(fig, Vector3(-0.37, 1.47, 0), Vector3(-0.44, 1.16, 0.05), 0.095, 0.075, ic, 8)
+			_limb_n(fig, Vector3(-0.44, 1.16, 0.05), Vector3(-0.43, 0.9, 0.12), 0.075, 0.055, ic * 0.95, 8)
+			_limb_n(fig, Vector3(-0.43, 0.94, 0.12), Vector3(-0.42, 0.8, 0.14), 0.06, 0.04, ic * 0.95, 8, true)
+			# The standard: a tapered pole, a spear finial, a crossbar and a
+			# swallow-tailed banner.
+			_limb_n(fig, Vector3(0.53, 1.0, 0.14), Vector3(0.53, 3.05, 0.14), 0.035, 0.028, ic, 6)
+			_limb_n(fig, Vector3(0.53, 3.05, 0.14), Vector3(0.53, 3.24, 0.14), 0.05, 0.004, ic, 6)
+			_box_c(fig, Vector3(0.53, 2.99, 0.3), Vector3(0.03, 0.03, 0.36), ic)
+			_box_c(fig, Vector3(0.53, 2.75, 0.3), Vector3(0.025, 0.46, 0.3), ic * 0.92)
+			for bz: float in [0.2, 0.4]:
+				_box_c(fig, Vector3(0.53, 2.46, bz), Vector3(0.025, 0.12, 0.1), ic * 0.88)
 		&"ash_planter":
 			# A stone urn holding bare, ash-dead twigs — no living greenery this
 			# close to the Ashmounts.
@@ -308,21 +393,40 @@ static func _build(kind: StringName) -> Mesh:
 		&"modillion":
 			# A cornice bracket under the corona soffit (local: x along the
 			# facade, +z out of the wall, y = 0 at the soffit): a deep top
-			# block and a shorter scrolled drop, pale dressed stone.
+			# block and a shorter drop, pale dressed stone. Only the eight
+			# faces that can be seen (16 triangles, was 24): the top sits on
+			# the soffit, the backs against the bed moulding and the frieze,
+			# and the top block's sides start where the bed moulding (0.38 m
+			# out) stops hiding them.
 			var pc := Color(0.9, 0.87, 0.8)
-			_box_c(ashlar, Vector3(0, -0.08, 0.56), Vector3(0.22, 0.16, 0.88), pc)
-			_box_c(ashlar, Vector3(0, -0.24, 0.3), Vector3(0.18, 0.18, 0.36), pc * 0.9)
+			var pd := pc * 0.9
+			# Top block: x +-0.11, y -0.16..0, z 0.38..1.0.
+			_face(ashlar, Vector3(0, -0.08, 1.0), Vector3.RIGHT * 0.11, Vector3.UP * 0.08, pc)
+			_face(ashlar, Vector3(0, -0.16, 0.74), Vector3.RIGHT * 0.11, Vector3.BACK * 0.26, pc * 0.8)
+			_face(ashlar, Vector3(0.11, -0.08, 0.69), Vector3.FORWARD * 0.31, Vector3.UP * 0.08, pc)
+			_face(ashlar, Vector3(-0.11, -0.08, 0.69), Vector3.BACK * 0.31, Vector3.UP * 0.08, pc)
+			# Drop: x +-0.09, y -0.33..-0.15, z 0.12..0.48.
+			_face(ashlar, Vector3(0, -0.24, 0.48), Vector3.RIGHT * 0.09, Vector3.UP * 0.09, pd)
+			_face(ashlar, Vector3(0, -0.33, 0.3), Vector3.RIGHT * 0.09, Vector3.BACK * 0.18, pd * 0.8)
+			_face(ashlar, Vector3(0.09, -0.24, 0.3), Vector3.FORWARD * 0.18, Vector3.UP * 0.09, pd)
+			_face(ashlar, Vector3(-0.09, -0.24, 0.3), Vector3.BACK * 0.18, Vector3.UP * 0.09, pd)
 		&"plinth":
-			# Ashlar pedestal for a district statue: base, die and moulded cap
-			# (top at 1.7 m, where the `statue` instance stands).
+			# Dressed-stone pedestal for a district statue (big 0.6 m courses,
+			# not the facade's brick-sized ones): a chamfered base, a step
+			# with a sloped wash, the die, a coved bed moulding and a cap slab
+			# (top at 1.7 m, where the figure stands).
 			var sc := Color(0.82, 0.79, 0.73)
-			_box_c(ashlar, Vector3(0, 0.15, 0), Vector3(1.7, 0.3, 1.7), sc * 0.8)
-			_box_c(ashlar, Vector3(0, 0.36, 0), Vector3(1.5, 0.12, 1.5), sc * 0.9)
-			_box_c(ashlar, Vector3(0, 0.96, 0), Vector3(1.2, 1.08, 1.2), sc)
-			_box_c(ashlar, Vector3(0, 1.56, 0), Vector3(1.4, 0.1, 1.4), sc * 0.95)
-			_box_c(ashlar, Vector3(0, 1.66, 0), Vector3(1.6, 0.08, 1.6), sc * 0.9)
-			# A dark bronze dedication plaque on the street face.
-			_box_c(iron, Vector3(0, 0.98, 0.615), Vector3(0.6, 0.4, 0.03), Color(0.45, 0.4, 0.32))
+			_box_c(dressed, Vector3(0, 0.13, 0), Vector3(1.7, 0.26, 1.7), sc * 0.78)
+			dressed.add_frustum(Vector3(0, 0.26, 0), 0.85, 0.75, 0.08, sc * 0.78, sc * 0.82)
+			_box_c(dressed, Vector3(0, 0.39, 0), Vector3(1.5, 0.1, 1.5), sc * 0.85)
+			dressed.add_frustum(Vector3(0, 0.44, 0), 0.75, 0.6, 0.06, sc * 0.85, sc * 0.9)
+			_box_c(dressed, Vector3(0, 1.0, 0), Vector3(1.2, 1.0, 1.2), sc)
+			dressed.add_frustum(Vector3(0, 1.5, 0), 0.6, 0.7, 0.06, sc * 0.8, sc * 0.9)
+			_box_c(dressed, Vector3(0, 1.6, 0), Vector3(1.4, 0.08, 1.4), sc * 0.95)
+			dressed.add_frustum(Vector3(0, 1.64, 0), 0.7, 0.78, 0.03, sc * 0.9, sc * 0.92)
+			_box_c(dressed, Vector3(0, 1.685, 0), Vector3(1.56, 0.03, 1.56), sc * 0.92)
+			# A bronze dedication plaque on the street face.
+			_box_c(bronze, Vector3(0, 1.0, 0.613), Vector3(0.6, 0.4, 0.026), Color(0.9, 0.85, 0.75))
 		&"shop_sign_board", &"shop_sign_medallion", &"shop_sign_coin":
 			# A hanging trade sign on a wrought-iron bracket (local: x along
 			# the facade, +z out of the wall, y = 0 at the bracket arm), the
@@ -352,4 +456,4 @@ static func _build(kind: StringName) -> Mesh:
 					_prism_x(paint, Vector3(0, -0.47, 0.64), 0.2, 0.08, 12, Color(0.2, 0.16, 0.12))
 					_prism_x(paint, Vector3(0, -0.47, 0.64), 0.09, 0.09, 8, gilt * 1.1)
 	return _commit({M.IRON: iron, M.LANTERN_GLASS: glass, M.WOOD: wood, M.STONE: stone,
-			M.ASHLAR: ashlar, M.BANNER: paint})
+			M.ASHLAR: ashlar, M.BANNER: paint, M.BRONZE: bronze, M.DRESSED_STONE: dressed})

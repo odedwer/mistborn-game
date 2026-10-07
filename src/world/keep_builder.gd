@@ -350,6 +350,7 @@ static func _courtyard_layout(data: ChunkBuildData, o: Vector3) -> void:
 	# doesn't have a lantern filling the lower frame. The inner pair stays at
 	# z -162: test_traversal's cp_3 -> keep_courtyard steel jump uses it to
 	# come down onto the walk (at -164.5 the bot hung in the air pushing).
+	# Their anchors stay at a full post's 3 m (ChunkInstancer.lamp_anchor_height).
 	for z: float in [-157.0, -162.0]:
 		_lamp(data, o + Vector3(-3.6, 0, z), Vector2(1, 0), true, false, 0.8)
 		_lamp(data, o + Vector3(3.6, 0, z), Vector2(-1, 0), true, false, 0.8)
@@ -375,7 +376,8 @@ static func _courtyard_fountain(data: ChunkBuildData, c: Vector3) -> void:
 		var a1 := TAU * float(k + 1) / 8.0
 		var w0 := c + Vector3(0, 0.45, 0)
 		wm.add_tri(w0, w0 + Vector3(sin(a0), 0, cos(a0)) * r, w0 + Vector3(sin(a1), 0, cos(a1)) * r, Color(1, 1, 1))
-	st.add_box(c + Vector3(-0.35, 0.0, -0.35), c + Vector3(0.35, 1.2, 0.35), col * 0.7, col, col)
+	# Big dressed courses on the pedestal (the basin keeps the facade ashlar).
+	data.mb(M.DRESSED_STONE).add_box(c + Vector3(-0.35, 0.0, -0.35), c + Vector3(0.35, 1.2, 0.35), col * 0.7, col, col)
 	data.add_instance(&"statue", Transform3D(Basis().scaled(Vector3.ONE * 0.55), c + Vector3(0, 1.2, 0)))
 	data.add_box_shape(c + Vector3(0, 0.32, 0), Vector3(r * 2.0, 0.64, r * 2.0))
 	data.add_box_shape(c + Vector3(0, 0.9, 0), Vector3(0.7, 1.8, 0.7))

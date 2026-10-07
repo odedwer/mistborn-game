@@ -18,9 +18,15 @@ const INSTANCE_RANGE := {
 	&"weathervane": 220.0, &"lightning_rod": 260.0, &"bollard": 130.0, &"stall": 160.0, &"well": 200.0,
 	# Keep gardens are seen from rooftops and from the air: keep them in view.
 	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0, &"carriage": 200.0,
-	&"plinth": 400.0, &"statue_marble": 400.0, &"modillion": 140.0,
+	&"plinth": 400.0, &"statue_bronze": 400.0, &"modillion": 64.0,
 	&"shop_sign_board": 110.0, &"shop_sign_medallion": 110.0, &"shop_sign_coin": 110.0,
 }
+## Kinds that are many and small (about 900 modillions per merchant/noble
+## chunk): split into square cells of this size (m), one MultiMesh each, so
+## their short visibility range culls by cell around the camera. A visibility
+## range is measured to the instance's AABB centre, so a whole-chunk
+## MultiMesh would vanish or stay as one block.
+const INSTANCE_CELL := {&"modillion": 24.0}
 const DETAIL_RANGE := 150.0
 const WINDOW_RANGE := 420.0
 const RIGID_RANGE := 110.0
@@ -209,38 +215,58 @@ func _build_multimeshes() -> void:
 		var xfs: Array = data.instances[kind]
 		if xfs.is_empty():
 			continue
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = PropMeshes.mesh(kind)
-		mm.instance_count = xfs.size()
-		for i in xfs.size():
-			mm.set_instance_transform(i, xfs[i])
-		var mmi := MultiMeshInstance3D.new()
-		mmi.name = "MM_%s" % kind
-		mmi.multimesh = mm
-		var r: float = INSTANCE_RANGE.get(kind, 150.0)
-		if r > 0.0:
-			mmi.visibility_range_end = r
-			mmi.visibility_range_end_margin = 10.0
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if kind in [&"lamp_post", &"lightning_rod", &"weathervane"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(mmi)
-		draw_meshes += mm.mesh.get_surface_count()
+		if INSTANCE_CELL.has(kind):
+			var cell: float = INSTANCE_CELL[kind]
+			var cells := {}
+			for xf: Transform3D in xfs:
+				var key := Vector2i(floori(xf.origin.x / cell), floori(xf.origin.z / cell))
+				if not cells.has(key):
+					cells[key] = []
+				(cells[key] as Array).append(xf)
+			for key: Vector2i in cells:
+				_add_multimesh(kind, cells[key], "MM_%s_%d_%d" % [kind, key.x, key.y])
+		else:
+			_add_multimesh(kind, xfs, "MM_%s" % kind)
+	_build_lamp_posts()
+
+
+func _add_multimesh(kind: StringName, xfs: Array, node_name: String) -> void:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = PropMeshes.mesh(kind)
+	mm.instance_count = xfs.size()
+	for i in xfs.size():
+		mm.set_instance_transform(i, xfs[i])
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = node_name
+	mmi.multimesh = mm
+	var r: float = INSTANCE_RANGE.get(kind, 150.0)
+	if r > 0.0:
+		mmi.visibility_range_end = r
+		mmi.visibility_range_end_margin = 10.0
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if kind in [&"lamp_post", &"lightning_rod", &"weathervane"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(mmi)
+	draw_meshes += mm.mesh.get_surface_count()
+
+
+func _build_lamp_posts() -> void:
 	# Lamp post visuals.
-	if not data.lamp_posts.is_empty():
-		var mm2 := MultiMesh.new()
-		mm2.transform_format = MultiMesh.TRANSFORM_3D
-		mm2.mesh = PropMeshes.mesh(&"lamp_post")
-		mm2.instance_count = data.lamp_posts.size()
-		for i in data.lamp_posts.size():
-			var lp: Dictionary = data.lamp_posts[i]
-			var d: Vector2 = lp["dir"]
-			var bx := Basis.looking_at(Vector3(d.x, 0, d.y)) if d.length() > 0.01 else Basis()
-			mm2.set_instance_transform(i, Transform3D(bx.scaled_local(Vector3.ONE * float(lp.get("scale", 1.0))), lp["pos"]))
-		var mmi2 := MultiMeshInstance3D.new()
-		mmi2.name = "MM_lamp_posts"
-		mmi2.multimesh = mm2
-		root.add_child(mmi2)
-		draw_meshes += mm2.mesh.get_surface_count()
+	if data.lamp_posts.is_empty():
+		return
+	var mm2 := MultiMesh.new()
+	mm2.transform_format = MultiMesh.TRANSFORM_3D
+	mm2.mesh = PropMeshes.mesh(&"lamp_post")
+	mm2.instance_count = data.lamp_posts.size()
+	for i in data.lamp_posts.size():
+		var lp: Dictionary = data.lamp_posts[i]
+		var d: Vector2 = lp["dir"]
+		var bx := Basis.looking_at(Vector3(d.x, 0, d.y)) if d.length() > 0.01 else Basis()
+		mm2.set_instance_transform(i, Transform3D(bx.scaled_local(Vector3.ONE * float(lp.get("scale", 1.0))), lp["pos"]))
+	var mmi2 := MultiMeshInstance3D.new()
+	mmi2.name = "MM_lamp_posts"
+	mmi2.multimesh = mm2
+	root.add_child(mmi2)
+	draw_meshes += mm2.mesh.get_surface_count()
 
 
 func _add_static_metal(i: int) -> void:
@@ -250,6 +276,16 @@ func _add_static_metal(i: int) -> void:
 	met.anchored = true
 	met.position = m["pos"]
 	static_body.add_child(met)
+
+
+## Height of a lamp post's Metallic anchor: the iron at 3 m, as on a full
+## post, or the lantern (3.75 m x scale) when the post is too short for that.
+## A 0.8 garden lamp keeps its anchor at 3 m. Scaling the anchor down to
+## 2.4 m with the post cost test_traversal's cp_3 -> keep_courtyard jump 140
+## frames: the bot, dropping onto Keep Venture's approach walk, pushed off the
+## low anchor from 4 m above it and was thrown back over the goal.
+static func lamp_anchor_height(s: float) -> float:
+	return minf(3.0, 3.75 * s)
 
 
 func _add_lamp(i: int) -> void:
@@ -272,7 +308,7 @@ func _add_lamp(i: int) -> void:
 	var met := Metallic.new()
 	met.metal_mass = 60.0
 	met.anchored = true
-	met.position = Vector3(0, 3.0 * s, 0)
+	met.position = Vector3(0, lamp_anchor_height(s), 0)
 	body.add_child(met)
 	root.add_child(body)
 
