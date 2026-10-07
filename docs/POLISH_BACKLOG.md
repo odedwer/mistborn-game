@@ -382,3 +382,21 @@ Merged:
 Follow-ups:
 - At about 1 m the head is still faceted, and the laurel leaves stick out sideways like spikes. Lay the wreath flat against the head.
 - Seen close, the verdigris runs on the chest are fairly straight and evenly spaced. Add per-run jitter in width and length.
+
+## Review of art pass 16
+
+Merged:
+- **Robes settle in death:**
+  - Long robes and gowns (Inquisitor, Sazed, Marsh, both obligators, vin_gown, noble_woman and her bustle) get five skirt bones each. They stay at rest in every clip except `die`, where they flatten the robe over the legs. A test checks that they don't move outside `die`.
+  - Robed styles fold their legs less as they fall, which removes the flip-up around 0.55 s.
+  - **Result:** the hem lies 15–28 cm off the floor over the feet, where it used to be a stiff tube 31–53 cm open, partly under the floor. The new `clearance.py --settle` guards it.
+- **Weapon-to-cloth margins:** every weapon-to-skirt gap is now at least 5 cm. For example, the Inquisitor's `push` went from 1.9 to 8.4 cm, and the guard's `attack` from 3.5 to 5.7 cm.
+- **Garment meshes:** the cloth check now covers `noble_man:tails`, `noble_man:longcoat` and `noble_woman:bustle`. The knees were coming 15 cm through the long coat; that is fixed, and the worst is now 0.7 cm.
+- **Hazekiller crouch:** at face height the staff is 27 cm to the side. It used to be 3 cm, crossing his face.
+
+303 Godot tests and 21 clearance tests green (about 64 s). Reviewed p16_cmp_inquisitor_die and p16_cmp_robes_die: the lying robes and gowns now cover the legs, with only the feet at the hem.
+
+Follow-ups:
+- **Hem opening:** from the 34 and front cameras you can see into the lowered hem opening, because the cloth doesn't draw its inside faces. Turn off back-face culling on the cloth materials, or add an inner shell.
+- **Characters without robes:** in death they still lie with their legs 10–15 cm off the floor and the left knee raised.
+- **Hard-coded tuning:** the robe-flattening values were fitted offline with an optimiser that isn't in the repo, and only `--settle` and the cloth check guard them. Commit the fitting script if robe shapes are likely to change.
