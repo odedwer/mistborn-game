@@ -89,7 +89,7 @@ signal action_started(name) / action_finished(name)
   - `die` moves to the `dead` state and holds the final pose until `revive()`. While dead, other actions return `false`. Unknown names also return `false`.
   - `attack` is character-specific: a dagger slash (vin), a spear thrust (guard), an overhead staff strike (hazekiller), a club smash (thug), a coin throw (coinshot) and a diagonal axe chop (inquisitor). Enemies strike with `attack`. Only the player plays `melee`.
   - `melee` is a wide one-handed swing: a dagger slash for Vin, a punch for the coinshot.
-  - **Free hand.** The armed characters (guard, hazekiller, thug, Inquisitor) carry their weapon in the right hand. Their `melee`, `drink`, `talk`, `throw`, `push` and `pull` use the free left hand, while the weapon arm holds the weapon upright and clear of the head. In Push and Pull, the Inquisitor holds his axe upright and low at his side. These poses are the right-handed keys mirrored by `free_hand()` and `arm()` in `anim.py`.
+  - **Free hand.** The armed characters (guard, hazekiller, thug, Inquisitor) carry their weapon in the right hand. Their `melee`, `drink`, `talk`, `throw`, `push` and `pull` use the free left hand, while the weapon arm holds the weapon upright and clear of the head. In idle and the gaits, the Inquisitor carries his axe like the guard's spear, forearm level and haft upright (from the side and the front) beside the shoulder; in Push and Pull he holds it upright and low at his side. These poses are the right-handed keys mirrored by `free_hand()` and `arm()` in `anim.py`.
 - **`set_aim`** uses a `CharacterAimModifier` (a `SkeletonModifier3D`) that spreads yaw and pitch over Spine→Head. It is clamped, smoothed, and fades out for targets behind the character. Pass `Vector3.ZERO` to turn it off.
 - **`get_attachment`** takes `hand_r`, `hand_l` (the grip centre), `chest` (front of the UpperChest, e.g. where the guard's metal sits), `head`, `lantern` (guard) or any bone name. It returns a `Node3D` under a `BoneAttachment3D`, created on first use.
 - **Cloak dynamics:** a `SpringBoneSimulator3D` has one setting per tassel chain, with capsule colliders on the hips and legs. It simulates in world space, so the tassels stream behind the character when it moves or turns. You can tune `cloak_stiffness`, `cloak_drag` and `cloak_gravity`, or turn it off with `cloak_physics = false`.
@@ -105,7 +105,8 @@ The pipeline has these parts:
   - `Body.hand(side, color, palm=None)`: the optional `palm` colour paints the palm and the inner faces of the curled fingers and thumb. A dark glove with a pale leather palm (as on the guard) reads as an open hand in a Push instead of a fist.
   - Clearance proxies, which never reach the GLB:
     - weapons register capsules in `Body.weapon_caps`;
-    - shields register discs in `Body.shields`;
+    - shields register discs in `Body.shields` (the board and its boss);
+    - `Body.skirt` records its hem in `Body.skirts`, so the check knows which legs a skirt hides;
     - `with b.part(name):` tags vertex ranges in `Body.parts`. Props are tagged `weapon` or `shield`, and `Body.skirt` tags `skirt`.
 - `chars.py`: the six combat designs and their props.
 - `chars_npc.py`: the NPC designs, hats and garments, plus the variant `POOLS` and `PRESETS`.
@@ -119,13 +120,14 @@ Preview with `godot res://scenes/test/character_lineup.tscn -- <options>`. The o
 Tests are in `tests/test_characters.gd`.
 
 ### Weapon clearance (`clearance.py`)
-The check poses each armed character (guard, hazekiller, thug, Inquisitor) frame by frame in every animation. It needs only numpy, not Blender. It skins the mesh the same way `build_characters.py` bakes it, then measures the surface gap between the weapon capsules and these parts of the body:
+The check poses each armed character (guard, hazekiller, thug, Inquisitor) frame by frame in every animation (every clip in `anim.ANIM_NAMES`, which is also the list the GLBs export). It needs only numpy, not Blender. It skins the mesh the same way `build_characters.py` bakes it, then measures the surface gap between the weapon capsules and these parts of the body:
 - the head, neck and torso;
 - the arms: the free arm and the weapon arm's upper arm, but not the gripping hand and forearm;
+- the legs: thighs, shins and feet, where no skirt covers them. A leg vertex counts as covered when, in the rest pose, it lies above a skirt's hem and inside its arc (`Body.skirts` records each skirt's hem height, centre and arc). So the thug's whole leg is checked, the guard's and hazekiller's below the tunic, and only the Inquisitor's feet below his robe;
 - robe, tunic and coat skirts;
-- the hazekiller's shield.
+- the hazekiller's shield: the board as a disc, plus its boss as a stack of thinner discs (each at the widest radius of its slice).
 
-The body is sampled at its vertices, face centroids and edge midpoints. A region fails when the weapon comes closer than 1 cm to the head, neck or torso, or when it penetrates the arms, skirts or shield.
+The body is sampled at its vertices, face centroids and edge midpoints. A region fails when the weapon comes closer than 1 cm to the head, neck or torso, or when it penetrates the arms, legs, skirts or shield.
 ```bash
 python3 tools/characters/clearance.py                                  # all four, every clip: each region's minimum (m) and when it occurs
 python3 tools/characters/clearance.py inquisitor --anim=pull --frames  # per-frame table
@@ -133,7 +135,15 @@ python3 tools/characters/clearance.py vin --threshold=head=0.02        # other c
 ```
 It exits with status 1 when any region falls below its threshold.
 
-`tools/characters/test_clearance.py` runs the full check, plus a negative control and geometry tests. Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`; it takes about 15 s, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a style's arm pose or any one-shot.
+Closest gaps after art pass 14 (all clips clear):
+- legs: guard `land` 4.1 cm, guard `jump` and hazekiller `land` 5.0 cm, guard `fall` 5.6 cm; sprint and crouch about 7 cm;
+- skirts: guard `attack` 5.6 cm, hazekiller `block` and Inquisitor `push` 6.5 cm, guard and hazekiller `sprint` 10 and 9.4 cm;
+- head: Inquisitor `attack` 7.6 cm, guard Push and Pull 7.9 cm;
+- shield: hazekiller `melee` 11 cm.
+
+**Carried weapons.** The guard, hazekiller and Inquisitor carry their weapon upright in a held (`arm_lock`) right arm. In the gaits the wrist takes back 60% of the run's forward lean and half the arm's sway (`CARRY_K` in `anim.py`), and the arm swings out a little as the knee lift grows (`CARRY_ABD`), so the shaft stays within about 20° of upright from idle to sprint (the axe within 14°) and clears the thigh. In the crouch the arm swings 6° wider; only the Inquisitor (`crouch_carry`) also stands his short axe upright there, since a long spear stood up this way drives its butt into the shin.
+
+`tools/characters/test_clearance.py` runs the full check, plus negative controls (a club through the torso and arm, a spear into the thigh), checks that every exported clip is scanned, and geometry tests (capsule and disc distance, skirt coverage, the shield boss). Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`; it takes about 20 s, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a style's arm pose or any one-shot.
 
 ## Licence
 All meshes, rigs, animations, shaders and generator scripts are original work created for this project, with no third-party assets. They are dedicated to the public domain under **CC0 1.0**. Mistborn names and designs belong to Brandon Sanderson / Dragonsteel Entertainment. This is a non-commercial fan project.
