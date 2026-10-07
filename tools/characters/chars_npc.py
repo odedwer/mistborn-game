@@ -959,11 +959,15 @@ def build_noble_man():
          color=hexcol("f4f0e6"), weights=b.W(["UpperChest", "Neck"]), cap1=0.006 * s)
     collar(b, coat_d, h=0.05, r=(0.08, 0.075, 0.08))
     with b.garment("tails"):
+        # The garment skirts follow the knees like the main-mesh coats (the
+        # cloth check found the knees 15 cm through the long coat in the
+        # sprint and crouch, and 3 cm through the tails in the sprint).
         b.skirt(0.6 * H, 0.34 * H, (0.16 * s, 0.1 * s, 0.11 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,
-                arc=(196, 344), leg_share=0.55, n=12)
+                arc=(196, 344), leg_share=0.55, n=12, front_share=0.9, shin_share=0.5, ease=0.02 * s)
     with b.garment("longcoat"):
         b.skirt(0.6 * H, 0.27 * H, (0.158 * s, 0.098 * s, 0.108 * s), (0.2 * s, 0.15 * s, 0.17 * s),
-                lambda p, i, th: coat_d if i == 6 else coat, rows=7, arc=(104, 436), leg_share=0.6)
+                lambda p, i, th: coat_d if i == 6 else coat, rows=7, arc=(104, 436), leg_share=0.6,
+                front_share=0.95, shin_share=0.6, ease=0.03 * s)
     with b.garment("hat_top"):
         top_hat(b, hexcol("141216"), dyed(GREY_D, 1))
     with b.garment("hat_bowler"):
@@ -1032,7 +1036,8 @@ def build_noble_woman():
             leg_share=0.4, front_share=0.8, shin_share=0.6, ease=0.025 * s, curve=1.1)
     with b.garment("bustle"):
         b.skirt(0.6 * H, 0.2 * H, (0.13 * s, 0.09 * s, 0.13 * s), (0.3 * s, 0.26 * s, 0.4 * s),
-                lambda p, i, th: trim if i == 4 else gown_d, arc=(210, 330), rows=5, n=10, leg_share=0.2, curve=0.7)
+                lambda p, i, th: trim if i == 4 else gown_d, arc=(210, 330), rows=5, n=10, leg_share=0.2, curve=0.7,
+                settle=True)  # (it lies down with the gown)
     with b.garment("hat_wide"):
         # Authored at mid grey, so the dye shows at its own value. GREY_L
         # multiplied the dye by ~1.8, and a pale dye went past white: an

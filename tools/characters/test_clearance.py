@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import clearance  # noqa: E402
 import chars  # noqa: E402
-from anim import ANIM_NAMES, base_params, make_anims  # noqa: E402
+from anim import ANIM_NAMES, SKIRT_CLASS, base_params, make_anims  # noqa: E402
 
 
 class GeometryTest(unittest.TestCase):
@@ -163,6 +163,23 @@ class ClothTest(unittest.TestCase):
                           "marsh", "elend", "vin_gown", "noble_woman", "obligator", "obligator_2", "skaa_man",
                           "skaa_woman"})
 
+    def test_garment_skirts(self):
+        """The skirts of the optional garment meshes are checked too."""
+        self.assertEqual(set(clearance.garment_skirted()),
+                         {"noble_man:tails", "noble_man:longcoat", "noble_woman:bustle"})
+
+    def test_detects_legs_through_a_garment(self):
+        """Negative control: the noble's long coat (a garment mesh) skinned to
+        the hips alone shows his crouching knees."""
+        ch = clearance.Cloth("noble_man:longcoat")
+        p = ch.anims["crouch_idle"][1](0.5)
+        self.assertGreater(ch.measure(p), clearance.CLOTH_THRESHOLD)
+        hips = ch.bones.index("Hips")
+        for W in ch.Wg:
+            W[:] = 0.0
+            W[:, hips] = 1.0
+        self.assertLess(ch.measure(p), -0.05)
+
     def test_detects_legs_through_a_robe(self):
         """Negative control: a robe that only follows the hips (as the
         Inquisitor's did, mostly) shows his crouching knees by over 10 cm."""
@@ -181,6 +198,41 @@ class ClothTest(unittest.TestCase):
         fails = clearance.check_cloth(step=2)
         msg = "\n".join(f"{n} {a}: {v:.3f} m at t={t:.2f}" for n, a, v, t in fails)
         self.assertEqual(fails, [], "legs through cloth:\n" + msg)
+
+
+class SettleTest(unittest.TestCase):
+    def test_settling_characters(self):
+        """The long robes and gowns have skirt bones."""
+        self.assertEqual(set(clearance.settling()),
+                         {"inquisitor", "sazed", "marsh", "vin_gown", "noble_woman", "obligator", "obligator_2"})
+
+    def test_skirt_bones_rest_outside_die(self):
+        """The skirt bones stay at rest in every clip but `die`, so the cloth
+        moves exactly as it did before they were added."""
+        for name in clearance.settling():
+            b, info = clearance.BUILDERS[name]()
+            A, rig = make_anims(info["style"], b.S), clearance.Rig(b.S)
+            for anim, (n, fn, _) in A.items():
+                if anim == "die":
+                    continue
+                for f in range(0, n + 1, 8):
+                    Q, _ = rig.solve(fn(f / 30.0))
+                    for bone in SKIRT_CLASS:
+                        np.testing.assert_allclose(Q[bone], np.eye(3), atol=1e-9, err_msg=f"{name} {anim}")
+                        np.testing.assert_allclose(rig.loc[bone], 0.0, atol=1e-9, err_msg=f"{name} {anim}")
+
+    def test_robes_settle(self):
+        """Lying in `die`, no robe or gown stands open over the feet or sinks
+        through the floor."""
+        fails = clearance.check_settle(step=3)
+        self.assertEqual(fails, [], "\n".join(f"{n} {w}: {v:.3f} at t={t:.2f} (limit {lim:.3f})"
+                                              for n, w, v, t, lim in fails))
+
+    def test_detects_an_unsettled_robe(self):
+        """Negative control: without its skirt bone poses the Inquisitor's
+        robe lies as a stiff tube, its back 20 cm under the floor."""
+        rows = clearance.settle_scan("inquisitor", step=4, settle={"fall": {}, "lie": {}})
+        self.assertLess(min(z for _, _, z in rows), -0.15)
 
 
 if __name__ == "__main__":

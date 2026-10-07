@@ -40,10 +40,17 @@ def sname(side, base):
 
 
 # ------------------------------------------------------------------ parameters
+# The skirt bones of a settling skirt (Body.settle_bones) and the parameter
+# prefix that poses each: <prefix>_fb, _lat (scales), _pitch (degrees) and
+# _lift (m, a shift towards the body's front).
+SKIRT_CLASS = {"SkirtHips": "sk_hips", "LeftSkirtThigh": "sk_thigh", "RightSkirtThigh": "sk_thigh",
+               "LeftSkirtShin": "sk_shin", "RightSkirtShin": "sk_shin"}
+
 def default_params():
     p = dict(hips_x=0.0, hips_y=0.0, hips_z=0.0, hips_lean=0.0, hips_yaw=0.0, hips_roll=0.0,
              spine_lean=0.0, spine_side=0.0, spine_twist=0.0,
-             head_pitch=0.0, head_yaw=0.0, head_roll=0.0, leg_fk=0.0)
+             head_pitch=0.0, head_yaw=0.0, head_roll=0.0, leg_fk=0.0,
+             **{f"{c}_{k}": (1.0 if k in ("fb", "lat") else 0.0) for c in SKIRT_CLASS.values() for k in ("fb", "lat", "pitch", "lift")})
     for s, _ in SIDES:
         p.update({f"{s}_abd": 8.0, f"{s}_flex": 0.0, f"{s}_twist": 0.0, f"{s}_elbow": 12.0, f"{s}_wrist": 0.0,
                   f"{s}_wtwist": 0.0, f"{s}_shrug": 0.0, f"{s}_prot": 0.0,
@@ -88,6 +95,7 @@ def keyed(keys, t, base):
 
 
 # ----------------------------------------------------------------- pose solver
+
 class Rig:
     def __init__(self, S: Skel):
         self.S = S
@@ -99,7 +107,10 @@ class Rig:
         return math.degrees(math.atan2(abs(d[0]), -d[2]))
 
     def solve(self, p: dict) -> tuple[dict, np.ndarray]:
+        """(Q, hips offset). Also sets `self.loc`: {bone: translation in the
+        armature's axes, applied in its parent's frame} for the skirt bones."""
         S = self.S
+        self.loc = {}
         Q = {b: I3.copy() for b in S.order}
         Q["Hips"] = Rz(p["hips_yaw"]) @ Rx(-p["hips_lean"]) @ Ry(p["hips_roll"])
         sp = Rz(p["spine_twist"]) @ Rx(-p["spine_lean"]) @ Ry(p["spine_side"])
@@ -117,6 +128,13 @@ class Rig:
             Q[la] = rot_axis(h2, p[f"{s}_elbow"])
             h3 = norm(np.cross(d3, v3(0, 1, 0)))
             Q[hb] = rot_axis(h3, p[f"{s}_wrist"]) @ rot_axis(d3, side * p[f"{s}_wtwist"])
+        if "SkirtHips" in Q:
+            # skirt bones (Body.settle_bones): a scale in the armature's axes
+            # (sideways, front to back) about each bone's head, then a pitch
+            # (negative: the cloth swings towards the body's back)
+            for b, c in SKIRT_CLASS.items():
+                Q[b] = Rx(p.get(c + "_pitch", 0.0)) @ np.diag([p.get(c + "_lat", 1.0), p.get(c + "_fb", 1.0), 1.0])
+                self.loc[b] = v3(0.0, p.get(c + "_lift", 0.0), 0.0)
         off = v3(p["hips_x"], p["hips_y"], p["hips_z"])
         if p.get("leg_fk", 0.0) > 0.5:
             for s, side in SIDES:
@@ -184,7 +202,12 @@ STYLES = {
                   arm_lock={"r"}, stride=1.0, swing=0.35, hunch=0.0, weapon_r=True),
     "haze": dict(base={"r_elbow": 78, "r_abd": 10, "r_flex": 6, "r_twist": -6, "r_wrist": -6,
                        "l_abd": 16, "l_elbow": 30, "l_flex": 8},
-                 arm_lock={"r"}, stride=1.0, swing=0.6, hunch=2.0, weapon_r=True),
+                 arm_lock={"r"}, stride=1.0, swing=0.6, hunch=2.0, weapon_r=True,
+                 # In the crouch the staff leant ~21 degrees in across the
+                 # body, so from the front its top crossed his face. The upper
+                 # arm and forearm turn out and the wrist stands it up a
+                 # little: it passes 27 cm outside the face (it was 3 cm).
+                 crouch_hold={"r_twist": 20, "r_wtwist": 10, "r_wrist": 8}),
     "thug": dict(base={"r_abd": 22, "l_abd": 22, "r_elbow": 38, "l_elbow": 32, "r_twist": 10, "l_twist": 10,
                        "spine_lean": 9, "head_pitch": -6, "r_shrug": 6, "l_shrug": 6},
                  stride=1.1, swing=0.8, hunch=9.0, wide=0.035, weapon_r=True),
@@ -195,7 +218,7 @@ STYLES = {
     # swung 10-54 degrees through walk and run. The forearm twist stands it
     # upright from the front too (it leant ~12 degrees in towards the face).
     "inquisitor": dict(base={"r_abd": 12, "l_abd": 12, "r_elbow": 85, "r_flex": 6, "l_elbow": 20, "spine_lean": 6,
-                             "head_pitch": 8, "r_wrist": 0, "r_wtwist": 12},
+                             "head_pitch": 8, "r_wrist": 0, "r_wtwist": 12, "r_twist": 8},
                        arm_lock={"r"}, crouch_carry=True, stride=1.12, swing=0.7, hunch=6.0, robe=True,
                        weapon_r=True),
     # ---- NPCs (crew, nobles, obligators, skaa)
@@ -234,6 +257,37 @@ STYLES = {
                         arm_lock={"r", "l"}, stride=0.9, swing=0.2, hunch=0.0, robe=True),
     "skaa": dict(base={"spine_lean": 9, "head_pitch": -7, "r_abd": 10, "l_abd": 10, "r_elbow": 22, "l_elbow": 18,
                        "r_shrug": 3, "l_shrug": 3}, stride=0.88, swing=0.65, hunch=8.0),
+}
+
+
+# Death-pose cloth settle of the long robes and gowns (styles whose skirt has
+# skirt bones, Body.settle_bones): skirt bone poses (see SKIRT_CLASS) as he
+# sits down ("fall", the 0.55 s key) and once he lies on his back ("lie").
+# Checked with tools/characters/clearance.py --settle.
+def _lie(hips_fb, hips_lift, thigh_fb, thigh_lift, shin_fb, shin_lift, lat=(1.1, 1.15, 1.15)):
+    return dict(sk_hips_fb=hips_fb, sk_hips_lift=hips_lift, sk_thigh_fb=thigh_fb, sk_thigh_lift=thigh_lift,
+                sk_shin_fb=shin_fb, sk_shin_lift=shin_lift, sk_hips_lat=lat[0], sk_thigh_lat=lat[1],
+                sk_shin_lat=lat[2])
+
+
+# Lying, each skirt is flattened front to back over the legs: strongly below
+# the knee (to a tenth), less over the thighs, little round the hips (the
+# buttocks), and spread a little sideways. The lifts (m for a 1.75 m
+# character) set where the flattened cloth sits: on the floor behind the legs
+# (up to 2 cm under it) and just over them in front. The values were fitted
+# so the lower half of the cloth lies as low as it can while every leg (and
+# hip) point it covers stays at least 1 cm inside it; the hem now rises
+# 15-18 cm off the floor over the feet (the gowns 28 cm), where it stood
+# 31-36 cm high and open.
+SETTLE = {
+    "inquisitor": {"fall": {}, "lie": _lie(0.84, -0.017, 0.335, 0.035, 0.108, -0.006)},
+    "sazed": {"fall": {}, "lie": _lie(0.88, -0.006, 0.374, 0.031, 0.115, -0.004)},
+    "marsh": {"fall": {}, "lie": _lie(0.93, -0.016, 0.364, 0.05, 0.118, -0.001)},
+    "obligator": {"fall": {}, "lie": _lie(0.76, -0.041, 0.292, 0.054, 0.108, -0.01)},
+    "obligator_b": {"fall": {}, "lie": _lie(0.64, -0.061, 0.376, 0.149, 0.1, -0.04)},
+    # (the hoop skirts flatten further, and are fitted to stay over the feet:
+    # their hems reach the floor, and the toes poked through)
+    "gown": {"fall": {}, "lie": _lie(0.196, -0.082, 0.416, 0.142, 0.107, 0.149, lat=(1.0, 0.93, 0.91))},
 }
 
 
@@ -394,6 +448,8 @@ def make_anims(style: str, S: Skel):
                 # The carried weapon swings a little wider so the rising thigh
                 # clears the spear and staff (it came within 7 mm).
                 p[f"{s}_abd"] = base.get(f"{s}_abd", 8.0) + CROUCH_CARRY_ABD
+                for key, v in STYLES[style].get("crouch_hold", {}).items():
+                    p[key] = p.get(key, 0.0) + v
                 if STYLES[style].get("crouch_carry", False):
                     # the short axe stays upright in the crouch too (a long
                     # spear or staff stood up this way drove its butt into the
@@ -542,7 +598,7 @@ def make_anims(style: str, S: Skel):
     atk = {
         "guard": [  # spear thrust
             (0.0, {}),
-            (0.22, {"r_flex": -25, "r_elbow": 70, "r_abd": 14, "r_wrist": 5, "r_twist": -8, "spine_twist": -18,
+            (0.22, {"r_flex": -25, "r_elbow": 70, "r_abd": 20, "r_wrist": 5, "r_twist": -8, "spine_twist": -18,
                     "hips_yaw": -10, "l_flex": 20, "l_elbow": 60, "r_fy": -0.08 * k, "l_fy": 0.12 * k}),
             (0.38, {"r_flex": 60, "r_elbow": 5, "r_abd": 6, "r_wrist": -35, "r_twist": -8, "spine_twist": 20,
                     "spine_lean": 10, "hips_yaw": 10, "l_flex": 5, "r_fy": -0.08 * k, "l_fy": 0.2 * k,
@@ -602,6 +658,8 @@ def make_anims(style: str, S: Skel):
 
     add("hit", 0.5, hit)
 
+    settle = SETTLE.get(style)  # (read once, when the clips are built)
+
     def die(t):
         fk = {"leg_fk": 1.0}
         stand = dict(fk, r_lflex=0, l_lflex=0, r_knee=0, l_knee=0, r_ankle=0, l_ankle=0)
@@ -617,28 +675,42 @@ def make_anims(style: str, S: Skel):
             return {"r_flex": flex - 30.0 * f, "r_wtwist": base.get("r_wtwist", 0.0) - 60.0 * f,
                     "r_wrist": base.get("r_wrist", 0.0) - 20.0 * f}
 
+        legs = [dict(r_lflex=85, l_lflex=75, r_knee=120, l_knee=110, r_ankle=30, l_ankle=25),
+                dict(r_lflex=12, l_lflex=28, r_knee=20, l_knee=45, r_labd=10, l_labd=8, r_ankle=30, l_ankle=30),
+                dict(r_lflex=8, l_lflex=24, r_knee=12, l_knee=40, r_labd=12, l_labd=9, r_ankle=25, l_ankle=25)]
+        cloth = [{}, {}, {}]
+        if settle:
+            # A long robe or gown: the legs fold less as he sits down (the
+            # thighs carried the front of the robe up past horizontal and
+            # showed its open hem), and he lies with them nearly flat on the
+            # floor (the robe tented 50 cm high over a raised knee, its back
+            # 14 cm under the floor). The skirt bones flatten the cloth over
+            # the legs as he lands.
+            legs = [dict(r_lflex=55, l_lflex=48, r_knee=78, l_knee=70, r_ankle=30, l_ankle=25),
+                    dict(r_lflex=0, l_lflex=4, r_knee=4, l_knee=10, r_labd=5, l_labd=4, r_ankle=50, l_ankle=45),
+                    dict(r_lflex=-2, l_lflex=2, r_knee=2, l_knee=8, r_labd=6, l_labd=5, r_ankle=55, l_ankle=50)]
+            cloth = [{kk: v * k if kk.endswith("_lift") else v for kk, v in d.items()}
+                     for d in (settle["fall"], settle["lie"], settle["lie"])]
         return keyed([
             (0.0, stand),
             (0.2, dict(fk, spine_lean=-10, head_pitch=-20, r_abd=35, l_abd=35, r_elbow=40, l_elbow=40,
                        hips_z=-0.04 * k, r_lflex=5, l_lflex=5, r_knee=10, l_knee=10)),
             (0.55, dict(fk, hips_z=-0.42 * leg_h, hips_lean=-35, hips_y=-0.1 * k, spine_lean=-10, head_pitch=-15,
-                        r_lflex=85, l_lflex=75, r_knee=120, l_knee=110, r_ankle=30, l_ankle=25, r_abd=45, l_abd=40,
-                        l_flex=20, r_elbow=50, l_elbow=40, **drop(0.0, 30))),
+                        r_abd=45, l_abd=40,
+                        l_flex=20, r_elbow=50, l_elbow=40, **drop(0.0, 30), **legs[0], **cloth[0])),
             (0.95, dict(fk, hips_z=-leg_h + 0.12 * k, hips_lean=-88, hips_y=-0.3 * k, spine_lean=-4,
-                        head_pitch=10, head_yaw=25, r_lflex=12, l_lflex=28, r_knee=20, l_knee=45, r_labd=10,
-                        l_labd=8, r_ankle=30, l_ankle=30, r_abd=80, l_abd=70, l_flex=-5,
-                        r_elbow=30, l_elbow=45, **drop(1.0, 10))),
+                        head_pitch=10, head_yaw=25, r_abd=80, l_abd=70, l_flex=-5,
+                        r_elbow=30, l_elbow=45, **drop(1.0, 10), **legs[1], **cloth[1])),
             (1.3, dict(fk, hips_z=-leg_h + 0.11 * k, hips_lean=-90, hips_y=-0.32 * k, spine_lean=0,
-                       head_pitch=12, head_yaw=30, r_lflex=8, l_lflex=24, r_knee=12, l_knee=40, r_labd=12,
-                       l_labd=9, r_ankle=25, l_ankle=25, r_abd=85, l_abd=72, l_flex=-8,
-                       r_elbow=25, l_elbow=40, **drop(1.0, 5))),
+                       head_pitch=12, head_yaw=30, r_abd=85, l_abd=72, l_flex=-8,
+                       r_elbow=25, l_elbow=40, **drop(1.0, 5), **legs[2], **cloth[2])),
         ], t, base)
 
     add("die", 1.3, die)
 
     blocks = {
         "haze": {"l_flex": 70, "l_abd": 25, "l_elbow": 95, "l_twist": 75, "spine_twist": 10, "spine_lean": 6,
-                 "r_flex": -10, "r_wrist": 8, "hips_z": -0.05 * k, "l_fy": 0.12 * k},
+                 "r_flex": -10, "r_wrist": 8, "r_abd": 15, "hips_z": -0.05 * k, "l_fy": 0.12 * k},
         "guard": {"r_flex": 35, "r_abd": 40, "r_elbow": 80, "r_twist": 60, "r_wrist": -10, "l_flex": 40,
                   "l_elbow": 90, "l_abd": 30, "spine_lean": 4, "hips_z": -0.05 * k, "l_fy": 0.12 * k},
     }
@@ -740,7 +812,9 @@ def make_anims(style: str, S: Skel):
             # the jaw from the side).
             # (no forearm twist here: the carry's twist swung the haft's butt
             # to within 1 cm of the robe)
-            weapon = {"r_abd": 8, "r_flex": 0, "r_elbow": 20, "r_twist": 0, "r_wrist": 60, "r_wtwist": 0}
+            # (r_abd 12, not 8: on the way into the hold the haft swung
+            # within 1.9 cm of the fuller robe; 4 degrees out keeps it clear)
+            weapon = {"r_abd": 12, "r_flex": 0, "r_elbow": 20, "r_twist": 0, "r_wrist": 60, "r_wtwist": 0}
 
     def push(t):
         hold = dict(palm_out, r_flex=palm_out["r_flex"] - 3, spine_twist=palm_out["spine_twist"] - 2,

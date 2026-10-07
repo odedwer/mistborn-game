@@ -37,11 +37,14 @@ Usage:
   tools/characters/clearance.py --threshold=head=0.02 --threshold=skirt=0
   tools/characters/clearance.py --cloth                       # every skirted character
   tools/characters/clearance.py --cloth sazed --anim=crouch_walk --frames
+  tools/characters/clearance.py --cloth noble_man:longcoat     # a garment's skirt
+  tools/characters/clearance.py --settle                      # robes lying down in `die`
 Exit status: 0 when every region clears its threshold, 1 otherwise.
 """
 from __future__ import annotations
 
 import argparse
+import functools
 import os
 import sys
 
@@ -77,9 +80,11 @@ def _arm_bones(hand_bone):
     return {free + "UpperArm", free + "LowerArm", free + "Hand", side + "UpperArm"}
 
 
-def _pose(S, Q, off):
-    """World rotation and head position of every bone (as bake_actions keys them)."""
+def _pose(S, Q, off, loc=None):
+    """World rotation (with the skirt bones' scale) and head position of every
+    bone (as bake_actions keys them). `loc`: Rig.loc, the skirt bones' shifts."""
     D, Hd = {}, {}
+    loc = loc or {}
     for b in S.order:
         par = S.bones[b][0]
         if par is None:
@@ -87,7 +92,7 @@ def _pose(S, Q, off):
             Hd[b] = S.head(b) + off
         else:
             D[b] = D[par] @ Q[b]
-            Hd[b] = Hd[par] + D[par] @ (S.head(b) - S.head(par))
+            Hd[b] = Hd[par] + D[par] @ (S.head(b) - S.head(par) + loc.get(b, 0.0))
     return D, Hd
 
 
@@ -138,9 +143,10 @@ def _disc_dist(P, c, n, R, ht):
     return np.sqrt(dr * dr + dh * dh)
 
 
-def _skin_matrix(b):
-    """(rest vertices, normalised skin weight matrix, bone names) of b's main mesh."""
-    m = b.m
+def _skin_matrix(b, m=None):
+    """(rest vertices, normalised skin weight matrix, bone names) of b's main
+    mesh (or of mesh `m`, a garment)."""
+    m = b.m if m is None else m
     V = np.array(m.verts)
     bones = list(b.S.order)
     bi = {n: i for i, n in enumerate(bones)}
@@ -298,7 +304,9 @@ CLOTH_HEM_MARGIN = 0.08
 
 class Cloth:
     """Cloth-against-legs check: a character's skirts (robe, gown, tunic,
-    coat tails, tabard) against its own legs, posed frame by frame.
+    coat tails, tabard) against its own legs, posed frame by frame. A name
+    "<character>:<garment>" checks the skirts of that optional garment mesh
+    (noble_man:tails, noble_woman:bustle) instead of the main mesh's.
 
     A leg vertex (thigh, knee, shin, foot) that the cloth covers in the rest
     pose must stay inside it: its clearance is how far inside the cloth it
@@ -308,31 +316,39 @@ class Cloth:
 
     def __init__(self, name):
         self.name = name
-        b, info = BUILDERS[name]()
+        base, _, garment = name.partition(":")
+        b, info = BUILDERS[base]()
         self.b, self.S, self.style = b, b.S, info["style"]
-        if not b.skirt_grids:
+        if garment:
+            gs = b.garment_skirts.get(garment, [])
+            infos, grids = [e[0] for e in gs], [e[1] for e in gs]
+        else:
+            infos, grids = b.skirts, b.skirt_grids
+        if not grids:
             raise ValueError(f"{name} has no skirt")
         V, Wm, bones = _skin_matrix(b)
+        # the cloth's own vertices (the garment mesh's, or the main mesh's)
+        Vc, Wc, _ = _skin_matrix(b, b.garments[garment]) if garment else (V, Wm, bones)
         tag = np.zeros(len(V), dtype=bool)
         for ranges in b.parts.values():
             for s0, s1 in ranges:
                 tag[s0:s1] = True
         dom = Wm.argmax(axis=1)
         legs = np.array([i for i in range(len(V)) if bones[dom[i]] in LEG_BONES and not tag[i]], dtype=int)
-        self.surfs = _skirt_surfaces(b)
+        self.surfs = [SkirtSurface(g, closed, yc) for (g, closed), (_, yc, _) in zip(grids, infos)]
         for sf in self.surfs:
-            sf.orient(V[sf.grid])
-        depth, beyond = _coverage(self.surfs, [V[sf.grid] for sf in self.surfs], V[legs])
+            sf.orient(Vc[sf.grid])
+        depth, beyond = _coverage(self.surfs, [Vc[sf.grid] for sf in self.surfs], V[legs])
         margin = CLOTH_HEM_MARGIN * b.H / 1.75
-        hems = np.array([z for z, _, _ in b.skirts])
+        hems = np.array([z for z, _, _ in infos])
         # (legs, skirts): covered in the rest pose, well above that skirt's hem
         self.cover = (depth >= 0.0) & ~beyond & (V[legs][:, 2:3] > hems[None, :] + margin)
         keep = self.cover.any(axis=1)
         self.legs, self.cover = legs[keep], self.cover[keep]
         self.grid_idx = [sf.grid for sf in self.surfs]
         self.Wl, self.Vl = Wm[self.legs], V[self.legs]
-        self.Wg = [Wm[g.reshape(-1)] for g in self.grid_idx]
-        self.Vg = [V[g.reshape(-1)] for g in self.grid_idx]
+        self.Wg = [Wc[g.reshape(-1)] for g in self.grid_idx]
+        self.Vg = [Vc[g.reshape(-1)] for g in self.grid_idx]
         self.bones = bones
         self.anims = make_anims(self.style, self.S)
         self.rig = Rig(self.S)
@@ -342,7 +358,7 @@ class Cloth:
         (negative = a leg shows through); with `detail`, also the per-vertex
         depths and posed leg positions."""
         Q, off = self.rig.solve(params)
-        D, Hd = _pose(self.S, Q, off)
+        D, Hd = _pose(self.S, Q, off, self.rig.loc)
         P = _skin(self.S, D, Hd, self.bones, self.Vl, self.Wl)
         Pg = [_skin(self.S, D, Hd, self.bones, V, W).reshape(g.shape + (3,))
               for V, W, g in zip(self.Vg, self.Wg, self.grid_idx)]
@@ -358,15 +374,26 @@ class Cloth:
         return [(f / FPS, self.measure(self.anims[anim][1](f / FPS))) for f in range(0, last + 1, step)]
 
 
+@functools.lru_cache(maxsize=None)
+def _built(name):
+    """BUILDERS[name]() built once, for read-only use (the listings below)."""
+    return BUILDERS[name]()
+
+
 def skirted():
     """Every character whose main mesh has a skirt."""
-    return [n for n in BUILDERS if BUILDERS[n]()[0].skirt_grids]
+    return [n for n in BUILDERS if _built(n)[0].skirt_grids]
+
+
+def garment_skirted():
+    """Every optional garment with a skirt, as "<character>:<garment>"."""
+    return [f"{n}:{g}" for n in BUILDERS for g in _built(n)[0].garment_skirts]
 
 
 def check_cloth(names=None, anims=None, step=1, threshold=CLOTH_THRESHOLD, report=None):
     """Scans the skirted characters; returns failures (name, anim, depth, t)."""
     fails = []
-    for name in names or skirted():
+    for name in names or skirted() + garment_skirted():
         ch = Cloth(name)
         for anim in anims or ANIM_NAMES:
             rows = ch.scan(anim, step)
@@ -478,7 +505,7 @@ class Character:
         """{region: min clearance (m)} for one anim.py pose parameter dict."""
         S = self.S
         Q, off = self.rig.solve(params)
-        D, Hd = _pose(S, Q, off)
+        D, Hd = _pose(S, Q, off, self.rig.loc)
         P = _skin(S, D, Hd, self.bones, self.V, self.Wm)
 
         def xf(bn, p):
@@ -529,6 +556,66 @@ class Character:
         return [(f / FPS, self.frame(anim, f / FPS)) for f in list(range(0, last + 1, step))]
 
 
+# Death settle (`--settle`): once a long robe or gown lies down (from
+# SETTLE_FROM s into `die`), its hem may rise at most SETTLE_HEM (m, for a
+# 1.75 m character) off the floor, and no cloth may sink more than
+# SETTLE_FLOOR under it (a little is hidden by the floor).
+SETTLE_FROM = 0.95
+SETTLE_HEM = 0.32
+SETTLE_FLOOR = -0.03
+
+
+def settling():
+    """Every character whose skirt has skirt bones (Body.settle_bones)."""
+    return [n for n in BUILDERS if "SkirtHips" in _built(n)[0].S.bones]
+
+
+def settle_scan(name, step=1, settle=None):
+    """[(t, hem height, lowest cloth z)] of `name`'s main-mesh skirts in the
+    lying part of `die`. `settle` overrides anim.SETTLE[style] (a test)."""
+    import anim
+    b, info = _built(name)
+    style = info["style"]
+    saved = anim.SETTLE.get(style)
+    if settle is not None:
+        anim.SETTLE[style] = settle
+    try:
+        A = make_anims(style, b.S)
+    finally:
+        if settle is not None:
+            anim.SETTLE[style] = saved
+    V, Wm, bones = _skin_matrix(b)
+    grids = [g for g, _ in b.skirt_grids]
+    idx = np.unique(np.concatenate([g.reshape(-1) for g in grids]))
+    hem = np.isin(idx, np.concatenate([g[-1] for g in grids]))
+    rig = Rig(b.S)
+    n = A["die"][0]
+    rows = []
+    for f in range(int(round(SETTLE_FROM * FPS)), n + 1, step):
+        Q, off = rig.solve(A["die"][1](f / FPS))
+        D, Hd = _pose(b.S, Q, off, rig.loc)
+        z = _skin(b.S, D, Hd, bones, V[idx], Wm[idx])[:, 2]
+        rows.append((f / FPS, float(z[hem].max()), float(z.min())))
+    return rows
+
+
+def check_settle(names=None, step=1, report=None):
+    """Returns failures (name, what, value, t, limit)."""
+    fails = []
+    for name in names or settling():
+        rows = settle_scan(name, step)
+        if report:
+            report(name, rows)
+        k = _built(name)[0].H / 1.75
+        t, h, _ = max(rows, key=lambda r: r[1])
+        if h > SETTLE_HEM * k:
+            fails.append((name, "hem", h, t, SETTLE_HEM * k))
+        t, _, z = min(rows, key=lambda r: r[2])
+        if z < SETTLE_FLOOR:
+            fails.append((name, "floor", z, t, SETTLE_FLOOR))
+    return fails
+
+
 def check(names=None, anims=None, step=1, thresholds=None, report=None):
     """Scans the characters; returns a list of failures
     (name, anim, region, clearance, t, threshold). `report(name, anim, rows)`
@@ -560,7 +647,11 @@ def main(argv=None):
                     help="override a failure threshold in metres (repeatable)")
     ap.add_argument("--cloth", action="store_true",
                     help="cloth check instead: legs against skirts (default: every skirted character)")
+    ap.add_argument("--settle", action="store_true",
+                    help="death settle check instead: long robes and gowns lying down")
     a = ap.parse_args(argv)
+    if a.settle:
+        return _main_settle(a)
     if a.cloth:
         return _main_cloth(a, ap)
     th = {}
@@ -618,7 +709,7 @@ def _main_cloth(a, ap):
                 print(f"  t={t:4.2f}  cloth {v:6.3f}" + (" <<" if v < lim else ""))
         else:
             t, v = min(rows, key=lambda x: x[1])
-            print(f"{ch.name:<12}{anim:<12}cloth {v:6.3f}@{t:4.2f}{'!' if v < lim else ''}")
+            print(f"{ch.name:<19}{anim:<12}cloth {v:6.3f}@{t:4.2f}{'!' if v < lim else ''}")
 
     fails = check_cloth(a.chars or None, anims, a.step, lim, report)
     if fails:
@@ -627,6 +718,27 @@ def _main_cloth(a, ap):
             print(f"  {name} {anim}: {v:.3f} m at t={t:.2f} (threshold {lim:.3f})")
         return 1
     print("\nall covered")
+    return 0
+
+
+def _main_settle(a):
+    def report(name, rows):
+        if a.frames:
+            print(f"== {name} die (hem height / lowest cloth, m)")
+            for t, h, z in rows:
+                print(f"  t={t:4.2f}  hem {h:6.3f}  floor {z:+6.3f}")
+        else:
+            th, h, _ = max(rows, key=lambda r: r[1])
+            tz, _, z = min(rows, key=lambda r: r[2])
+            print(f"{name:<12}hem {h:6.3f}@{th:4.2f}  floor {z:+6.3f}@{tz:4.2f}")
+
+    fails = check_settle(a.chars or None, a.step, report)
+    if fails:
+        print(f"\n{len(fails)} failure(s):")
+        for name, what, v, t, lim in fails:
+            print(f"  {name} {what}: {v:.3f} m at t={t:.2f} (limit {lim:.3f})")
+        return 1
+    print("\nall settled")
     return 0
 
 
