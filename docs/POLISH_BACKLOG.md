@@ -400,3 +400,22 @@ Follow-ups:
 - **Hem opening:** from the 34 and front cameras you can see into the lowered hem opening, because the cloth doesn't draw its inside faces. Turn off back-face culling on the cloth materials, or add an inner shell.
 - **Characters without robes:** in death they still lie with their legs 10–15 cm off the floor and the left knee raised.
 - **Hard-coded tuning:** the robe-flattening values were fitted offline with an optimiser that isn't in the repo, and only `--settle` and the cloth check guard them. Commit the fitting script if robe shapes are likely to change.
+
+## Review of polish pass 17
+
+Merged:
+- **Double-sided cloth:** `cloth.tres` (also used for skin and leather) uses the new `character_cloth.gdshader`. Back faces are darkened: albedo ×0.22, no specular or rim, AO 0.4. Hem openings now read as shadow rather than see-through. The three character shaders share `character_surface.gdshaderinc`. Metal, obsidian and glow still cull back faces.
+- **Death legs:** for characters without robes, the final `die` pose has nearly straight legs, the bent knee falls sideways, and the heels rest on the floor. The per-style `DIE_LIE` table keeps helmets, hoods and spikes out of the floor.
+  - The new `clearance.py --dead` fails anything more than 1 cm below the floor, or a leg more than 5 cm above it.
+  - Every character's lowest point is now between −0.6 and +0.9 cm.
+- **Robe-fit script:** `tools/characters/fit_robe_settle.py` is the cleaned-up optimiser. It reproduces the committed values within 0.003, and `--check` refits every style and compares. The junior obligator was refitted for his new lift.
+- **Statue:** the laurel is flat leaves lying along the band (1,238 triangles). The verdigris runs are placed per cell with their own position, width, length and strength. A speckle bug in the run hash is fixed.
+
+303 Godot tests and 25 clearance tests green. Reviewed p17_cmp_hem_vin_gown, p17_cmp_dead_groups and p17_cmp_statue_head.
+
+Follow-ups:
+- **Dark insides:** with double-sided cloth, the openings at the neckline and puff sleeves now show a dark inside where they used to show background through the hole. A small dark patch at Vin's gown neckline is visible in the crouch at 3/4. It is acceptable, but an inner collar facing would be cleaner.
+- **Short skirts in the floor:** coat and tunic skirts on characters without robes sink 2–17 cm under the floor when lying (worst is `skaa_woman`). This is hidden by the floor and not counted by `--dead`; consider a settle for them as well.
+- Spook's hips sit about 2 cm off the floor in death.
+- `fit_robe_settle.py` has no unit test; a full refit takes minutes per style.
+- **Suite time:** the full `tools/run_tests.sh` takes about 8 min. The Godot suite is the slow part, at about 6.5 min of that.
