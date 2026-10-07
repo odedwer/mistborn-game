@@ -14,8 +14,9 @@ Regions (the gripping hand and forearm are never checked):
   neck   Neck
   torso  Hips, Spine, Chest, UpperChest, shoulders (minus skirts)
   arms   the free arm, hand and the weapon arm's upper arm
+  legs   thighs, shins and feet, where no skirt covers them (in the rest pose)
   skirt  robe / tunic / coat skirts (`Body.skirt`)
-  shield the character's own shield (the hazekiller's round shield)
+  shield the character's own shield (the hazekiller's round shield and its boss)
 
 Distances are in metres, surface to surface (negative = interpenetrating).
 A region fails when its minimum falls below its threshold.
@@ -41,17 +42,35 @@ import chars  # noqa: E402
 from anim import ANIM_NAMES, FPS, LOOPING, Rig, make_anims  # noqa: E402
 
 ARMED = ["guard", "hazekiller", "thug", "inquisitor"]
-REGIONS = ["head", "neck", "torso", "arms", "skirt", "shield"]
+REGIONS = ["head", "neck", "torso", "arms", "legs", "skirt", "shield"]
 # Default failure thresholds (m). Head, neck and torso keep a 1 cm gap. The
-# arms and skirts are soft and move with the weapon arm, so only real
+# arms, legs and skirts are soft and move with the weapon arm, so only real
 # interpenetration fails; the shield only must not be passed through.
-THRESHOLDS = {"head": 0.01, "neck": 0.01, "torso": 0.01, "arms": 0.0, "skirt": 0.0, "shield": 0.0}
+THRESHOLDS = {"head": 0.01, "neck": 0.01, "torso": 0.01, "arms": 0.0, "legs": 0.0, "skirt": 0.0, "shield": 0.0}
 
 BONE_REGION = {
     "Head": "head", "Neck": "neck",
     "Hips": "torso", "Spine": "torso", "Chest": "torso", "UpperChest": "torso",
     "LeftShoulder": "torso", "RightShoulder": "torso",
+    "LeftUpperLeg": "legs", "RightUpperLeg": "legs", "LeftLowerLeg": "legs", "RightLowerLeg": "legs",
+    "LeftFoot": "legs", "RightFoot": "legs", "LeftToes": "legs", "RightToes": "legs",
 }
+
+
+def _covered(p, skirts):
+    """True when rest-pose point p lies above the hem of a skirt that wraps
+    round to it (`Body.skirts`: hem z, centre y at the hem, arc or None)."""
+    for z_hem, yc, arc in skirts:
+        if p[2] < z_hem:
+            continue
+        if arc is None:
+            return True
+        # tube() angle for a skirt lofted downwards: 0 = -X, 90 = forward (+Y)
+        th = np.degrees(np.arctan2(p[1] - yc, -p[0])) % 360.0
+        a0, a1 = arc
+        if any(a0 <= th + k <= a1 for k in (-360.0, 0.0, 360.0)):
+            return True
+    return False
 
 
 def _arm_bones(hand_bone):
@@ -149,7 +168,10 @@ class Character:
                 return None
             if dom[i] in arm_bones:
                 return "arms"
-            return BONE_REGION.get(dom[i])
+            r = BONE_REGION.get(dom[i])
+            if r == "legs" and _covered(V[i], b.skirts):
+                return None
+            return r
 
         vreg = [region(i) for i in range(len(V))]
         # sample points: vertices, face centroids, edge midpoints (each a set of
