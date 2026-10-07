@@ -307,7 +307,8 @@ def build_guard():
         b.leg(side, pants, boot_z=0.24 * H, boot_col=boots)
         b.foot(side, boots, sole=hexcol("120e0b"))
     # tunic skirt
-    b.skirt(0.6 * H, 0.42 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.2 * s, 0.14 * s, 0.15 * s), tunic, rows=5, leg_share=0.7)
+    b.skirt(0.6 * H, 0.42 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.2 * s, 0.14 * s, 0.15 * s), tunic, rows=5,
+            leg_share=0.7, front_share=0.9, shin_share=0.5, ease=0.02 * s)
     # belt
     tube(b.m, [v3(0, -0.004 * s, 0.585 * H), v3(0, -0.004 * s, 0.615 * H)], [(0.152 * s, 0.09 * s, 0.092 * s)] * 2,
          n=16, ex=2.3, color=hexcol("2a1d14"), weights=b.W(["Hips", "Spine"]))
@@ -376,7 +377,7 @@ def build_hazekiller():
              weights=b.W([side_name(side, "UpperLeg"), side_name(side, "LowerLeg")]))
     # leather tabard skirt
     b.skirt(0.6 * H, 0.44 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.19 * s, 0.13 * s, 0.14 * s), leather, rows=5,
-            arc=(100, 440))
+            arc=(100, 440), front_share=0.9, shin_share=0.5, ease=0.03 * s)
     # wooden lamellar chest plate (front)
     cu = [r for r in t if 0.63 <= r[0] <= 0.79]
     centers = [v3(0, r[4] * s, r[0] * H) for r in cu]
@@ -497,7 +498,7 @@ def build_coinshot():
         b.foot(side, boots, sole=hexcol("0a0808"))
     # long coat tails (open front)
     b.skirt(0.6 * H, 0.27 * H, (0.155 * s, 0.092 * s, 0.1 * s), (0.2 * s, 0.15 * s, 0.17 * s), coat, rows=7,
-            arc=(106, 434), leg_share=0.6)
+            arc=(106, 434), leg_share=0.6, front_share=0.9, shin_share=0.5, ease=0.03 * s)
     # coin pouch + buckle
     tube(b.m, [v3(0.13 * s, 0.05 * s, 0.575 * H), v3(0.13 * s, 0.05 * s, 0.53 * H)], [(0.03 * s, 0.022 * s), (0.034 * s, 0.026 * s)],
          n=8, color=hexcol("4a3526"), weights={"Hips": 1.0}, cap0="flat", cap1=0.01 * s)
@@ -556,8 +557,12 @@ def build_inquisitor():
             return black
         return robe
 
+    # The robe's front follows the thighs and its lower part the shins: with
+    # a hip-weighted front his knees came 24 cm through it in the sprint and
+    # 31-37 cm in the crouch. (Little ease: a wider robe brought it within
+    # 2 mm of the axe held low in Push.)
     b.skirt(0.6 * H, 0.03 * H, (0.145 * s, 0.085 * s, 0.095 * s), (0.25 * s, 0.22 * s, 0.26 * s), robe_col,
-            rows=9, n=20, leg_share=0.55)
+            rows=9, n=20, leg_share=0.75, front_share=0.95, shin_share=0.7, ease=0.01 * s)
     # high collar
     tube(b.m, [v3(0, -0.01 * s, 0.82 * H), v3(0, -0.02 * s, 0.875 * H)], [(0.085 * s, 0.07 * s, 0.08 * s), (0.08 * s, 0.06 * s, 0.08 * s)],
          n=14, arc=(115, 425), color=under, weights=b.W(["UpperChest", "Neck"]), mat=CLOTH)

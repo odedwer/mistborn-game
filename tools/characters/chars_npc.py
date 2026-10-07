@@ -423,7 +423,7 @@ def apron(b: Body, col, *, z_top=0.6, z_bot=0.3, bib=True, strap=None):
     s, H = b.s, b.H
     w = b.P["width"]
     b.skirt(z_top * H, z_bot * H, (0.16 * s * w, 0.1 * s * w, 0.1 * s * w), (0.19 * s * w, 0.15 * s * w, 0.12 * s * w), col,
-            arc=(28, 152), rows=5, n=12, leg_share=0.6)
+            arc=(28, 152), rows=5, n=12, leg_share=0.6, front_share=0.9, shin_share=0.5, ease=0.02 * s)
     if bib:
         # bib: a front panel following the chest
         zs = [z_top, 0.66, 0.72, 0.77]
@@ -527,7 +527,7 @@ def build_dockson():
         b.foot(side, boots, sole=hexcol("100c09"))
     # knee-length practical coat, open at the front
     b.skirt(0.6 * H, 0.3 * H, (0.165 * s, 0.1 * s, 0.108 * s), (0.2 * s, 0.15 * s, 0.17 * s), coat, rows=6,
-            arc=(104, 436), leg_share=0.6)
+            arc=(104, 436), leg_share=0.6, front_share=0.9, shin_share=0.5, ease=0.03 * s)
     shirt_v(b, trings, shirt, half_w=0.045)
     collar(b, coat, h=0.04, r=(0.085, 0.078, 0.085))
     # satchel on the left hip
@@ -576,7 +576,7 @@ def build_breeze():
     collar(b, coat, h=0.045, r=(0.08, 0.075, 0.08))
     # tailcoat tails at the back
     b.skirt(0.6 * H, 0.33 * H, (0.17 * s, 0.11 * s, 0.12 * s), (0.18 * s, 0.13 * s, 0.16 * s), coat, rows=5,
-            arc=(200, 340), leg_share=0.55, n=12)
+            arc=(200, 340), leg_share=0.55, front_share=0.9, shin_share=0.5, ease=0.04 * s, n=12)
     # waistcoat buttons
     for k_ in range(5):
         z_ = (0.6 + 0.03 * k_) * H
@@ -755,7 +755,7 @@ def build_sazed():
         return vcol(p, i, th)
 
     b.skirt(0.6 * H, 0.03 * H, (0.145 * s, 0.088 * s, 0.098 * s), (0.23 * s, 0.2 * s, 0.24 * s), skirt_col,
-            rows=18, n=24, leg_share=0.55)
+            rows=18, n=24, leg_share=0.75, front_share=0.95, shin_share=0.7, ease=0.025 * s)
     # V collar
     collar(b, rust, h=0.03, r=(0.08, 0.075, 0.08), arc=(125, 415))
     # metalmind bracers (copper / tin / pewter)
@@ -796,7 +796,7 @@ def build_marsh():
         return robe
 
     b.skirt(0.6 * H, 0.04 * H, (0.145 * s, 0.088 * s, 0.096 * s), (0.22 * s, 0.19 * s, 0.23 * s), robe_col,
-            rows=8, n=20, leg_share=0.55)
+            rows=8, n=20, leg_share=0.75, front_share=0.95, shin_share=0.7, ease=0.025 * s)
     collar(b, under, h=0.055, r=(0.085, 0.07, 0.08), arc=(115, 425))
     return b, dict(mats={CLOTH: "Cloth"}, style="marsh")
 
@@ -839,7 +839,8 @@ def build_elend():
          color=hexcol("7a2a2a"), weights=b.W(["UpperChest", "Chest"]))
     # open frock coat, one collar flipped up
     b.skirt(0.6 * H, 0.36 * H, (0.155 * s, 0.098 * s, 0.108 * s), (0.18 * s, 0.13 * s, 0.15 * s),
-            lambda p, i, th: coat_d if i == 4 else coat, rows=5, arc=(112, 428), leg_share=0.6)
+            lambda p, i, th: coat_d if i == 4 else coat, rows=5, arc=(112, 428),
+            leg_share=0.6, front_share=0.9, shin_share=0.5, ease=0.02 * s)
     collar(b, coat, h=0.05, r=(0.08, 0.075, 0.08), arc=(115, 300))
     collar(b, coat_d, h=0.07, r=(0.085, 0.08, 0.085), arc=(300, 425))
     # stack of books held against the left hip, out in front of the open
@@ -914,7 +915,7 @@ def build_vin_gown():
         return silk
 
     b.skirt(0.6 * H, 0.0, (0.12 * s, 0.085 * s, 0.1 * s), (0.44 * s, 0.44 * s, 0.5 * s), skirt_col, rows=9, n=24,
-            leg_share=0.28, curve=0.75)
+            leg_share=0.4, front_share=0.8, shin_share=0.6, ease=0.025 * s, curve=0.75)
     return b, dict(mats={CLOTH: "Cloth"}, style="gown")
 
 
@@ -1028,7 +1029,7 @@ def build_noble_woman():
         return gown
 
     b.skirt(0.6 * H, 0.0, (0.12 * s, 0.085 * s, 0.1 * s), (0.42 * s, 0.4 * s, 0.5 * s), skirt_col, rows=9, n=22,
-            leg_share=0.28, curve=1.1)
+            leg_share=0.4, front_share=0.8, shin_share=0.6, ease=0.025 * s, curve=1.1)
     with b.garment("bustle"):
         b.skirt(0.6 * H, 0.2 * H, (0.13 * s, 0.09 * s, 0.13 * s), (0.3 * s, 0.26 * s, 0.4 * s),
                 lambda p, i, th: trim if i == 4 else gown_d, arc=(210, 330), rows=5, n=10, leg_share=0.2, curve=0.7)
@@ -1083,7 +1084,7 @@ def build_obligator():
         return robe
 
     b.skirt(0.6 * H, 0.02 * H, (0.145 * s, 0.086 * s, 0.096 * s), (0.24 * s, 0.21 * s, 0.25 * s), robe_col,
-            rows=8, n=20, leg_share=0.5)
+            rows=8, n=20, leg_share=0.75, front_share=0.95, shin_share=0.7, ease=0.025 * s)
     collar(b, stole, h=0.06, r=(0.082, 0.07, 0.078), arc=(112, 428))
     # rank chain across the chest
     tube(b.m, [v3(x * s, 0.1 * s - abs(x) * 0.25 * s, 0.745 * H - (0.08 - abs(x)) * 0.25 * s) for x in (-0.08, -0.04, 0, 0.04, 0.08)],
@@ -1117,7 +1118,7 @@ def build_obligator_2():
         return robe
 
     b.skirt(0.6 * H, 0.025 * H, (0.165 * s, 0.11 * s, 0.11 * s), (0.25 * s, 0.23 * s, 0.25 * s), robe_col,
-            rows=8, n=20, leg_share=0.5)
+            rows=8, n=20, leg_share=0.75, front_share=0.95, shin_share=0.7, ease=0.025 * s)
     collar(b, under, h=0.035, r=(0.09, 0.08, 0.085), arc=(112, 428))
     # book of the Balance hanging from the belt
     box(b.m, v3(-0.17 * s, 0.03 * s, 0.53 * H), (0.03 * s, 0.1 * s, 0.13 * s), color=hexcol("3a2a22"),
@@ -1157,7 +1158,8 @@ def build_skaa_man():
         b.leg(side, lambda p, i, th: mottle(pants, p, 0.12) if p[2] > 0.2 * H else wrap, thigh=0.94)
         b.foot(side, wrap, sole=hexcol("2a241e"))
     b.skirt(0.6 * H, 0.4 * H, (0.15 * s, 0.09 * s, 0.1 * s), (0.18 * s, 0.13 * s, 0.14 * s),
-            lambda p, i, th: mottle(tunic, p, 0.1), rows=5, n=16, leg_share=0.7, jag=0.05, seed=3)
+            lambda p, i, th: mottle(tunic, p, 0.1), rows=5, n=16,
+            leg_share=0.7, front_share=0.9, shin_share=0.5, ease=0.02 * s, jag=0.05, seed=3)
     # rope belt
     belt(b, 0.595, hexcol("8a7a5a"), r=(0.15, 0.092, 0.1), h=0.018)
     with b.garment("cap"):
@@ -1206,7 +1208,8 @@ def build_skaa_woman():
         b.leg(side, skin, thigh=0.9)
         b.foot(side, hexcol("4a4034"), scale=0.88, sole=hexcol("201a14"))
     b.skirt(0.6 * H, 0.12 * H, (0.13 * s, 0.09 * s, 0.1 * s), (0.26 * s, 0.24 * s, 0.26 * s),
-            lambda p, i, th: mottle(dress, p, 0.1), rows=7, n=18, leg_share=0.45, jag=0.04, seed=5)
+            lambda p, i, th: mottle(dress, p, 0.1), rows=7, n=18,
+            leg_share=0.65, front_share=0.95, shin_share=0.6, ease=0.02 * s, jag=0.04, seed=5)
     apron(b, apron_c, z_top=0.61, z_bot=0.24, bib=False)
     belt(b, 0.6, hexcol("5a4a36"), r=(0.14, 0.09, 0.1), h=0.016)
     with b.garment("headscarf"):

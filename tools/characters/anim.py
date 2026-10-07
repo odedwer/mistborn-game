@@ -606,21 +606,32 @@ def make_anims(style: str, S: Skel):
         fk = {"leg_fk": 1.0}
         stand = dict(fk, r_lflex=0, l_lflex=0, r_knee=0, l_knee=0, r_ankle=0, l_ankle=0)
         leg_h = S.head("Hips")[2]
+
+        def drop(f, flex):
+            # An armed character lets the weapon fall flat beside him. The
+            # carry's grip stood the shaft straight up from the dead hand (the
+            # spear and staff also drove 50-70 cm into the floor): the
+            # forearm turns the shaft down along the arm and the arm lowers.
+            if not STYLES[style].get("weapon_r", False):
+                return {"r_flex": flex}
+            return {"r_flex": flex - 30.0 * f, "r_wtwist": base.get("r_wtwist", 0.0) - 60.0 * f,
+                    "r_wrist": base.get("r_wrist", 0.0) - 20.0 * f}
+
         return keyed([
             (0.0, stand),
             (0.2, dict(fk, spine_lean=-10, head_pitch=-20, r_abd=35, l_abd=35, r_elbow=40, l_elbow=40,
                        hips_z=-0.04 * k, r_lflex=5, l_lflex=5, r_knee=10, l_knee=10)),
             (0.55, dict(fk, hips_z=-0.42 * leg_h, hips_lean=-35, hips_y=-0.1 * k, spine_lean=-10, head_pitch=-15,
                         r_lflex=85, l_lflex=75, r_knee=120, l_knee=110, r_ankle=30, l_ankle=25, r_abd=45, l_abd=40,
-                        r_flex=30, l_flex=20, r_elbow=50, l_elbow=40)),
+                        l_flex=20, r_elbow=50, l_elbow=40, **drop(0.0, 30))),
             (0.95, dict(fk, hips_z=-leg_h + 0.12 * k, hips_lean=-88, hips_y=-0.3 * k, spine_lean=-4,
                         head_pitch=10, head_yaw=25, r_lflex=12, l_lflex=28, r_knee=20, l_knee=45, r_labd=10,
-                        l_labd=8, r_ankle=30, l_ankle=30, r_abd=80, l_abd=70, r_flex=10, l_flex=-5,
-                        r_elbow=30, l_elbow=45)),
+                        l_labd=8, r_ankle=30, l_ankle=30, r_abd=80, l_abd=70, l_flex=-5,
+                        r_elbow=30, l_elbow=45, **drop(1.0, 10))),
             (1.3, dict(fk, hips_z=-leg_h + 0.11 * k, hips_lean=-90, hips_y=-0.32 * k, spine_lean=0,
                        head_pitch=12, head_yaw=30, r_lflex=8, l_lflex=24, r_knee=12, l_knee=40, r_labd=12,
-                       l_labd=9, r_ankle=25, l_ankle=25, r_abd=85, l_abd=72, r_flex=5, l_flex=-8,
-                       r_elbow=25, l_elbow=40)),
+                       l_labd=9, r_ankle=25, l_ankle=25, r_abd=85, l_abd=72, l_flex=-8,
+                       r_elbow=25, l_elbow=40, **drop(1.0, 5))),
         ], t, base)
 
     add("die", 1.3, die)

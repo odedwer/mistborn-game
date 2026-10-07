@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Weapon clearance check: how close each armed character's weapon comes to
-its own body, frame by frame, in every animation.
+"""Clearance checks of the generated characters, frame by frame, in every
+animation: how close each armed character's weapon comes to its own body
+(the weapon check), and whether any skirted character's legs show through
+its robe, gown, tunic or coat (the cloth check, `--cloth`).
 
 Needs only numpy (no Blender): it builds the character with chars.py, poses
 the skeleton with anim.py exactly as build_characters.py bakes it, and skins
@@ -14,18 +16,27 @@ Regions (the gripping hand and forearm are never checked):
   neck   Neck
   torso  Hips, Spine, Chest, UpperChest, shoulders (minus skirts)
   arms   the free arm, hand and the weapon arm's upper arm
-  legs   thighs, shins and feet, where no skirt covers them (in the rest pose)
+  legs   thighs, shins and feet, where no skirt covers them in that frame (a
+         thigh that swings out past the hem mid-stride counts)
   skirt  robe / tunic / coat skirts (`Body.skirt`)
   shield the character's own shield (the hazekiller's round shield and its boss)
 
 Distances are in metres, surface to surface (negative = interpenetrating).
 A region fails when its minimum falls below its threshold.
 
+Cloth check (`--cloth`, every character with a skirt): the leg vertices a
+skirt covers in the rest pose (from 8 cm above its hem up) must stay inside
+its cloth. Each frame reports the deepest a leg shows through (negative, m);
+a clip fails below -1.5 cm (CLOTH_THRESHOLD). A leg that leaves the cloth
+past the hem or through a front slit is uncovered there, not clipping.
+
 Usage:
   tools/characters/clearance.py                     # every armed character, every clip: summary
   tools/characters/clearance.py inquisitor --anim=pull --frames   # per-frame table
   tools/characters/clearance.py guard thug --anim=run,sprint --step=2
   tools/characters/clearance.py --threshold=head=0.02 --threshold=skirt=0
+  tools/characters/clearance.py --cloth                       # every skirted character
+  tools/characters/clearance.py --cloth sazed --anim=crouch_walk --frames
 Exit status: 0 when every region clears its threshold, 1 otherwise.
 """
 from __future__ import annotations
@@ -39,8 +50,10 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import chars  # noqa: E402
+import chars_npc  # noqa: E402
 from anim import ANIM_NAMES, FPS, LOOPING, Rig, make_anims  # noqa: E402
 
+BUILDERS = {**chars.BUILDERS, **chars_npc.BUILDERS}
 ARMED = ["guard", "hazekiller", "thug", "inquisitor"]
 REGIONS = ["head", "neck", "torso", "arms", "legs", "skirt", "shield"]
 # Default failure thresholds (m). Head, neck and torso keep a 1 cm gap. The
@@ -55,22 +68,6 @@ BONE_REGION = {
     "LeftUpperLeg": "legs", "RightUpperLeg": "legs", "LeftLowerLeg": "legs", "RightLowerLeg": "legs",
     "LeftFoot": "legs", "RightFoot": "legs", "LeftToes": "legs", "RightToes": "legs",
 }
-
-
-def _covered(p, skirts):
-    """True when rest-pose point p lies above the hem of a skirt that wraps
-    round to it (`Body.skirts`: hem z, centre y at the hem, arc or None)."""
-    for z_hem, yc, arc in skirts:
-        if p[2] < z_hem:
-            continue
-        if arc is None:
-            return True
-        # tube() angle for a skirt lofted downwards: 0 = -X, 90 = forward (+Y)
-        th = np.degrees(np.arctan2(p[1] - yc, -p[0])) % 360.0
-        a0, a1 = arc
-        if any(a0 <= th + k <= a1 for k in (-360.0, 0.0, 360.0)):
-            return True
-    return False
 
 
 def _arm_bones(hand_bone):
@@ -121,6 +118,16 @@ def _caps_dist(P, A, C, R, bound=None):
     return float((np.sqrt(np.einsum("nkj,nkj->nk", D, D)) - R).min())
 
 
+def _caps_dists(P, A, C, R):
+    """Surface distance from each of points P (N,3) to the nearest of capsules A-C (K,3), radii R (K,)."""
+    AB = C - A
+    den = np.maximum(np.einsum("kj,kj->k", AB, AB), 1e-12)
+    PA = P[:, None, :] - A[None, :, :]
+    u = np.clip(np.einsum("nkj,kj->nk", PA, AB) / den, 0.0, 1.0)
+    D = PA - u[:, :, None] * AB[None, :, :]
+    return (np.sqrt(np.einsum("nkj,nkj->nk", D, D)) - R).min(axis=1)
+
+
 def _disc_dist(P, c, n, R, ht):
     """Distances from points P to a solid disc (centre c, normal n, radius R, half thickness ht)."""
     rel = P - c
@@ -131,24 +138,257 @@ def _disc_dist(P, c, n, R, ht):
     return np.sqrt(dr * dr + dh * dh)
 
 
+def _skin_matrix(b):
+    """(rest vertices, normalised skin weight matrix, bone names) of b's main mesh."""
+    m = b.m
+    V = np.array(m.verts)
+    bones = list(b.S.order)
+    bi = {n: i for i, n in enumerate(bones)}
+    Wm = np.zeros((len(V), len(bones)))
+    for i, w in enumerate(m.weights):
+        for bn, x in w.items():
+            Wm[i, bi[bn]] = x
+    Wm /= Wm.sum(axis=1, keepdims=True)
+    return V, Wm, bones
+
+
+def _skin(S, D, Hd, bones, V, Wm):
+    """Linear blend skinning of rest points V (N,3) with weights Wm (N,bones)."""
+    P = np.zeros_like(V)
+    for j, bn in enumerate(bones):
+        w = Wm[:, j]
+        nz = w > 0
+        if nz.any():
+            P[nz] += w[nz, None] * (Hd[bn] + (V[nz] - S.head(bn)) @ D[bn].T)
+    return P
+
+
+def _unit(v):
+    return v / np.maximum(np.linalg.norm(v, axis=-1, keepdims=True), 1e-12)
+
+
+class SkirtSurface:
+    """A skirt's posed cloth surface (`Body.skirt_grids`: a grid of rings x
+    columns, hem last), sampled at its vertices, quad centres and boundary
+    edge midpoints. Each sample has an outward normal, and boundary samples
+    (hem, waist and the edges of an open arc) a tangent pointing off the cloth.
+
+    `classify(P)` -> (d, beyond): d is the distance of each point outside the
+    cloth along the nearest sample's normal (negative = inside), and `beyond`
+    says the point has passed off the edge of the cloth (below the hem, out
+    of a front slit): it is uncovered there, not poking through."""
+
+    def __init__(self, grid, closed, yc):
+        self.grid, self.closed, self.yc = grid, closed, yc
+        self.sign = 1.0
+
+    def _quads(self, G):
+        Gn = np.concatenate([G, G[:, :1]], axis=1) if self.closed else G
+        a, b, c, d = Gn[:-1, :-1], Gn[:-1, 1:], Gn[1:, 1:], Gn[1:, :-1]
+        return Gn, (a + b + c + d) / 4.0, np.cross(c - a, d - b)
+
+    def orient(self, G):
+        """Fixes the normal sign from the rest pose: normals point away from
+        the skirt's axis (x = 0, y = centre at the hem)."""
+        _, qc, qn = self._quads(G)
+        out = qc - np.stack([np.zeros_like(qc[..., 0]), np.full_like(qc[..., 0], self.yc), qc[..., 2]], axis=-1)
+        self.sign = 1.0 if float((qn * out).sum()) >= 0.0 else -1.0
+
+    def samples(self, G):
+        """(points, normals, tangents) for the posed grid G (rows, cols, 3)."""
+        R, C = G.shape[:2]
+        Gn, qc, qn = self._quads(G)
+        qn = _unit(qn * self.sign)
+        vn = np.zeros(Gn.shape)
+        vn[:-1, :-1] += qn
+        vn[:-1, 1:] += qn
+        vn[1:, 1:] += qn
+        vn[1:, :-1] += qn
+        if self.closed:
+            vn[:, 0] += vn[:, -1]
+            vn = vn[:, :-1]
+        vn = _unit(vn)
+        vt = np.zeros(G.shape)
+        vt[-1] += _unit(G[-1] - G[-2])  # hem: down the cloth
+        vt[0] += _unit(G[0] - G[1])  # waist
+        if not self.closed:
+            vt[:, 0] += _unit(G[:, 0] - G[:, 1])
+            vt[:, -1] += _unit(G[:, -1] - G[:, -2])
+        vt = _unit(vt) * (np.linalg.norm(vt, axis=-1, keepdims=True) > 0)
+        pts, nrm, tan = [G.reshape(-1, 3), qc.reshape(-1, 3)], [vn.reshape(-1, 3), qn.reshape(-1, 3)], \
+            [vt.reshape(-1, 3), np.zeros((qc.shape[0] * qc.shape[1], 3))]
+        # boundary edge midpoints
+        edges = []
+        cols = list(range(C)) if self.closed else list(range(C - 1))
+        for r in (0, R - 1):
+            edges += [((r, j), (r, (j + 1) % C)) for j in cols]
+        if not self.closed:
+            edges += [((i, c), (i + 1, c)) for c in (0, C - 1) for i in range(R - 1)]
+        if edges:
+            e0 = np.array([e[0] for e in edges])
+            e1 = np.array([e[1] for e in edges])
+            pts.append((G[e0[:, 0], e0[:, 1]] + G[e1[:, 0], e1[:, 1]]) / 2.0)
+            nrm.append(_unit(vn[e0[:, 0], e0[:, 1]] + vn[e1[:, 0], e1[:, 1]]))
+            tan.append(_unit(vt[e0[:, 0], e0[:, 1]] + vt[e1[:, 0], e1[:, 1]]))
+        return np.concatenate(pts), np.concatenate(nrm), np.concatenate(tan)
+
+    def classify(self, P, G):
+        S, N, T = self.samples(G)
+        d2 = (P * P).sum(1)[:, None] - 2.0 * P @ S.T + (S * S).sum(1)[None, :]
+        k = d2.argmin(axis=1)
+        rel = P - S[k]
+        d = (rel * N[k]).sum(1)
+        if self.closed:
+            # Where the cloth folds over itself (a knee-length fold behind a
+            # bent knee), the nearest sample can lie on the far side of the
+            # fold. A closed tube's winding number settles it: about 1 inside,
+            # about 0 outside, whatever the folds.
+            out = np.where(d > 0.0)[0]
+            if len(out):
+                inside = np.abs(self.winding(P[out], G)) > 0.5
+                d[out[inside]] = np.minimum(d[out[inside]], 0.0)
+        return d, (rel * T[k]).sum(1) > 0.0
+
+    def winding(self, P, G):
+        """Generalised winding number of the cloth tube around points P (the
+        signed solid angle of its triangles over 4 pi; the open waist and hem
+        let it fall short of 1 inside)."""
+        Gn = np.concatenate([G, G[:, :1]], axis=1)
+        a, b, c, d = Gn[:-1, :-1], Gn[:-1, 1:], Gn[1:, 1:], Gn[1:, :-1]
+        T = np.concatenate([np.stack([a, b, c], -2).reshape(-1, 3, 3), np.stack([a, c, d], -2).reshape(-1, 3, 3)])
+        R = T[None, :, :, :] - P[:, None, None, :]
+        L = np.linalg.norm(R, axis=-1)
+        A, B, C = R[:, :, 0], R[:, :, 1], R[:, :, 2]
+        la, lb, lc = L[:, :, 0], L[:, :, 1], L[:, :, 2]
+        num = np.einsum("ntj,ntj->nt", A, np.cross(B, C))
+        den = (la * lb * lc + np.einsum("ntj,ntj->nt", A, B) * lc + np.einsum("ntj,ntj->nt", A, C) * lb
+               + np.einsum("ntj,ntj->nt", B, C) * la)
+        return (2.0 * np.arctan2(num, den)).sum(axis=1) / (4.0 * np.pi)
+
+
+def _skirt_surfaces(b):
+    return [SkirtSurface(g, closed, yc) for (g, closed), (_, yc, _) in zip(b.skirt_grids, b.skirts)]
+
+
+def _coverage(surfs, Pg, P):
+    """(depth, beyond), each (points, skirts): how deep each point of P lies
+    inside each skirt's cloth (m, negative = outside it), and whether it has
+    left that cloth past its hem or edge. `Pg` holds the posed skirt grids."""
+    depth = np.zeros((len(P), len(surfs)))
+    beyond = np.zeros((len(P), len(surfs)), dtype=bool)
+    for k, (sf, G) in enumerate(zip(surfs, Pg)):
+        d, beyond[:, k] = sf.classify(P, G)
+        depth[:, k] = -d
+    return depth, beyond
+
+
+def covered(surfs, Pg, P):
+    """True for the points of P inside some skirt's cloth (posed grids Pg)."""
+    depth, beyond = _coverage(surfs, Pg, P)
+    return ((depth >= 0.0) & ~beyond).any(axis=1)
+
+
+LEG_BONES = {bn for bn, r in BONE_REGION.items() if r == "legs"}
+CLOTH_THRESHOLD = -0.015  # (m) see Cloth
+# Feet step out from under a long robe's hem as they would under real cloth:
+# only leg vertices at least this far above the hem in the rest pose (m, for
+# a 1.75 m character) must stay inside the cloth.
+CLOTH_HEM_MARGIN = 0.08
+
+
+class Cloth:
+    """Cloth-against-legs check: a character's skirts (robe, gown, tunic,
+    coat tails, tabard) against its own legs, posed frame by frame.
+
+    A leg vertex (thigh, knee, shin, foot) that the cloth covers in the rest
+    pose must stay inside it: its clearance is how far inside the cloth it
+    lies (negative = showing through). A leg that leaves the cloth past its
+    hem or through a front slit is uncovered there, not clipping, and doesn't
+    count."""
+
+    def __init__(self, name):
+        self.name = name
+        b, info = BUILDERS[name]()
+        self.b, self.S, self.style = b, b.S, info["style"]
+        if not b.skirt_grids:
+            raise ValueError(f"{name} has no skirt")
+        V, Wm, bones = _skin_matrix(b)
+        tag = np.zeros(len(V), dtype=bool)
+        for ranges in b.parts.values():
+            for s0, s1 in ranges:
+                tag[s0:s1] = True
+        dom = Wm.argmax(axis=1)
+        legs = np.array([i for i in range(len(V)) if bones[dom[i]] in LEG_BONES and not tag[i]], dtype=int)
+        self.surfs = _skirt_surfaces(b)
+        for sf in self.surfs:
+            sf.orient(V[sf.grid])
+        depth, beyond = _coverage(self.surfs, [V[sf.grid] for sf in self.surfs], V[legs])
+        margin = CLOTH_HEM_MARGIN * b.H / 1.75
+        hems = np.array([z for z, _, _ in b.skirts])
+        # (legs, skirts): covered in the rest pose, well above that skirt's hem
+        self.cover = (depth >= 0.0) & ~beyond & (V[legs][:, 2:3] > hems[None, :] + margin)
+        keep = self.cover.any(axis=1)
+        self.legs, self.cover = legs[keep], self.cover[keep]
+        self.grid_idx = [sf.grid for sf in self.surfs]
+        self.Wl, self.Vl = Wm[self.legs], V[self.legs]
+        self.Wg = [Wm[g.reshape(-1)] for g in self.grid_idx]
+        self.Vg = [V[g.reshape(-1)] for g in self.grid_idx]
+        self.bones = bones
+        self.anims = make_anims(self.style, self.S)
+        self.rig = Rig(self.S)
+
+    def measure(self, params, detail=False):
+        """Minimum depth (m) of the rest-covered leg vertices inside the cloth
+        (negative = a leg shows through); with `detail`, also the per-vertex
+        depths and posed leg positions."""
+        Q, off = self.rig.solve(params)
+        D, Hd = _pose(self.S, Q, off)
+        P = _skin(self.S, D, Hd, self.bones, self.Vl, self.Wl)
+        Pg = [_skin(self.S, D, Hd, self.bones, V, W).reshape(g.shape + (3,))
+              for V, W, g in zip(self.Vg, self.Wg, self.grid_idx)]
+        depth, beyond = _coverage(self.surfs, Pg, P)
+        # a point that left a skirt past its hem or edge is uncovered, not poking through
+        depth = np.where(self.cover, np.where(beyond, np.inf, depth), -np.inf).max(axis=1)
+        v = float(depth.min()) if len(depth) else 9.0
+        return (v, depth, P) if detail else v
+
+    def scan(self, anim, step=1):
+        n = self.anims[anim][0]
+        last = n - 1 if anim in LOOPING else n
+        return [(f / FPS, self.measure(self.anims[anim][1](f / FPS))) for f in range(0, last + 1, step)]
+
+
+def skirted():
+    """Every character whose main mesh has a skirt."""
+    return [n for n in BUILDERS if BUILDERS[n]()[0].skirt_grids]
+
+
+def check_cloth(names=None, anims=None, step=1, threshold=CLOTH_THRESHOLD, report=None):
+    """Scans the skirted characters; returns failures (name, anim, depth, t)."""
+    fails = []
+    for name in names or skirted():
+        ch = Cloth(name)
+        for anim in anims or ANIM_NAMES:
+            rows = ch.scan(anim, step)
+            if report:
+                report(ch, anim, rows)
+            t, v = min(rows, key=lambda x: x[1])
+            if v < threshold:
+                fails.append((name, anim, v, t))
+    return fails
+
+
 class Character:
     """One character's mesh, regions and weapon proxies, ready to pose."""
 
     def __init__(self, name):
         self.name = name
-        b, info = chars.BUILDERS[name]()
+        b, info = BUILDERS[name]()
         self.b, self.S, self.style = b, b.S, info["style"]
         if not b.weapon_caps:
             raise ValueError(f"{name} carries no weapon with clearance capsules")
         m = b.m
-        V = np.array(m.verts)
-        bones = list(self.S.order)
-        bi = {n: i for i, n in enumerate(bones)}
-        Wm = np.zeros((len(V), len(bones)))
-        for i, w in enumerate(m.weights):
-            for bn, x in w.items():
-                Wm[i, bi[bn]] = x
-        Wm /= Wm.sum(axis=1, keepdims=True)
+        V, Wm, bones = _skin_matrix(b)
         dom = [bones[j] for j in Wm.argmax(axis=1)]
         tag = [None] * len(V)
         for part, ranges in b.parts.items():
@@ -168,10 +408,7 @@ class Character:
                 return None
             if dom[i] in arm_bones:
                 return "arms"
-            r = BONE_REGION.get(dom[i])
-            if r == "legs" and _covered(V[i], b.skirts):
-                return None
-            return r
+            return BONE_REGION.get(dom[i])
 
         vreg = [region(i) for i in range(len(V))]
         # sample points: vertices, face centroids, edge midpoints (each a set of
@@ -193,7 +430,13 @@ class Character:
                         edges.add(e)
                         samples[r].append(e)
         self.samples = {}
-        used = sorted({i for r in samples for s in samples[r] for i in s})
+        # the skirts' own grids are skinned too: a leg counts as covered in
+        # the frames where it is inside its skirt (see SkirtSurface)
+        self.surfs = _skirt_surfaces(b)
+        for sf in self.surfs:
+            sf.orient(V[sf.grid])
+        grid_v = {int(i) for sf in self.surfs for i in sf.grid.reshape(-1)}
+        used = sorted({i for r in samples for s in samples[r] for i in s} | grid_v)
         self.used = np.array(used, dtype=int)
         pos = {v: k for k, v in enumerate(used)}
         for r, lst in samples.items():
@@ -204,6 +447,7 @@ class Character:
             for s in lst:
                 groups.setdefault(len(s), []).append([pos[i] for i in s])
             self.samples[r] = [np.array(g, dtype=int) for g in groups.values()]
+        self.grids = [np.vectorize(pos.get)(sf.grid) for sf in self.surfs]
         self.V = V[self.used]
         self.Wm = Wm[self.used]
         self.bones = bones
@@ -235,13 +479,7 @@ class Character:
         S = self.S
         Q, off = self.rig.solve(params)
         D, Hd = _pose(S, Q, off)
-        # linear blend skinning of the sampled vertices
-        P = np.zeros_like(self.V)
-        for j, bn in enumerate(self.bones):
-            w = self.Wm[:, j]
-            nz = w > 0
-            if nz.any():
-                P[nz] += w[nz, None] * (Hd[bn] + (self.V[nz] - S.head(bn)) @ D[bn].T)
+        P = _skin(S, D, Hd, self.bones, self.V, self.Wm)
 
         def xf(bn, p):
             return Hd[bn] + D[bn] @ (p - S.head(bn))
@@ -257,7 +495,10 @@ class Character:
         out = {}
         for r, groups in self.samples.items():
             pts = np.concatenate([P[g].mean(axis=1) for g in groups])
-            out[r] = _caps_dist(pts, A, C, R, bnd)
+            if r == "legs" and self.surfs:
+                out[r] = self._uncovered_dist(pts, [P[g] for g in self.grids], A, C, R)
+            else:
+                out[r] = _caps_dist(pts, A, C, R, bnd)
         for bn, c, n, R, ht in self.b.shields:
             cw, nw = xf(bn, c), D[bn] @ n
             best = 9.0
@@ -267,6 +508,19 @@ class Character:
                 best = min(best, float((_disc_dist(pts, cw, nw, R, ht) - rad).min()))
             out["shield"] = min(out.get("shield", 9.0), best)
         return out
+
+    def _uncovered_dist(self, pts, grids, A, C, R, chunk=48):
+        """Closest weapon distance over the leg points no skirt covers in
+        this pose: a thigh that swings out past the hem mid-stride counts.
+        Points are tried nearest first, a chunk at a time."""
+        dist = _caps_dists(pts, A, C, R)
+        order = np.argsort(dist)
+        for k in range(0, len(order), chunk):
+            idx = order[k:k + chunk]
+            cov = covered(self.surfs, grids, pts[idx])
+            if not cov.all():
+                return float(dist[idx[~cov][0]])
+        return 9.0
 
     def scan(self, anim, step=1):
         """[(t, {region: clearance})] for every `step`-th frame of `anim`."""
@@ -304,7 +558,11 @@ def main(argv=None):
     ap.add_argument("--frames", action="store_true", help="print every frame, not just each clip's minimum")
     ap.add_argument("--threshold", action="append", default=[], metavar="REGION=M",
                     help="override a failure threshold in metres (repeatable)")
+    ap.add_argument("--cloth", action="store_true",
+                    help="cloth check instead: legs against skirts (default: every skirted character)")
     a = ap.parse_args(argv)
+    if a.cloth:
+        return _main_cloth(a, ap)
     th = {}
     for kv in a.threshold:
         k, v = kv.split("=", 1)
@@ -338,6 +596,37 @@ def main(argv=None):
             print(f"  {name} {anim} {r}: {v:.3f} m at t={t:.2f} (threshold {lim:.3f})")
         return 1
     print("\nall clear")
+    return 0
+
+
+def _main_cloth(a, ap):
+    lim = CLOTH_THRESHOLD
+    for kv in a.threshold:
+        k, v = kv.split("=", 1)
+        if k != "cloth":
+            ap.error("with --cloth, only --threshold=cloth=M")
+        lim = float(v)
+    anims = [x for x in a.anim.split(",") if x] or None
+    for x in anims or []:
+        if x not in ANIM_NAMES:
+            ap.error(f"unknown animation {x}")
+
+    def report(ch, anim, rows):
+        if a.frames:
+            print(f"== {ch.name} {anim}  (depth of the legs inside the cloth, m)")
+            for t, v in rows:
+                print(f"  t={t:4.2f}  cloth {v:6.3f}" + (" <<" if v < lim else ""))
+        else:
+            t, v = min(rows, key=lambda x: x[1])
+            print(f"{ch.name:<12}{anim:<12}cloth {v:6.3f}@{t:4.2f}{'!' if v < lim else ''}")
+
+    fails = check_cloth(a.chars or None, anims, a.step, lim, report)
+    if fails:
+        print(f"\n{len(fails)} clip(s) where a leg shows through the cloth:")
+        for name, anim, v, t in fails:
+            print(f"  {name} {anim}: {v:.3f} m at t={t:.2f} (threshold {lim:.3f})")
+        return 1
+    print("\nall covered")
     return 0
 
 

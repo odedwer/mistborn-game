@@ -65,10 +65,13 @@ class Body:
         # vertex ranges of tagged parts of the main mesh ("weapon", "shield",
         # "skirt") as {name: [(start, end), ...]}, and each main-mesh skirt's
         # coverage (hem z, centre y at the hem, arc or None) so the legs it
-        # hides are left to the skirt check.
+        # hides are left to the skirt check. `skirt_grids` keeps each main-mesh
+        # skirt's vertex grid (rings x columns, hem last) and whether it is a
+        # closed tube, for the cloth-against-legs check.
         self.weapon_caps: list[tuple[str, np.ndarray, np.ndarray, float]] = []
         self.shields: list[tuple[str, np.ndarray, np.ndarray, float, float]] = []
         self.skirts: list[tuple[float, float, tuple[float, float] | None]] = []
+        self.skirt_grids: list[tuple[np.ndarray, bool]] = []
         self.parts: dict[str, list[tuple[int, int]]] = {}
         self._main = self.m
         self._make_skel()
@@ -775,10 +778,24 @@ class Body:
              cap0=0.012 * s, cap1=0.012 * s, ex=2.4)
 
     def skirt(self, z_top, z_bot, r_top, r_bot, color, *, mat=CLOTH, arc=None, n=18, rows=6,
-              yc_top=0.0, yc_bot=0.0, leg_share=0.85, ex=2.2, front_scale=1.0, curve=0.9, jag=0.0, seed=0):
+              yc_top=0.0, yc_bot=0.0, leg_share=0.85, ex=2.2, front_scale=1.0, curve=0.9, jag=0.0, seed=0,
+              front_share=None, shin_share=0.0, ease=0.0):
         """Flared skirt / robe / coat tails with leg-following weights.
-        `curve` < 1 flares early (hoop skirt), > 1 late (bell); `jag` (m) tatters the hem."""
+        `curve` < 1 flares early (hoop skirt), > 1 late (bell); `jag` (m) tatters the hem.
+
+        `leg_share` is how much of the hem follows the thighs (it grows from
+        the waist). `front_share` (if set) replaces it over the front of the
+        skirt (fading out round the sides), where a raised knee pushes the
+        cloth forward: there the cloth follows the thighs from the upper thigh
+        down, so a crouch or a sprint's knee lift carries the robe with it
+        instead of showing through. With `front_share` set, `shin_share` of
+        the leg weight below the knee goes to the shin, so the cloth hangs
+        along the shin (and lifts with a heel kicked back) rather than flying
+        up with the thigh. `ease` (m) widens every ring below the waist band
+        for the hip and the top of the thigh. tools/characters/clearance.py
+        --cloth checks the result."""
         s = self.s
+        z_knee = float(self.S.head("RightLowerLeg")[2])
         zs = np.linspace(z_top, z_bot, rows)
         centers, radii = [], []
         for i, z in enumerate(zs):
@@ -786,6 +803,11 @@ class Body:
             rx = lerp(r_top[0], r_bot[0], f ** curve)
             rf = lerp(r_top[1], r_bot[1], f ** curve) * front_scale
             rb = lerp(r_top[2], r_bot[2], f ** curve)
+            if i > 0:
+                # slack below the waist band, where the hip and the top of
+                # the thigh swing out against the cloth
+                e = ease * min(1.0, f * (rows - 1))
+                rx, rf, rb = rx + e, rf + e, rb + e
             centers.append(v3(0, lerp(yc_top, yc_bot, f), z))
             radii.append((rx, rx, rf, rb))
 
@@ -794,7 +816,15 @@ class Body:
             a = (f ** 0.85) * leg_share
             rxz = radii[i][0]
             R = smoothstep(-0.55, 0.55, p[0] / rxz)
-            w = {"Hips": 1 - a, "RightUpperLeg": a * R, "LeftUpperLeg": a * (1 - R)}
+            sh = 0.0
+            if front_share is not None:
+                # front-ness: 1 over the front, 0.25 at the sides, 0 at the back
+                fr = smoothstep(-0.3, 0.6, math.sin(math.radians(th)))
+                af = front_share * smoothstep(0.0, 0.22, f)
+                a = a + (max(a, af) - a) * fr
+                sh = shin_share * smoothstep(z_knee + 0.02 * s, z_knee - 0.12 * s, float(p[2]))
+            w = {"Hips": 1 - a, "RightUpperLeg": a * R * (1 - sh), "LeftUpperLeg": a * (1 - R) * (1 - sh),
+                 "RightLowerLeg": a * R * sh, "LeftLowerLeg": a * (1 - R) * sh}
             if i == 0:
                 w = {"Hips": 0.6, "Spine": 0.4}
             return clean_weights(w)
@@ -810,6 +840,7 @@ class Body:
             # (the highest hem point: a tattered hem only counts where it is shortest)
             self.skirts.append((max(float(self.m.verts[idx][2]) for idx, _, _ in rings[-1]), float(yc_bot),
                                 None if arc is None else (float(arc[0]), float(arc[1]))))
+            self.skirt_grids.append((np.array([[idx for idx, _, _ in ring] for ring in rings]), arc is None))
         return centers, radii
 
     def mistcloak(self, *, z_hem, z_collar, n_strips, len_range, color, color_dark, arc=(128, 412),
