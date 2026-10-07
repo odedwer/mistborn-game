@@ -419,3 +419,25 @@ Follow-ups:
 - Spook's hips sit about 2 cm off the floor in death.
 - `fit_robe_settle.py` has no unit test; a full refit takes minutes per style.
 - **Suite time:** the full `tools/run_tests.sh` takes about 8 min. The Godot suite is the slow part, at about 6.5 min of that.
+
+## Review of the test-suite speedup
+
+Merged. `tools/run_tests.sh` now takes about 70–80 s (it took about 505 s). In my verification run it took 80 s, with 305 Godot tests over 4 shards and 25 clearance tests, all green. No assertion, tolerance, frame limit or test was removed or loosened.
+
+**Three real game bugs fixed along the way.** I reviewed each diff:
+- **`ChunkInstancer.wait_for_bake`:** it polled `is_baking_navigation_mesh`, which only clears on a main-thread sync that the wait itself blocks. So it always ran to its 10 s timeout, twice per world freed mid-bake: a 20 s freeze in the game too. It now also checks that the baked polygons have arrived. This is safe because every bake uses a fresh `NavigationMesh` (`chunk_instancer.gd:431`). This one fix took the sequential Godot suite from 423 s to 178 s.
+- **Camera landing dip:** an explicit spring step on `delta / time_scale` diverged on a long frame during atium. The camera went to y = 1e30 and then NaN, and a coin throw aimed along a zero vector. It is now integrated in steps of at most 1/60 s, which is identical at 60 fps. There is a regression test.
+- **`WorldStreamer.load_now`:** it cleared every in-flight task id, so other units still generating were never waited for. That caused an abort at exit after a fast travel, and those units were generated twice. It also skipped wanted units that were already generating. It now waits for exactly the wanted units. There is a regression test.
+
+**Runner:**
+- Godot files are sharded over `TEST_JOBS` processes (default: CPU cores, at most 4; `TEST_JOBS=1` is sequential), heaviest file first, each file whole in one process.
+- The clearance tests run alongside, in 2 processes (`tools/characters/run_parallel.py`).
+- The run fails on any failed test, a crashed shard, a shard with no summary, an unrun file, or a Python failure.
+- It prints per-test times over 2 s and tables of the slowest files and tests. `--reverse` and `--shuffle=<seed>` change the order; the whole suite passed in reverse and shuffled order.
+- The docs are in `docs/PERFORMANCE.md` ("Test suite") and the README.
+
+Follow-ups:
+- **Python tests finish last:** `test_all_clips_clear` is a single 34 s test, and the clearance tests take 64–75 s next to the Godot shards. Split it per character to shorten the run further.
+- **Real-time tests set the floor:** `test_story_sweep` (41 s), `test_traversal` (40 s) and `test_soak` (31 s) run at 60 physics frames per second. Running them faster than real time would need a fixed-step, fast-forward test mode.
+- **Leaks at exit:** some shards print "resources still in use" or "ObjectDB instances leaked". The sequential run printed these too; they haven't been investigated.
+- **`FILE_WEIGHTS`:** the table in `tests/run_tests.gd` is maintained by hand. If it goes stale, only the shard balance suffers, never correctness.
