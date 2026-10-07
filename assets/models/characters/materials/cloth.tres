@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" load_steps=2 format=3]
 
-[ext_resource type="Shader" path="res://assets/models/characters/materials/character.gdshader" id="1"]
+[ext_resource type="Shader" path="res://assets/models/characters/materials/character_cloth.gdshader" id="1"]
 
 [resource]
 resource_name = "cloth"
