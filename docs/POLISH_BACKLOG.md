@@ -441,3 +441,21 @@ Follow-ups:
 - **Real-time tests set the floor:** `test_story_sweep` (41 s), `test_traversal` (40 s) and `test_soak` (31 s) run at 60 physics frames per second. Running them faster than real time would need a fixed-step, fast-forward test mode.
 - ~~**Leaks at exit:**~~ Done: sounds still playing at quit (`AudioManager.shutdown`), a `MassBattle` soldier target cycle, and three unfreed nodes in `test_act3_missions`. The suite exits clean and `tools/run_tests.sh` now fails on Godot's leak report; see "Leaks at exit" in `docs/PERFORMANCE.md`. Two more intermittent failures found on the way, both real streaming races, are fixed with regression tests: `load_now` skipping units still instancing, and a streamed-in checkpoint area missed before `unit_loaded`.
 - **`FILE_WEIGHTS`:** the table in `tests/run_tests.gd` is maintained by hand. If it goes stale, only the shard balance suffers, never correctness.
+
+## Review of the exit-leak pass
+
+Merged. The suite exits with no leaks: 17 of the 44 test files used to leak when run alone. A new guard in `tools/run_tests.sh` fails the run if any shard prints Godot's leak report. In my verification run: 309 Godot tests over 4 shards and 51 clearance tests, all green in 69 s, with no leak lines.
+
+I reviewed every game-code change:
+- **`AudioManager.shutdown()`:**
+  - **Cause:** sounds still playing at quit leaked their playbacks and streams, because the AudioServer frees a stopped playback only on a later mix step. This was 16 of the 17 leaking files.
+  - **Fix:** it stops all voices, frees and remakes the players, and waits at most 2 s, usually about 30 ms, until every playback is released. The pause menu's Quit awaits it.
+- **`MassBattle`:** two soldiers targeting each other formed a RefCounted cycle that outlived the battle. `NOTIFICATION_PREDELETE` now clears the targets.
+- **`ChunkInstancer`:** stage 8, which adds markers and checkpoint areas, now sets `_done` in the same step. It was already the last real stage; the default branch only set `_done` one frame later. So `unit_loaded` (which connects the checkpoint areas) fires before a physics step can report a player already inside an area. This fixes an intermittent "streamed-in checkpoint recorded" e2e failure.
+- **`WorldStreamer.load_now`:** it also finishes wanted units that are still instancing, instead of skipping them. Before, it could return with a half-built unit.
+
+There are regression tests for the audio, battle and both streaming fixes. One test leak was fixed in `test_act3_missions`. The runner gains `--test=<text>`. The split clearance tests are per character and garment, with a check that every (character, clip) pair is scanned exactly once, in 3 processes. The docs are in `docs/PERFORMANCE.md` ("Leaks at exit").
+
+Follow-ups:
+- Closing the game window quits without `AudioManager.shutdown()`. This only affects what the engine prints at exit. It could be hooked to `NOTIFICATION_WM_CLOSE_REQUEST`.
+- With `--verbose`, Godot prints "unclaimed string names at exit" for its built-in type names. These are engine-held, not part of the leak report, and documented.
