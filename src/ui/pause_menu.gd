@@ -205,7 +205,7 @@ func _build_menu_tab() -> Control:
 	box.add_child(main_menu_btn)
 
 	var quit_btn := UIHelpers.button("Quit")
-	quit_btn.pressed.connect(func(): get_tree().quit())
+	quit_btn.pressed.connect(_on_quit)
 	box.add_child(quit_btn)
 
 	return margin
@@ -458,6 +458,14 @@ func _open_settings() -> void:
 func _on_main_menu() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+
+
+## Lets the AudioServer release the playing sounds first (see
+## AudioManager.shutdown), so quitting leaks nothing.
+func _on_quit() -> void:
+	var tree := get_tree()
+	await AudioManager.shutdown()
+	tree.quit()
 
 
 func _open_slot_popup(mode: String) -> void:
