@@ -106,24 +106,30 @@ The pipeline has these parts:
   - Clearance proxies, which never reach the GLB:
     - weapons register capsules in `Body.weapon_caps`;
     - shields register discs in `Body.shields` (the board and its boss);
-    - `Body.skirt` records its hem in `Body.skirts`, so the check knows which legs a skirt hides;
+    - `Body.skirt` records its hem in `Body.skirts` and its vertex grid (rings by columns, hem last) in `Body.skirt_grids`, so the checks can rebuild the cloth surface in any pose;
     - `with b.part(name):` tags vertex ranges in `Body.parts`. Props are tagged `weapon` or `shield`, and `Body.skirt` tags `skirt`.
+  - **Skirt weights.** `Body.skirt` weights the cloth to the hips and, more and more towards the hem, to the thighs (`leg_share`). Every robe, gown, tunic and coat also sets:
+    - `front_share`: over the front, the cloth follows the thighs from the upper thigh down, so a crouch or a sprint's knee lift carries it forward. It fades to a quarter at the sides and is off at the back;
+    - `shin_share`: below the knee, this share of the leg weight goes to the shin, so the cloth hangs along it rather than flying up with the thigh;
+    - `ease`: the rings below the waist band are this much wider, for the hip and the top of the thigh.
+
+    Before art pass 15, the legs showed through every long skirt. The knees came 24 cm through the Inquisitor's robe in the sprint and 31–37 cm in the crouch, 22–30 cm through the gowns in the crouch, and 28–38 cm through the obligators', Marsh's and Sazed's robes.
 - `chars.py`: the six combat designs and their props.
 - `chars_npc.py`: the NPC designs, hats and garments, plus the variant `POOLS` and `PRESETS`.
 - `anim.py`: semantic pose parameters, 2-bone leg IK, gaits and one-shot keyframes. It also holds the per-character styles (spear arm, lantern arm, hunch, and so on).
 - `build_characters.py`: builds the Blender armature, mesh and actions, then exports the GLB. Looping clips are named `-loop`, which makes the importer set the loop flag.
 - `godot_files.py`: writes the materials, `.tscn` and `.import` files.
-- `clearance.py`: the weapon clearance check (see below).
+- `clearance.py`: the weapon and cloth clearance checks (see below).
 
 Preview with `godot res://scenes/test/character_lineup.tscn -- <options>`. The options are documented at the top of `character_lineup.gd`, for example `--only=vin --anim=run --t=0.2 --cam=side --light=studio --shot=out.png`, or `--moving` for cloak dynamics.
 
 Tests are in `tests/test_characters.gd`.
 
-### Weapon clearance (`clearance.py`)
-The check poses each armed character (guard, hazekiller, thug, Inquisitor) frame by frame in every animation (every clip in `anim.ANIM_NAMES`, which is also the list the GLBs export). It needs only numpy, not Blender. It skins the mesh the same way `build_characters.py` bakes it, then measures the surface gap between the weapon capsules and these parts of the body:
+### Clearance checks (`clearance.py`)
+**Weapon clearance.** The check poses each armed character (guard, hazekiller, thug, Inquisitor) frame by frame in every animation (every clip in `anim.ANIM_NAMES`, which is also the list the GLBs export). It needs only numpy, not Blender. It skins the mesh the same way `build_characters.py` bakes it, then measures the surface gap between the weapon capsules and these parts of the body:
 - the head, neck and torso;
 - the arms: the free arm and the weapon arm's upper arm, but not the gripping hand and forearm;
-- the legs: thighs, shins and feet, where no skirt covers them. A leg vertex counts as covered when, in the rest pose, it lies above a skirt's hem and inside its arc (`Body.skirts` records each skirt's hem height, centre and arc). So the thug's whole leg is checked, the guard's and hazekiller's below the tunic, and only the Inquisitor's feet below his robe;
+- the legs: thighs, shins and feet, wherever no skirt covers them in that frame. A leg point counts as covered while it is inside a skirt's posed cloth surface (see the cloth check), so a thigh that swings out past the hem mid-stride counts as exposed. Standing, that leaves the thug's whole leg, the guard's and hazekiller's below the tunic, and only the Inquisitor's feet below his robe;
 - robe, tunic and coat skirts;
 - the hazekiller's shield: the board as a disc, plus its boss as a stack of thinner discs (each at the widest radius of its slice).
 
@@ -132,18 +138,33 @@ The body is sampled at its vertices, face centroids and edge midpoints. A region
 python3 tools/characters/clearance.py                                  # all four, every clip: each region's minimum (m) and when it occurs
 python3 tools/characters/clearance.py inquisitor --anim=pull --frames  # per-frame table
 python3 tools/characters/clearance.py vin --threshold=head=0.02        # other characters or thresholds
+python3 tools/characters/clearance.py --cloth                          # cloth check, every skirted character
+python3 tools/characters/clearance.py --cloth sazed --anim=crouch_walk --frames
 ```
 It exits with status 1 when any region falls below its threshold.
 
-Closest gaps after art pass 14 (all clips clear):
-- legs: guard `land` 4.1 cm, guard `jump` and hazekiller `land` 5.0 cm, guard `fall` 5.6 cm; sprint and crouch about 7 cm;
-- skirts: guard `attack` 5.6 cm, hazekiller `block` and Inquisitor `push` 6.5 cm, guard and hazekiller `sprint` 10 and 9.4 cm;
+Closest gaps after art pass 15 (all clips clear):
+- legs: guard `land` 4.1 cm, guard `jump` and hazekiller `land` 5.0 cm, guard `fall` 5.6 cm; sprint and crouch about 7 cm. Posed coverage found no new contacts;
+- skirts: Inquisitor `push` 1.9 cm and `land` 2.1 cm, crouch 3.1 cm; guard `attack` and hazekiller `block` 3.5 cm. The robes and tunics are fuller and follow the knees now, so these fell from 5.6–6.5 cm;
 - head: Inquisitor `attack` 7.6 cm, guard Push and Pull 7.9 cm;
 - shield: hazekiller `melee` 11 cm.
 
+**Cloth clearance (`--cloth`).** This check covers every character whose main mesh has a skirt: the guard, hazekiller, coinshot, Inquisitor, Dockson, Breeze, Clubs (apron), Sazed, Marsh, Elend, `vin_gown`, `noble_woman`, both obligators, and the skaa man and woman. The garment-mesh skirts (noble coats, tails, bustle) are left out. For each frame of every clip, it skins the legs and the skirt grids:
+- **Cloth surface.** The skirt's posed cloth surface is sampled at its vertices, quad centres and boundary edge midpoints, each with an outward normal. The boundary samples (hem, waist band, the edges of an open arc) also carry a tangent pointing off the cloth.
+- **Inside or outside.** A leg point is outside the cloth by its distance along the nearest sample's normal. If it is past a boundary sample's tangent, it has left the cloth below the hem or through a front slit, which leaves it uncovered rather than clipping. Where the cloth folds over itself, the closed tube's winding number decides inside from outside.
+- **What must stay covered.** The leg vertices that the cloth covers in the rest pose, from 8 cm above the hem up, must stay inside it. Feet step out from under a long hem, as they would under real cloth.
+
+A clip fails when a leg shows through by more than 1.5 cm (`CLOTH_THRESHOLD`). After art pass 15, the deepest are about 1.2 cm, on Clubs' apron in `sprint`, at the edge of Dockson's coat front in `crouch_walk` and at the hazekiller's waist band. None of them shows in the lineup. The robes and gowns all stay within 0.7 cm.
+
 **Carried weapons.** The guard, hazekiller and Inquisitor carry their weapon upright in a held (`arm_lock`) right arm. In the gaits the wrist takes back 60% of the run's forward lean and half the arm's sway (`CARRY_K` in `anim.py`), and the arm swings out a little as the knee lift grows (`CARRY_ABD`), so the shaft stays within about 20° of upright from idle to sprint (the axe within 14°) and clears the thigh. In the crouch the arm swings 6° wider; only the Inquisitor (`crouch_carry`) also stands his short axe upright there, since a long spear stood up this way drives its butt into the shin.
 
-`tools/characters/test_clearance.py` runs the full check, plus negative controls (a club through the torso and arm, a spear into the thigh), checks that every exported clip is scanned, and geometry tests (capsule and disc distance, skirt coverage, the shield boss). Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`; it takes about 20 s, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a style's arm pose or any one-shot.
+`tools/characters/test_clearance.py` holds 15 tests:
+- the full weapon check, and the cloth check on every second frame;
+- negative controls: a club through the torso and arm, a spear into the thigh, and a hips-only robe that shows the crouching Inquisitor's knees;
+- checks that every exported clip and every skirted character is scanned;
+- geometry tests: capsule and disc distance, skirt coverage (inside, outside, below the hem, through a slit), the winding number, posed coverage (a knee raised past the guard's hem is exposed), and the shield boss.
+
+Run it with `python3 -m unittest discover -s tools/characters -p 'test_*.py'`. It takes about a minute, and pytest also collects it. `tools/run_tests.sh` runs it after the Godot suite when python3 has numpy, and otherwise prints a message and skips it. Run it after changing a weapon, a skirt, a style's arm pose, a gait or any one-shot.
 
 ## Licence
 All meshes, rigs, animations, shaders and generator scripts are original work created for this project, with no third-party assets. They are dedicated to the public domain under **CC0 1.0**. Mistborn names and designs belong to Brandon Sanderson / Dragonsteel Entertainment. This is a non-commercial fan project.

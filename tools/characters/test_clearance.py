@@ -1,7 +1,8 @@
-"""Weapon clearance regression test for the armed characters (numpy only).
+"""Clearance regression tests (numpy only): the armed characters' weapons
+against their bodies, and every skirted character's legs against its cloth.
 
 Run: python3 -m unittest discover -s tools/characters -p 'test_*.py'
-     (or pytest tools/characters/test_clearance.py). About 15 s.
+     (or pytest tools/characters/test_clearance.py). About a minute.
 tools/run_tests.sh runs it after the Godot suite when numpy is installed.
 """
 from __future__ import annotations
@@ -33,15 +34,43 @@ class GeometryTest(unittest.TestCase):
         d = clearance._disc_dist(P, c, n, 0.3, 0.015)
         np.testing.assert_allclose(d, [0.035, 0.2, 0.0], atol=1e-9)
 
+    @staticmethod
+    def _cylinder(arc=None, r=0.2, z=(1.0, 0.5), rows=6, n=24):
+        """A skirt-like cloth grid: rings from the waist down to the hem, laid
+        out as tube() does (0 degrees = -X, 90 = forward)."""
+        a0, a1 = (0.0, 360.0) if arc is None else arc
+        cols = n if arc is None else n + 1
+        th = np.radians(a0 + (a1 - a0) * np.arange(cols) / n)
+        zs = np.linspace(z[0], z[1], rows)
+        G = np.stack([np.broadcast_to(-r * np.cos(th), (rows, cols)), np.broadcast_to(r * np.sin(th), (rows, cols)),
+                      np.broadcast_to(zs[:, None], (rows, cols))], axis=-1)
+        sf = clearance.SkirtSurface(None, arc is None, 0.0)
+        sf.orient(G)
+        return sf, G
+
     def test_skirt_cover(self):
-        """A skirt covers the legs above its hem, inside its arc only."""
-        full = [(0.7, 0.0, None)]
-        self.assertTrue(clearance._covered(np.array([0.1, 0.0, 0.8]), full))
-        self.assertFalse(clearance._covered(np.array([0.1, 0.0, 0.6]), full))
-        slit = [(0.7, 0.0, (100.0, 440.0))]  # open over the front, 80-100 degrees
-        self.assertFalse(clearance._covered(np.array([0.0, 0.1, 0.8]), slit))
-        self.assertTrue(clearance._covered(np.array([0.0, -0.1, 0.8]), slit))
-        self.assertTrue(clearance._covered(np.array([0.1, 0.0, 0.8]), slit))
+        """A skirt covers the points inside its cloth: not those outside it,
+        below its hem or in front of a front slit."""
+        sf, G = self._cylinder()
+        P = np.array([[0.1, 0.0, 0.8], [0.25, 0.0, 0.8], [0.1, 0.0, 0.4], [0.0, 0.0, 0.52]])
+        np.testing.assert_array_equal(clearance.covered([sf], [G], P), [True, False, False, True])
+        d, beyond = sf.classify(P, G)
+        self.assertAlmostEqual(d[1], 0.05, delta=0.005)  # 5 cm outside the cloth
+        np.testing.assert_array_equal(beyond, [False, False, True, False])
+        sf, G = self._cylinder(arc=(100.0, 440.0))  # open over the front, 80-100 degrees
+        P = np.array([[0.0, 0.1, 0.8], [0.0, -0.1, 0.8], [0.1, 0.0, 0.8], [0.0, 0.25, 0.8]])
+        np.testing.assert_array_equal(clearance.covered([sf], [G], P), [False, True, True, False])
+        self.assertTrue(sf.classify(P, G)[1][3])  # out through the slit, not through the cloth
+
+    def test_winding(self):
+        """The cloth tube's winding number tells inside from outside (it is
+        what overrides the nearest-sample test where the cloth folds)."""
+        sf, G = self._cylinder(z=(1.0, 0.0), rows=11)
+        w = np.abs(sf.winding(np.array([[0.0, 0.0, 0.5], [0.15, 0.0, 0.6], [0.3, 0.0, 0.5], [0.0, 0.0, 1.4]]), G))
+        self.assertGreater(w[0], 0.7)
+        self.assertGreater(w[1], 0.5)
+        self.assertLess(w[2], 0.2)
+        self.assertLess(w[3], 0.2)
 
     def test_shield_boss(self):
         """The hazekiller's shield is the board plus its boss: a point at the
@@ -64,14 +93,34 @@ class ClearanceTest(unittest.TestCase):
             self.assertEqual(regs, {"head", "neck", "torso", "arms", "legs"} | extra, name)
 
     def test_legs_under_skirts(self):
-        """Legs are checked only where no skirt covers them: the thug's whole
-        leg, the guard's below the tunic, and only the Inquisitor's feet."""
-        for name, lo, hi in (("thug", 0.0, 0.9), ("guard", 0.0, 0.45), ("inquisitor", 0.0, 0.1)):
+        """In the rest pose the legs are uncovered only where no skirt hides
+        them: the thug's whole leg, the guard's below the tunic, and only the
+        Inquisitor's feet below his robe."""
+        for name, hi in (("thug", 0.9), ("guard", 0.45), ("inquisitor", 0.1)):
             ch = clearance.Character(name)
             pts = np.concatenate([ch.V[g].mean(axis=1) for g in ch.samples["legs"]])
+            if ch.surfs:
+                pts = pts[~clearance.covered(ch.surfs, [ch.V[g] for g in ch.grids], pts)]
             top = ch.b.skirts[0][0] if ch.b.skirts else 9.0
             self.assertLess(pts[:, 2].max(), min(top, hi * ch.b.H), name)
-            self.assertGreater(pts[:, 2].max(), lo, name)
+            self.assertGreater(len(pts), 100, name)
+
+    def test_posed_cover(self):
+        """Skirt coverage follows the pose: a guard's knee raised high past
+        his tunic's hem is exposed to the weapon check, though the tunic hides
+        it standing."""
+        ch = clearance.Character("guard")
+        dom = ch.Wm.argmax(axis=1)
+        knee = np.where(np.array(ch.bones)[dom] == "RightUpperLeg")[0]
+        knee = knee[ch.V[knee, 2] > ch.b.skirts[0][0]]
+        grids = [ch.V[g] for g in ch.grids]
+        self.assertTrue(clearance.covered(ch.surfs, grids, ch.V[knee]).all())
+        p = base_params("guard")
+        p.update({"leg_fk": 1.0, "r_lflex": 100, "r_knee": 90})
+        Q, off = ch.rig.solve(p)
+        D, Hd = clearance._pose(ch.S, Q, off)
+        P = clearance._skin(ch.S, D, Hd, ch.bones, ch.V, ch.Wm)
+        self.assertFalse(clearance.covered(ch.surfs, [P[g] for g in ch.grids], P[knee]).all())
 
     def test_every_clip_checked(self):
         """The check scans every clip the builder exports."""
@@ -104,6 +153,34 @@ class ClearanceTest(unittest.TestCase):
         msg = "\n".join(f"{n} {a} {r}: {v:.3f} m at t={t:.2f} (threshold {lim:.3f})"
                         for n, a, r, v, t, lim in fails)
         self.assertEqual(fails, [], "weapon clips:\n" + msg)
+
+
+class ClothTest(unittest.TestCase):
+    def test_skirted_characters(self):
+        """Every robed or skirted character is checked."""
+        self.assertEqual(set(clearance.skirted()),
+                         {"guard", "hazekiller", "coinshot", "inquisitor", "dockson", "breeze", "clubs", "sazed",
+                          "marsh", "elend", "vin_gown", "noble_woman", "obligator", "obligator_2", "skaa_man",
+                          "skaa_woman"})
+
+    def test_detects_legs_through_a_robe(self):
+        """Negative control: a robe that only follows the hips (as the
+        Inquisitor's did, mostly) shows his crouching knees by over 10 cm."""
+        ch = clearance.Cloth("inquisitor")
+        hips = ch.bones.index("Hips")
+        p = ch.anims["crouch_idle"][1](0.5)
+        self.assertGreater(ch.measure(p), clearance.CLOTH_THRESHOLD)
+        for W in ch.Wg:
+            W[:] = 0.0
+            W[:, hips] = 1.0
+        self.assertLess(ch.measure(p), -0.1)
+
+    def test_no_legs_through_cloth(self):
+        """No animation shows a leg through a robe, gown, tunic or coat (by
+        more than CLOTH_THRESHOLD)."""
+        fails = clearance.check_cloth(step=2)
+        msg = "\n".join(f"{n} {a}: {v:.3f} m at t={t:.2f}" for n, a, v, t in fails)
+        self.assertEqual(fails, [], "legs through cloth:\n" + msg)
 
 
 if __name__ == "__main__":
