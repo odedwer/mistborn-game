@@ -96,8 +96,7 @@ func test_route_is_traversable_with_steel_jumps() -> void:
 	var pts := await _setup()
 	for i in pts.size() - 1:
 		# Start each leg standing at the previous objective, like a player would.
-		player.respawn(Transform3D(Basis.IDENTITY, pts[i] + Vector3.UP * 0.1))
-		await physics_frames(2)
+		await _start_leg(pts[i])
 		var result := await _fly_leg(pts[i + 1])
 		print("    %s -> %s: %s" % [ROUTE[i], ROUTE[i + 1], result["log"]])
 		assert_true(result["ok"], "steel-jumped %s -> %s (%s)" % [ROUTE[i], ROUTE[i + 1], result["log"]])
@@ -112,12 +111,32 @@ func test_route_is_traversable_with_steel_jumps() -> void:
 func test_courtyard_leg_from_a_fresh_world() -> void:
 	var pts := await _setup()
 	var i := ROUTE.find(&"cp_3")
-	player.respawn(Transform3D(Basis.IDENTITY, pts[i] + Vector3.UP * 0.1))
-	await physics_frames(2)
+	await _start_leg(pts[i])
 	var result := await _fly_leg(pts[i + 1])
 	print("    %s -> %s (fresh world): %s" % [ROUTE[i], ROUTE[i + 1], result["log"]])
 	assert_true(result["ok"], "steel-jumped %s -> %s from a fresh world (%s)" % [ROUTE[i], ROUTE[i + 1], result["log"]])
 	assert_false(player.dead, "survived %s -> %s" % [ROUTE[i], ROUTE[i + 1]])
+
+
+## Puts the player at `at`, standing still, in the same state whatever came
+## before: the full route used to start a leg straight after the last
+## landing, still snapped to the floor (and sometimes mid-roll), while a leg
+## on its own dropped the 0.1 m onto the roof first, so the same leg flew
+## differently (cp_1 -> cp_2: 231 push frames in the route, 59 alone).
+## Respawn clears the movement timers; here we wait until the player has
+## stood on the roof for a few frames, and drop the bot's own Allomancy state.
+func _start_leg(at: Vector3) -> void:
+	var al := player.allomancer
+	al.set_flaring(false)
+	# Above the floor-snap length (0.35 m), so the player always drops onto
+	# the roof, whether or not it was standing on something a moment ago.
+	player.respawn(Transform3D(Basis.IDENTITY, at + Vector3.UP * 0.5))
+	var grounded := 0
+	for f in 60:
+		await get_tree().physics_frame
+		grounded = grounded + 1 if player.is_on_floor() else 0
+		if grounded >= 5:
+			break
 
 
 ## Distance from `target` to the player's capsule axis.
@@ -138,6 +157,7 @@ func _fly_leg(goal: Vector3) -> Dictionary:
 	var max_h := start.y
 	var launched := false
 	var last_jump := -100
+	var hops := 0
 	for f in LEG_FRAMES:
 		await get_tree().physics_frame
 		if player.dead:
@@ -151,7 +171,8 @@ func _fly_leg(goal: Vector3) -> Dictionary:
 		# Same rule as the objective trigger: the capsule touches its sphere.
 		if _capsule_distance(goal) < REACH:
 			Input.action_release(&"move_forward")
-			return {"ok": true, "log": "%d frames, %d push frames, apex %.1f m, landed %s" % [f, pushes, max_h, p]}
+			return {"ok": true, "log": "%d frames, %d push frames, %d hops, apex %.1f m, landed %s" % [f, pushes, hops,
+					max_h, p]}
 		var v := player.velocity
 		var hv := Vector2(v.x, v.z)
 		var dirh := Vector2(to.x, to.z) / maxf(h, 0.001)
@@ -180,6 +201,8 @@ func _fly_leg(goal: Vector3) -> Dictionary:
 		if on_floor and hv.length() < 1.0 and h > 1.0 and f - last_jump > 20:
 			Input.action_press(&"jump")
 			last_jump = f
+			if launched:
+				hops += 1
 		if on_floor and level and h < 12.0:
 			continue
 		var desired: Vector3
