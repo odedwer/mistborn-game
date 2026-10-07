@@ -128,6 +128,10 @@ func _step_once() -> void:
 			for f in data.fog_volumes:
 				_add_fog(f)
 			_stage += 1
+			# Done in this same step: the streamer emits unit_loaded (the
+			# MissionDirector connects the checkpoint areas on it) before any
+			# physics step can report a player already inside an area.
+			_done = true
 		_:
 			_done = true
 
