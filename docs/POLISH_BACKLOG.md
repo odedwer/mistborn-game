@@ -288,3 +288,39 @@ Follow-ups:
 - **Statue count:** down from 58 to 47 after the every-other rule. Raise the `statues` shares slightly if density matters.
 - **Modillion popping:** they pop out at 60–90 m with no fade. It is small, but a distance fade (`visibility_range_fade_mode`) would hide it.
 - **Statue head:** still a featureless egg. In shade, the bronze statue reads as a dark silhouette.
+
+## Review of art pass 14
+
+Merged:
+- **Upright weapon carry:**
+  - The Inquisitor carries the axe like the guard's spear: forearm level, haft upright beside the shoulder. Forward lean of the haft:
+
+    | Clip | Before | After |
+    |---|---|---|
+    | idle | about 40° | −2 to +4° |
+    | walk | up to 53° | +2 to +4° |
+    | run | up to 41° | +3 to +9° |
+    | sprint | up to 53° | +6 to +14° |
+
+  - In the gaits, the guard, hazekiller and Inquisitor take back 60% of the body's forward lean at the wrist and half the arm sway.
+  - Push and Pull holds are unchanged.
+- **Clearance check:**
+  - A new `legs` region covers the thighs, shins and feet wherever no skirt covers them, using coverage each skirt records when it is built.
+  - The hazekiller's shield gains its boss.
+  - A test fails if any exported clip isn't scanned.
+  - There are now 10 clearance tests (they were 5). The only real clip found came from this pass's own first crouch change, and it is fixed.
+- **Skirt gaps:**
+
+  | Clip | Before | After |
+  |---|---|---|
+  | guard `sprint` | 3.6 cm | 10 cm |
+  | hazekiller `sprint` | 4.4 cm | 9.4 cm |
+  | hazekiller `block` | 3.6 cm | 6.5 cm |
+
+302 Godot tests and 10 clearance tests green. Reviewed cmp2_inq (Inquisitor idle, walk, run, sprint, push and crouch) and cmp_gh (guard and hazekiller, before and after).
+
+Follow-ups:
+- **Robe clipping:** the Inquisitor's legs poke through the front of his robe in `sprint` and `crouch` (clearly visible in the crouch). This is the robe against the body, which the clearance check doesn't cover. Add a robe-to-leg check, or give robed characters more skirt flare and shorter strides.
+- The hazekiller's staff leans up to 21° in `sprint`, because it already leans 5–11° in idle.
+- The Inquisitor's one-shot clips (`attack`, `hit`, `throw`) start from the new carry pose. They pass the clearance check but haven't been screenshotted.
+- Skirt coverage uses rest-pose positions, so a thigh that swings past the hem mid-stride still counts as covered.
