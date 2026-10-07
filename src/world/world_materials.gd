@@ -123,49 +123,39 @@ static func _create(id: int) -> Material:
 	return StandardMaterial3D.new()
 
 
-## Weathered statuary bronze: a dark brown-bronze mottled with dull verdigris,
-## rough where the patina has built up, a little smoother and more metallic
-## on the worn bronze between. Both maps come from one seamless noise image
-## (fixed seed, built synchronously), projected triplanar in world space so
-## no two statues weather alike. Vertex colour darkens the folds.
-static func _bronze() -> StandardMaterial3D:
+## Weathered statuary bronze (`bronze.gdshader`): dark brown-bronze with
+## verdigris that gathers in the recesses the mesh's vertex colour marks, on
+## the ledges, and in thin runs down from the shoulders and the belt, rather
+## than a random mottle. Both textures are built here, synchronously, from
+## fixed noise seeds: vertical runs (a 128x16 seamless noise stretched to
+## 128x128, so the features are eight times taller than wide) and a fine
+## grain.
+static func _bronze() -> ShaderMaterial:
 	var fnl := FastNoiseLite.new()
-	fnl.seed = 0xB20
+	fnl.seed = 0xB21
 	fnl.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	fnl.frequency = 0.09
+	fnl.fractal_octaves = 2
+	var runs_src := fnl.get_seamless_image(128, 16)
+	var runs := Image.create(128, 128, false, Image.FORMAT_L8)
+	for y in 128:
+		var fy := float(y) / 8.0
+		var y0 := int(fy) % 16
+		var y1 := (y0 + 1) % 16
+		var t := fy - floorf(fy)
+		for x in 128:
+			var v := lerpf(runs_src.get_pixel(x, y0).r, runs_src.get_pixel(x, y1).r, t)
+			runs.set_pixel(x, y, Color(v, v, v))
+	runs.generate_mipmaps()
+	fnl.seed = 0xB20
 	fnl.frequency = 0.035
 	fnl.fractal_octaves = 4
-	var src := fnl.get_seamless_image(128, 128)
-	var alb := Image.create(128, 128, true, Image.FORMAT_RGB8)
-	var rough := Image.create(128, 128, true, Image.FORMAT_L8)
-	# Lighter than true statuary bronze (and only half metallic, below) so
-	# it still reads as bronze in shade, where it only gets ambient light.
-	var metal := Color(0.3, 0.225, 0.15)
-	var patina := Color(0.26, 0.33, 0.28)
-	for y in 128:
-		for x in 128:
-			var v := src.get_pixel(x, y).r
-			var t := smoothstep(0.5, 0.78, v) * 0.75
-			alb.set_pixel(x, y, metal.lerp(patina, t) * (0.8 + 0.35 * v))
-			rough.set_pixel(x, y, Color.from_hsv(0.0, 0.0, lerpf(0.45, 0.85, t)))
-	alb.generate_mipmaps()
-	rough.generate_mipmaps()
-	var m := StandardMaterial3D.new()
-	m.uv1_triplanar = true
-	m.uv1_world_triplanar = true
-	m.uv1_triplanar_sharpness = 4.0
-	m.uv1_scale = Vector3.ONE / 0.9
-	m.vertex_color_use_as_albedo = true
-	m.albedo_texture = ImageTexture.create_from_image(alb)
-	m.roughness = 1.0
-	m.roughness_texture = ImageTexture.create_from_image(rough)
-	m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
-	m.metallic = 0.35
-	m.metallic_specular = 0.5
-	# A faint rim along the silhouette picks the figure out of a dark street.
-	m.rim_enabled = true
-	m.rim = 0.25
-	m.rim_tint = 0.6
-	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var grain := fnl.get_seamless_image(128, 128)
+	grain.convert(Image.FORMAT_L8)
+	grain.generate_mipmaps()
+	var m := _shader_mat("bronze.gdshader")
+	m.set_shader_parameter("streaks", ImageTexture.create_from_image(runs))
+	m.set_shader_parameter("mottle", ImageTexture.create_from_image(grain))
 	return m
 
 

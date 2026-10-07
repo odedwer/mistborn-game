@@ -147,6 +147,109 @@ static func _lathe(b: WorldMeshBuilder, rings: Array, sides: int, col: Color, ca
 			b.add_tri(_ring_pt(top, a0), _ring_pt(top, a1), c, col * float(top[4]))
 
 
+## Head rows for `_statue_head`: [y, rx, rz, z offset, shade]. The first sits
+## inside the neck (the 12-sided neck and the 20-column head can't share
+## vertices, so they overlap instead of leaving a crack).
+const HEAD_ROWS := [[1.7, 0.077, 0.08, 0.02, 0.85], [1.745, 0.085, 0.108, 0.045, 0.8],
+		[1.77, 0.106, 0.127, 0.042, 0.9], [1.79, 0.12, 0.137, 0.038, 0.95], [1.81, 0.129, 0.144, 0.035, 0.97],
+		[1.84, 0.137, 0.149, 0.03, 1.0], [1.865, 0.139, 0.151, 0.027, 1.0], [1.88, 0.139, 0.151, 0.025, 1.0],
+		[1.898, 0.139, 0.15, 0.022, 1.0], [1.925, 0.134, 0.146, 0.018, 1.0], [1.97, 0.108, 0.122, 0.01, 1.0]]
+## Head columns (degrees from the front, +Z, towards +X): close over the face
+## so the sockets, the nose and the mouth have vertices, sparse behind it.
+const HEAD_COLS := [0.0, 6.0, 14.0, 24.0, 36.0, 50.0, 68.0, 90.0, 115.0, 145.0, 180.0,
+		215.0, 245.0, 270.0, 292.0, 310.0, 324.0, 336.0, 346.0, 354.0]
+## Nose profile: [y, forward offset at the ridge].
+const NOSE := [[1.79, 0.0], [1.81, 0.012], [1.84, 0.042], [1.865, 0.022], [1.88, 0.012], [1.898, 0.004], [1.93, 0.0]]
+const HEAD_APEX := Vector3(0, 2.008, 0.002)
+
+
+## The statue's head (faces +Z): an elliptical lathe whose rows are pushed in
+## and out over the face: eye sockets under a brow ridge, a nose, a mouth
+## line, a chin and cheekbones, plus two ears. Recesses are darkened in the
+## vertex colour, which the bronze shader also reads as where the patina
+## gathers. About 470 triangles.
+static func _statue_head(b: WorldMeshBuilder, col: Color) -> void:
+	var nr := HEAD_ROWS.size()
+	var nc := HEAD_COLS.size()
+	var pts: Array[Vector3] = []
+	var shades := PackedFloat32Array()
+	for r: Array in HEAD_ROWS:
+		var y := float(r[0])
+		for deg: float in HEAD_COLS:
+			var a := deg_to_rad(deg)
+			var rx := float(r[1])
+			var rz := float(r[2])
+			var x := sin(a) * rx
+			var h := Vector3(sin(a) / rx, 0.0, cos(a) / rz).normalized()
+			var d := _face_relief(x, y)
+			var w := smoothstep(0.35, 0.75, cos(a))
+			pts.append(Vector3(x, y, float(r[3]) + cos(a) * rz) + h * d.x * w)
+			shades.append(float(r[4]) * lerpf(1.0, d.y, w))
+	var nrm: Array[Vector3] = []
+	for ri in nr:
+		for ci in nc:
+			var tc := pts[ri * nc + (ci + 1) % nc] - pts[ri * nc + (ci + nc - 1) % nc]
+			var up := HEAD_APEX if ri == nr - 1 else pts[(ri + 1) * nc + ci]
+			var dn := pts[maxi(ri - 1, 0) * nc + ci]
+			nrm.append(tc.cross(up - dn).normalized())
+	for ri in nr - 1:
+		for ci in nc:
+			var c1 := (ci + 1) % nc
+			var ids := [ri * nc + ci, ri * nc + c1, (ri + 1) * nc + c1, (ri + 1) * nc + ci]
+			b.add_quad_smooth4(ids.map(func(i: int) -> Vector3: return pts[i]),
+					ids.map(func(i: int) -> Vector3: return nrm[i]),
+					ids.map(func(i: int) -> Color: return col * shades[i]))
+	var top := (nr - 1) * nc
+	for ci in nc:
+		var i0 := top + ci
+		var i1 := top + (ci + 1) % nc
+		b.add_tri_smooth([pts[i0], pts[i1], HEAD_APEX], [nrm[i0], nrm[i1], Vector3.UP],
+				[col * shades[i0], col * shades[i1], col])
+	# Ears: flattened ellipsoids against the sides of the head, tilted back.
+	for s: float in [-1.0, 1.0]:
+		var basis := Basis(Vector3(0.011 * s, 0, 0), Vector3(0, 0.034, -0.008), Vector3(0, 0, 0.02 * s))
+		_ellipsoid(b, Vector3(0.149 * s, 1.858, 0.002), basis, 6, col * 0.92)
+
+
+## Forward offset (x) and shade (y) of the face at lateral `x` and height `y`.
+static func _face_relief(x: float, y: float) -> Vector2:
+	var ax := absf(x)
+	var eye := -0.024 * exp(-pow((ax - 0.047) / 0.024, 2.0) - pow((y - 1.873) / 0.014, 2.0))
+	var brow := 0.012 * exp(-pow((y - 1.897) / 0.011, 2.0)) * smoothstep(0.1, 0.06, ax)
+	var ridge := 0.0
+	for k in NOSE.size() - 1:
+		var n0: Array = NOSE[k]
+		var n1: Array = NOSE[k + 1]
+		if y >= float(n0[0]) and y <= float(n1[0]):
+			ridge = lerpf(float(n0[1]), float(n1[1]), inverse_lerp(float(n0[0]), float(n1[0]), y))
+	var nose := ridge * exp(-pow(x / 0.015, 2.0))
+	var mouth := -0.01 * exp(-pow((y - 1.79) / 0.006, 2.0)) * smoothstep(0.045, 0.025, ax)
+	var chin := 0.012 * exp(-pow((y - 1.765) / 0.014, 2.0) - pow(x / 0.035, 2.0))
+	var cheek := 0.006 * exp(-pow((ax - 0.08) / 0.025, 2.0) - pow((y - 1.848) / 0.015, 2.0))
+	# Shade: the sockets, the mouth line and the shadow under the nose.
+	var under_nose := exp(-pow(x / 0.02, 2.0) - pow((y - 1.81) / 0.006, 2.0))
+	var shade := (1.0 + eye * 18.0) * (1.0 + mouth * 35.0) * (1.0 - 0.15 * under_nose)
+	return Vector2(eye + brow + nose + mouth + chin + cheek, shade)
+
+
+## A smooth ellipsoid: the unit sphere mapped by `basis` (its columns are the
+## half-axes, right-handed), `sides` around and three bands from pole to pole.
+static func _ellipsoid(b: WorldMeshBuilder, c: Vector3, basis: Basis, sides: int, col: Color) -> void:
+	var nb := basis.inverse().transposed()
+	var lats := [-PI * 0.5, -PI / 6.0, PI / 6.0, PI * 0.5]
+	for k in lats.size() - 1:
+		for i in sides:
+			var a0 := TAU * float(i) / float(sides)
+			var a1 := TAU * float(i + 1) / float(sides)
+			var us := [_sph(a0, lats[k]), _sph(a1, lats[k]), _sph(a1, lats[k + 1]), _sph(a0, lats[k + 1])]
+			b.add_quad_smooth4(us.map(func(u: Vector3) -> Vector3: return c + basis * u),
+					us.map(func(u: Vector3) -> Vector3: return (nb * u).normalized()), [col, col, col, col])
+
+
+static func _sph(a: float, lat: float) -> Vector3:
+	return Vector3(sin(a) * cos(lat), sin(lat), cos(a) * cos(lat))
+
+
 static func _ring_pt(r: Array, a: float) -> Vector3:
 	return Vector3(sin(a) * float(r[1]), float(r[0]), float(r[3]) + cos(a) * float(r[2]))
 
@@ -349,20 +452,15 @@ static func _build(kind: StringName) -> Mesh:
 			_lathe(fig, [[0.19, 0.46, 0.4, 0.0, 0.62], [0.28, 0.45, 0.38, 0.0, 0.7], [0.6, 0.41, 0.34, 0.0, 0.8],
 					[0.95, 0.36, 0.29, 0.0, 0.88], [1.12, 0.31, 0.24, 0.0, 0.85], [1.18, 0.32, 0.25, 0.0, 0.92],
 					[1.36, 0.35, 0.25, 0.0, 1.0], [1.48, 0.41, 0.24, 0.0, 1.0], [1.55, 0.38, 0.21, 0.0, 0.98],
-					[1.61, 0.2, 0.15, 0.0, 0.92], [1.64, 0.085, 0.09, 0.01, 0.85], [1.72, 0.08, 0.085, 0.02, 0.88],
-					# Head: a jaw carried forward to the chin, the cheeks, the
-					# temples and the crown (no longer an egg).
-					[1.745, 0.085, 0.11, 0.045, 0.9], [1.785, 0.118, 0.135, 0.04, 0.95],
-					[1.84, 0.138, 0.15, 0.03, 1.0], [1.91, 0.138, 0.15, 0.02, 1.0],
-					[1.97, 0.11, 0.125, 0.01, 1.0], [2.01, 0.05, 0.06, 0.0, 1.0]], 12, ic)
+					[1.61, 0.2, 0.15, 0.0, 0.92], [1.64, 0.085, 0.09, 0.01, 0.85], [1.72, 0.08, 0.085, 0.02, 0.88]],
+					12, ic, false)
+			# Head: a displaced grid (see `_statue_head`) with eye sockets, a
+			# nose, a mouth line, a chin and cheekbones, and ears.
+			_statue_head(fig, ic)
 			# Hair massed at the back of the skull and the nape.
 			_lathe(fig, [[1.76, 0.1, 0.07, -0.05, 0.8], [1.84, 0.142, 0.115, -0.035, 0.9],
 					[1.94, 0.14, 0.12, -0.01, 0.95], [2.0, 0.08, 0.075, 0.0, 1.0]], 10, ic * 0.95)
-			# Face (+Z): a brow ridge over the eyes, a wedge of a nose, and a
-			# laurel wreath round the temples.
-			for sx: float in [-1.0, 1.0]:
-				_limb_n(fig, Vector3(0, 1.888, 0.156), Vector3(sx * 0.085, 1.892, 0.138), 0.017, 0.009, ic, 5)
-			_limb_n(fig, Vector3(0, 1.88, 0.162), Vector3(0, 1.832, 0.19), 0.02, 0.012, ic, 4, true)
+			# A laurel wreath round the temples.
 			_lathe(fig, [[1.9, 0.142, 0.153, 0.018, 0.85], [1.925, 0.156, 0.167, 0.018, 1.0],
 					[1.95, 0.142, 0.153, 0.014, 0.9]], 12, ic * 1.05, false)
 			for i in 10:

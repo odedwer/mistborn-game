@@ -89,6 +89,33 @@ func add_quad_smooth(bl: Vector3, br: Vector3, tr: Vector3, tl: Vector3,
 	indices.append_array([i, i + 3, i + 2, i, i + 2, i + 1])
 
 
+## Like `add_quad_smooth`, with a colour per corner (a displaced grid whose
+## recesses are darkened vertex by vertex, such as the statue's face).
+func add_quad_smooth4(p: Array, n: Array, c: Array) -> void:
+	var i := verts.size()
+	verts.append_array(p)
+	normals.append_array(n)
+	var t := (Vector3(p[1]) - Vector3(p[0])).normalized()
+	for _k in 4:
+		tangents.append_array([t.x, t.y, t.z, 1.0])
+	colors.append_array(c)
+	uvs.append_array([Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)])
+	indices.append_array([i, i + 3, i + 2, i, i + 2, i + 1])
+
+
+## `add_tri` with a normal and a colour per corner (same winding).
+func add_tri_smooth(p: Array, n: Array, c: Array) -> void:
+	var i := verts.size()
+	verts.append_array(p)
+	normals.append_array(n)
+	var t := (Vector3(p[1]) - Vector3(p[0])).normalized()
+	for _k in 3:
+		tangents.append_array([t.x, t.y, t.z, 1.0])
+	colors.append_array(c)
+	uvs.append_array([Vector2(0, 1), Vector2(1, 1), Vector2(0.5, 0)])
+	indices.append_array([i, i + 2, i + 1])
+
+
 ## Adds a single triangle (a, b, c counter-clockwise seen from the front).
 func add_tri(a: Vector3, b: Vector3, c: Vector3, col: Color) -> void:
 	var i := verts.size()
