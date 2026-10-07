@@ -9,6 +9,8 @@ extends Node3D
 ## view along the direction of travel, and adds trauma-based shake.
 
 const WORLD_MASK := 1
+## Longest step (s) of the landing-dip spring (see `_process`).
+const DIP_MAX_STEP := 1.0 / 60.0
 
 @export_group("Framing")
 @export var pivot_height := 1.6
@@ -195,9 +197,15 @@ func _process(delta: float) -> void:
 	var fp_height := first_person_height - (0.55 if crouching else 0.0)
 	_height = lerpf(_height, lerpf(tp_height, fp_height, _fp_blend), 1.0 - exp(-12.0 * real_dt))
 
-	# Landing dip: critically damped spring back to 0.
-	_dip_vel += (-_dip * 180.0 - _dip_vel * 22.0) * real_dt
-	_dip += _dip_vel * real_dt
+	# Landing dip: critically damped spring back to 0. Integrated in steps of
+	# at most 1/60 s: this explicit step blows up past ~0.1 s, and real_dt
+	# gets there in a hitch during atium (delta / time_scale), which sent the
+	# camera to y = 1e30 and then NaN.
+	var steps := ceili(real_dt / DIP_MAX_STEP - 0.001)  # 1 at 60 fps, as before
+	var h := real_dt / maxf(steps, 1)
+	for i in steps:
+		_dip_vel += (-_dip * 180.0 - _dip_vel * 22.0) * h
+		_dip += _dip_vel * h
 
 	global_position = _pivot + Vector3.UP * (_height + _dip)
 	rotation = Vector3(0.0, yaw, 0.0)
