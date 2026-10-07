@@ -245,6 +245,15 @@ func set_simulating(on: bool) -> void:
 	_simulate = on
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		# Two soldiers fighting each other hold each other in `target`: a
+		# RefCounted cycle that would outlive the battle. Break it.
+		for s in soldiers:
+			s.target = null
+		soldiers.clear()
+
+
 # --- Simulation -----------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
