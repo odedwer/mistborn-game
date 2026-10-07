@@ -30,7 +30,7 @@ Targets: Windows x86_64 and Linux x86_64.
 | `InputSetup` | `src/autoload/input_setup.gd` | Registers all input actions in code. Action names are defined there. |
 | `MetalRegistry` | `src/autoload/metal_registry.gd` | Spatial hash of every `Metallic`. `query_radius(origin, r)`. |
 | `GameState` | `src/autoload/game_state.gd` | Mission progress, checkpoints, save/load (`user://saves/`). |
-| `AudioManager` | `src/autoload/audio_manager.gd` | Pooled SFX `play_3d(id, pos)`, `play_ui(id)`, music intensity. |
+| `AudioManager` | `src/autoload/audio_manager.gd` | Pooled SFX `play_3d(id, pos)`, `play_ui(id)`, music intensity; `await shutdown()` before quitting. |
 
 ## Physics layers
 

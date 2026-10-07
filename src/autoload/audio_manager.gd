@@ -10,6 +10,8 @@ extends Node
 ##   stop_ambience(id: StringName) -> void
 ##   play_music() -> void
 ##   stop_music() -> void
+##   stop_all() -> void
+##   shutdown(timeout_s := 2.0) -> void   # await before quit()
 
 const SFX_DIR := "res://assets/audio/sfx/"
 const AMBIENCE_DIR := "res://assets/audio/ambience/"
@@ -347,6 +349,55 @@ func stop_music() -> void:
 	for p in _music_players:
 		p.stop()
 	_music_playing = false
+
+
+## Stops every voice: SFX and UI pools, ambience loops and music.
+func stop_all() -> void:
+	for p in _sfx_pool:
+		p.stop()
+	for p in _ui_pool:
+		p.stop()
+	for id in _ambience_players.keys():
+		stop_ambience(id)
+	stop_music()
+
+
+## Stops all audio and waits (at most `timeout_s`) until every playback is
+## released. Await it before SceneTree.quit(): the AudioServer frees a
+## stopped playback only on a later mix step, and never frees the ones still
+## pending when the engine shuts down, so quitting with a sound playing leaks
+## the playback and its stream ("ObjectDB instances leaked" / "resources
+## still in use at exit"). The voices are freed and made anew (a stopped
+## AudioStreamPlayer3D keeps its last playback), so audio still works after.
+func shutdown(timeout_s := 2.0) -> void:
+	var players: Array[Node] = []
+	players.append_array(_sfx_pool)
+	players.append_array(_ui_pool)
+	players.append_array(_music_players)
+	players.append_array(_ambience_players.values())
+	var pending: Array[WeakRef] = []
+	for p in players:
+		if p.has_stream_playback():
+			pending.append(weakref(p.get_stream_playback()))
+	stop_all()
+	for p in players:
+		p.free()
+	_sfx_pool.clear()
+	_sfx_started_at.clear()
+	_ui_pool.clear()
+	_ui_started_at.clear()
+	_music_players.clear()
+	_setup_sfx_pool()
+	_setup_ui_pool()
+	_setup_music_players()
+	if not is_inside_tree():
+		return
+	var deadline := Time.get_ticks_msec() + int(timeout_s * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		pending = pending.filter(func(w: WeakRef) -> bool: return w.get_ref() != null)
+		if pending.is_empty():
+			return
+		await get_tree().process_frame
 
 
 ## `level` is 0..1. 0 = calm layer only, 0.5 = calm+tension blended,

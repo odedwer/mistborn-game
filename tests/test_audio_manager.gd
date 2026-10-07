@@ -91,3 +91,23 @@ func test_expected_audio_files_exist_on_disk() -> void:
 	for layer in AudioManager.MUSIC_LAYERS:
 		var path := "res://assets/audio/music/%s.ogg" % layer
 		assert_true(ResourceLoader.exists(path), "missing music file: %s" % path)
+
+
+## shutdown() stops every voice and returns once the AudioServer has released
+## their playbacks (otherwise a sound playing at quit leaks at exit).
+func test_shutdown_releases_every_playback() -> void:
+	AudioManager.play_3d(&"push", Vector3.ZERO)
+	AudioManager.play_ui(&"ui_click")
+	var refs: Array[WeakRef] = []
+	for p in AudioManager.get_children():
+		if (p is AudioStreamPlayer or p is AudioStreamPlayer3D) and p.has_stream_playback():
+			refs.append(weakref(p.get_stream_playback()))
+	assert_gt(refs.size(), 0, "something is playing")
+	await AudioManager.shutdown()
+	assert_eq(AudioManager.active_sfx_voice_count(), 0, "every voice stopped")
+	for w in refs:
+		assert_true(w.get_ref() == null, "playback released by the AudioServer")
+	# The voices are made anew: audio still works afterwards.
+	assert_eq(AudioManager.sfx_voice_capacity(), AudioManager.SFX_VOICE_COUNT)
+	AudioManager.play_ui(&"ui_click")
+	await AudioManager.shutdown()

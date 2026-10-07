@@ -227,13 +227,18 @@ calls it as is):
   runner's `FILE_WEIGHTS`, so they balance themselves. A file always runs
   whole, its tests in order, in one process;
 - at the same time, the Python clearance tests (`tools/characters`, numpy
-  only), split over 2 processes by `tools/characters/run_parallel.py`.
+  only), split over `CLEARANCE_JOBS` processes (default 3) by
+  `tools/characters/run_parallel.py`, heaviest test class first by each
+  class's `WEIGHT`. The long weapon and cloth scans are one class per
+  character (the Inquisitor's and the guard's weapon scans per share of
+  their clips), so no class takes more than about 5 s.
 
 The shard logs are printed one after the other at the end, then the
 failures again, the totals and the merged tables of the slowest files and
 tests. The run fails on any failed test, a shard that exits non-zero or
-prints no summary (a crash), a test file that no shard ran, or a failed
-Python test.
+prints no summary (a crash), a test file that no shard ran, a failed
+Python test, or a runner that prints Godot's leak report at exit (see
+"Leaks at exit" below).
 
 | Command | What it does |
 |---|---|
@@ -241,7 +246,8 @@ Python test.
 | `tools/run_tests.sh <filter>` | Only the Godot test files whose name contains `<filter>`. No Python tests. |
 | `TEST_JOBS=1 tools/run_tests.sh` | The Godot suite in one process, its output streamed live (the old behaviour). |
 | `TEST_SLOWEST=<n> tools/run_tests.sh` | `<n>` rows in the slowest files/tests tables (default 10). |
-| `godot --headless -s res://tests/run_tests.gd -- [filter] [--reverse \| --shuffle=<seed>]` | One runner. `--reverse` and `--shuffle` change the file order, to check that no file depends on what ran before it. |
+| `CLEARANCE_JOBS=<n> tools/run_tests.sh` | `<n>` Python clearance processes (default 3). |
+| `godot --headless -s res://tests/run_tests.gd -- [filter] [--test=<text>] [--reverse \| --shuffle=<seed>]` | One runner. `--test` runs only the test methods whose name contains `<text>`. `--reverse` and `--shuffle` change the file order, to check that no file depends on what ran before it. |
 
 Every test that takes 2 s or more prints its time under its `ok` line.
 
@@ -253,9 +259,9 @@ One shard peaks at about 580 MB (the story sweep).
 
 | | Before | After |
 |---|---|---|
-| `tools/run_tests.sh`, wall | about 8 min (423 s Godot, then 78 s Python) | 68-76 s (6 runs) |
+| `tools/run_tests.sh`, wall | about 8 min (423 s Godot, then 78 s Python) | 68-76 s (6 runs); 68-77 s (6 runs) since the clearance scans are split, the Godot shards now last |
 | Godot suite in one process | 423 s | 178 s |
-| Python clearance tests | 70-78 s, after the Godot suite | 37 s idle, 64-71 s next to the shards |
+| Python clearance tests | 70-78 s, after the Godot suite | 37 s idle, 64-71 s next to the shards in 2 processes. Since the split: 25 s idle and 51-58 s next to the shards in 3 processes, before the Godot shards (55-69 s) |
 
 Slowest files, one process, before -> after:
 
@@ -308,3 +314,50 @@ test):
   run in 5 when `test_open_world_content` was the last file of a process)
   and were generated again; and it skipped wanted units that were already
   generating, so they did not load synchronously.
+- **`load_now` also skipped wanted units still instancing** (in `_units`
+  but built over several frames), so it could return with one half built
+  (`test_load_now_during_background_streaming`, now and then). It finishes
+  them now.
+- **A streamed-in checkpoint could be missed.** A unit's checkpoint areas
+  entered the tree one build step before the unit was done; when the frame
+  budget ran out in between, a physics step ran before `unit_loaded`, on
+  which the `MissionDirector` connects them, and a player already standing
+  there was never recorded (`test_full_mission_playthrough`, now and then:
+  "streamed-in checkpoint recorded"). The step that adds the markers now
+  finishes the unit.
+
+### Leaks at exit
+
+Godot prints a leak report when a process exits with objects or resources
+still alive: "N ObjectDB instances leaked at exit" (nodes never freed,
+RefCounted objects kept alive by a cycle or a static) and "N resources
+still in use at exit". The suite exits clean, and `tools/run_tests.sh`
+fails a run whose shard (or sequential run) prints either line, naming the
+files that runner ran. To find a leak, run those files one at a time with
+`--verbose`, which lists the leaked objects and resources, then bisect the
+file's tests with `--test=<name>`:
+
+    godot --headless --verbose -s res://tests/run_tests.gd -- test_mass_battle.gd --test=rout
+
+The leaks it found (17 of the 44 files leaked):
+
+- **Sounds playing at quit (game).** The AudioServer frees a stopped
+  playback only on a later mix step, and never frees the ones still
+  pending when the engine shuts down. A sound still playing at exit leaked
+  its `AudioStreamPlaybackOggVorbis`, `OggPacketSequencePlayback` and the
+  `.ogg` stream itself: 16 of the 17 files, a different set on each run.
+  `AudioManager.shutdown()` stops every voice and waits until weak
+  references to their playbacks clear (at most 2 s). The test runner and
+  the pause menu's Quit await it before `quit()`. Closing the window
+  quits without it.
+- **`MassBattle` soldiers (game).** Two soldiers fighting each other hold
+  each other in `Soldier.target`, a RefCounted cycle that outlived the
+  battle. The battle clears the targets on `NOTIFICATION_PREDELETE`.
+- **`test_act3_missions` (test).** It emitted `allomantic_line_used` with
+  three `Node.new()` stand-ins that were never freed.
+
+Left alone: with `--verbose`, a few files also print "N unclaimed string
+names at exit" listing Godot's built-in type names (`Vector3`, `int`,
+`PackedByteArray`, ...), after a scene with the player is loaded. Those are
+StringNames held by the engine itself, not objects or resources, and are
+not in the report the runner checks.

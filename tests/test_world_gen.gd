@@ -193,6 +193,62 @@ func test_navigation_bakes() -> void:
 ## and the other in-flight tasks are still tracked (their ids used to be
 ## dropped, so they were never waited for: a crash at exit after a fast
 ## travel).
+## Regression: a unit's checkpoint areas entered the tree one build step before
+## the unit was done, so before unit_loaded let the MissionDirector connect
+## them; a player already standing there in between was never recorded
+## (test_full_mission_playthrough failed now and then: "streamed-in checkpoint
+## recorded"). The markers' step must finish the unit.
+func test_checkpoint_areas_appear_with_unit_loaded() -> void:
+	var plan := _get_plan()
+	var c := plan.chunk_of(Vector2(-24, -84))  # cp_3's rooftop
+	var data := WorldStreamer.generate_unit(plan, 1337, "c:%d,%d" % [c.x, c.y])
+	var has_checkpoint := false
+	for m: Dictionary in data.markers:
+		has_checkpoint = has_checkpoint or (m["meta"] as Dictionary).has("checkpoint_id")
+	assert_true(has_checkpoint, "cp_3's chunk has a checkpoint marker")
+	var parent := Node3D.new()
+	add_child(parent)
+	var inst := ChunkInstancer.new(data, parent, null)
+	var seen := false
+	for i in 10000:
+		inst.step(0)  # one build step at a time
+		for a in get_tree().get_nodes_in_group(&"checkpoint"):
+			if parent.is_ancestor_of(a):
+				seen = true
+		if seen or inst.is_done():
+			break
+	assert_true(seen, "checkpoint area built")
+	assert_true(inst.is_done(), "the step that adds the checkpoint areas finishes the unit")
+	inst.step(1 << 30)
+	inst.free_nodes()
+	parent.free()
+
+
+## Regression: load_now skipped a wanted unit that was already instancing over
+## several frames, so it returned with that unit half built.
+func test_load_now_finishes_a_unit_still_instancing() -> void:
+	var w := _make_world()
+	var far := Vector3(900, 0, 400)
+	w.streamer.fallback_focus = far
+	w.streamer.update_interval = 0.0
+	w.streamer.frame_budget_usec = 1  # one build step per frame
+	var wanted: Array = w.streamer.wanted_units(far, 1.0).keys()
+	var partial := ""
+	for i in 600:
+		await get_tree().process_frame
+		for k: String in wanted:
+			if w.streamer.get_unit(k) != null and not w.streamer.is_loaded(k):
+				partial = k
+		if partial != "":
+			break
+	assert_true(partial != "", "a wanted unit is instancing over several frames")
+	w.streamer.load_now(far, 1.0)
+	for k: String in wanted:
+		assert_true(w.streamer.is_loaded(k), "%s loaded by load_now" % k)
+	w.queue_free()
+	await get_tree().process_frame
+
+
 func test_load_now_during_background_streaming() -> void:
 	var w := _make_world()
 	var far := Vector3(900, 0, 400)  # the docks, far from the spawn

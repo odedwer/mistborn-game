@@ -4,7 +4,7 @@ everyone lying dead on the floor.
 
 Run: python3 -m unittest discover -s tools/characters -p 'test_*.py'
      (or pytest tools/characters/test_clearance.py). About a minute.
-tools/run_tests.sh runs it (split over 2 processes by run_parallel.py) alongside
+tools/run_tests.sh runs it (split over processes by run_parallel.py) alongside
 the Godot suite when numpy is installed.
 """
 from __future__ import annotations
@@ -24,6 +24,8 @@ from anim import ANIM_NAMES, SKIRT_CLASS, base_params, make_anims  # noqa: E402
 
 
 class GeometryTest(unittest.TestCase):
+    WEIGHT = 0.2  # rough seconds, for run_parallel.py
+
     def test_capsule_distance(self):
         P = np.array([[0.0, 0.1, 0.5], [0.0, 0.0, 1.3], [0.0, 0.005, 0.2]])
         A, C, R = np.array([[0.0, 0.0, 0.0]]), np.array([[0.0, 0.0, 1.0]]), np.array([0.01])
@@ -87,6 +89,8 @@ class GeometryTest(unittest.TestCase):
 
 
 class ClearanceTest(unittest.TestCase):
+    WEIGHT = 2.6
+
     def test_regions_found(self):
         """Every armed character is sampled in the regions it has."""
         expect = {"guard": {"skirt"}, "hazekiller": {"skirt", "shield"}, "thug": set(),
@@ -149,27 +153,68 @@ class ClearanceTest(unittest.TestCase):
         p["r_abd"] = base_params("guard")["r_abd"] - 5
         self.assertLess(ch.measure(p)["legs"], 0.0)
 
-    def test_all_clips_clear(self):
+    def test_all_clips_split(self):
+        """The ClipsClear_* tests below scan every armed character in every
+        clip, each pair exactly once."""
+        pairs = [(n, a) for n, _, _, anims in CLIP_PARTS for a in anims]
+        self.assertEqual(len([k for k in globals() if k.startswith("ClipsClear_")]), len(CLIP_PARTS))
+        self.assertEqual(len(pairs), len(set(pairs)))
+        self.assertEqual(set(pairs), {(n, a) for n in clearance.ARMED for a in ANIM_NAMES})
+
+
+# The weapon clip scan, one test class per armed character (the heavier ones
+# per share of their clips), so run_parallel.py spreads it over processes.
+# Each class's WEIGHT is its rough seconds on an idle machine, for balance only.
+CLIP_SPLIT = {"inquisitor": 4, "guard": 2}  # parts per character (default 1)
+CLIP_SECONDS = {"inquisitor": 16.0, "guard": 7.0, "hazekiller": 5.0, "thug": 4.0}
+# (character, part, parts, clips): every parts-th clip from the part-th on.
+CLIP_PARTS = [(name, i, CLIP_SPLIT.get(name, 1), ANIM_NAMES[i::CLIP_SPLIT.get(name, 1)])
+              for name in clearance.ARMED for i in range(CLIP_SPLIT.get(name, 1))]
+
+
+def _register(cls):
+    """Adds a generated test class to the module, where unittest finds it."""
+    globals()[cls.__name__] = cls
+
+
+def _clips_clear_case(name, part, parts, anims):
+    def test_clips_clear(self):
         """No animation brings a weapon within 1 cm of the head, neck or torso,
         into an arm, a leg or a skirt, or through the hazekiller's shield."""
-        fails = clearance.check()
+        fails = clearance.check(names=[name], anims=anims)
         msg = "\n".join(f"{n} {a} {r}: {v:.3f} m at t={t:.2f} (threshold {lim:.3f})"
                         for n, a, r, v, t, lim in fails)
         self.assertEqual(fails, [], "weapon clips:\n" + msg)
 
+    suffix = f"_{part + 1}of{parts}" if parts > 1 else ""
+    return type(f"ClipsClear_{name}{suffix}", (unittest.TestCase,),
+                {"test_clips_clear": test_clips_clear, "WEIGHT": CLIP_SECONDS[name] / parts})
+
+
+for _part in CLIP_PARTS:
+    _register(_clips_clear_case(*_part))
+
+
+# The skirted characters and garments (listing them builds every character,
+# about 4 s, so the cloth scan's test classes are made from these lists, and
+# ClothTest checks that they are complete).
+SKIRTED = ["guard", "hazekiller", "coinshot", "inquisitor", "dockson", "breeze", "clubs", "sazed", "marsh", "elend",
+           "vin_gown", "noble_woman", "obligator", "obligator_2", "skaa_man", "skaa_woman"]
+GARMENT_SKIRTED = ["noble_man:tails", "noble_man:longcoat", "noble_woman:bustle"]
+
 
 class ClothTest(unittest.TestCase):
+    WEIGHT = 4.0
+
     def test_skirted_characters(self):
         """Every robed or skirted character is checked."""
-        self.assertEqual(set(clearance.skirted()),
-                         {"guard", "hazekiller", "coinshot", "inquisitor", "dockson", "breeze", "clubs", "sazed",
-                          "marsh", "elend", "vin_gown", "noble_woman", "obligator", "obligator_2", "skaa_man",
-                          "skaa_woman"})
+        self.assertEqual(set(clearance.skirted()), set(SKIRTED))
+        self.assertEqual(len(SKIRTED), 16)
 
     def test_garment_skirts(self):
         """The skirts of the optional garment meshes are checked too."""
-        self.assertEqual(set(clearance.garment_skirted()),
-                         {"noble_man:tails", "noble_man:longcoat", "noble_woman:bustle"})
+        self.assertEqual(set(clearance.garment_skirted()), set(GARMENT_SKIRTED))
+        self.assertEqual(len(GARMENT_SKIRTED), 3)
 
     def test_detects_legs_through_a_garment(self):
         """Negative control: the noble's long coat (a garment mesh) skinned to
@@ -195,15 +240,28 @@ class ClothTest(unittest.TestCase):
             W[:, hips] = 1.0
         self.assertLess(ch.measure(p), -0.1)
 
+
+
+# The cloth scan, one test class per skirted character or garment.
+def _no_legs_through_cloth_case(name):
     def test_no_legs_through_cloth(self):
         """No animation shows a leg through a robe, gown, tunic or coat (by
         more than CLOTH_THRESHOLD)."""
-        fails = clearance.check_cloth(step=2)
+        fails = clearance.check_cloth(names=[name], step=2)
         msg = "\n".join(f"{n} {a}: {v:.3f} m at t={t:.2f}" for n, a, v, t in fails)
         self.assertEqual(fails, [], "legs through cloth:\n" + msg)
 
+    return type("NoLegsThroughCloth_" + name.replace(":", "_"), (unittest.TestCase,),
+                {"test_no_legs_through_cloth": test_no_legs_through_cloth, "WEIGHT": 1.2})
+
+
+for _name in SKIRTED + GARMENT_SKIRTED:
+    _register(_no_legs_through_cloth_case(_name))
+
 
 class SettleTest(unittest.TestCase):
+    WEIGHT = 2.5
+
     def test_settling_characters(self):
         """The long robes and gowns have skirt bones."""
         self.assertEqual(set(clearance.settling()),
@@ -239,6 +297,8 @@ class SettleTest(unittest.TestCase):
 
 
 class DeadTest(unittest.TestCase):
+    WEIGHT = 0.6
+
     def test_everyone_lies_on_the_floor(self):
         """At the end of `die` every character's legs rest on the floor (the
         robed ones under their robes aside), and no part of anyone's body

@@ -7,21 +7,24 @@
 #   Every file still runs all of its tests in order, in one process.
 # - Python clearance tests (tools/characters, numpy only; see
 #   tools/characters/clearance.py) run at the same time, without a filter
-#   only, split over 2 processes by tools/characters/run_parallel.py (about
-#   37 s on an idle machine, 65-70 s next to the shards; 70 s in one
-#   process). Skipped when numpy is missing.
+#   only, split over CLEARANCE_JOBS processes by
+#   tools/characters/run_parallel.py (25 s idle, 50-58 s next to the shards;
+#   65 s in one process). Skipped when numpy is missing.
 #
 # Each shard's output is printed when the suite finishes (a shard at a time,
 # so it stays readable), then the failures again, the totals and the slowest
-# files and tests. Any failure, crash or missing summary fails the run.
+# files and tests. Any failure, crash or missing summary fails the run, and
+# so does a runner whose exit prints Godot's leak report ("ObjectDB instances
+# leaked at exit", "resources still in use at exit"): the suite exits clean.
 #
 # TEST_JOBS=<n>  Godot processes (default: CPU cores, at most 4; 1 = the old
 #                sequential run, its output streamed live).
+# CLEARANCE_JOBS=<n>  Python clearance processes (default 3).
 # TEST_SLOWEST=<n>  rows in the slowest files/tests tables (default 10).
 #
 # Wall time on the 4-core dev container (see docs/PERFORMANCE.md "Test
-# suite"): about 75 s with the defaults (4 shards; the Python tests are the
-# last to finish), about 3 min with TEST_JOBS=1. It was about 8 min before
+# suite"): about 70-75 s with the defaults (4 shards; the Godot shards finish
+# last), about 3 min with TEST_JOBS=1. It was about 8 min before
 # the suite was sharded and a 20 s wait on freeing a world mid-bake was fixed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -49,7 +52,7 @@ py_status=0
 py_ran=0
 if [ -z "$FILTER" ]; then
 	if python3 -c "import numpy" >/dev/null 2>&1; then
-		python3 tools/characters/run_parallel.py -j 2 >"$work/python.log" 2>&1 &
+		python3 tools/characters/run_parallel.py -j "${CLEARANCE_JOBS:-3}" >"$work/python.log" 2>&1 &
 		py_pid=$!
 		py_ran=1
 	else
@@ -60,9 +63,35 @@ fi
 # Import once so class_name globals and resources are registered.
 "$GODOT" --headless --import >/dev/null 2>&1 || true
 
+# Godot's own report at exit of nodes or RefCounted objects never freed and
+# resources never released. The suite exits clean, so any of these lines
+# fails the run (see docs/PERFORMANCE.md "Leaks at exit").
+LEAK_RE='leaked at exit|still in use at exit'
+leaks=()
+# Records a leak if the log $1 (of runner $2) has Godot's leak report.
+check_leaks() {
+	if grep -q -E "$LEAK_RE" "$1"; then
+		local ran
+		ran=$(grep -o -E '^(ok|FAIL) +test_[a-zA-Z0-9_]+\.gd' "$1" | awk '{print $2}' | sort -u | tr '\n' ' ')
+		leaks+=("$2 leaked at exit: $(grep -E "$LEAK_RE" "$1" | tr '\n' ' ')(it ran: $ran)")
+		godot_status=1
+	fi
+}
+print_leaks() {
+	[ "${#leaks[@]}" -eq 0 ] && return 0
+	for l in "${leaks[@]}"; do echo "FAIL  $l"; done
+	echo "      To find it: godot --headless --verbose -s res://tests/run_tests.gd -- <file> [--test=<name>]"
+	echo "      lists the leaked objects and resources; run the files one at a time, then the tests."
+}
+
 godot_status=0
 if [ "$TEST_JOBS" -eq 1 ]; then
-	"$GODOT" --headless -s res://tests/run_tests.gd -- "$FILTER" || godot_status=$?
+	set +e
+	"$GODOT" --headless -s res://tests/run_tests.gd -- "$FILTER" 2>&1 | tee "$work/sequential.log"
+	godot_status=${PIPESTATUS[0]}
+	set -e
+	check_leaks "$work/sequential.log" "the Godot suite"
+	print_leaks
 else
 	echo "Godot suite: $TEST_JOBS shards${FILTER:+, filter '$FILTER'}..."
 	mkdir "$work/claims"
@@ -97,6 +126,7 @@ else
 			files_run=$((files_run + ${n:-0}))
 		fi
 		[ "${codes[$((i - 1))]}" -ne 0 ] && godot_status=1
+		check_leaks "$log" "shard $i"
 	done
 	[ "$failed" -gt 0 ] && godot_status=1
 	# Every matching test file must have been run by some shard.
@@ -104,6 +134,7 @@ else
 	echo
 	echo "===== Godot suite: $passed passed, $failed failed, $files_run files ($TEST_JOBS shards) ====="
 	grep -h -E '^FAIL ' "$work"/shard*.log || true
+	print_leaks
 	if [ "$files_run" -ne "$expected" ]; then
 		echo "FAIL  the shards ran $files_run test files, expected $expected"
 		godot_status=1
