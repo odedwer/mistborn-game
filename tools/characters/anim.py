@@ -281,12 +281,13 @@ def _lie(hips_fb, hips_lift, thigh_fb, thigh_lift, shin_fb, shin_lift, lat=(1.1,
 # hip) point it covers stays at least 1 cm inside it; the hem now rises
 # 15-18 cm off the floor over the feet (the gowns 28 cm), where it stood
 # 31-36 cm high and open.
+# Refit with tools/characters/fit_robe_settle.py.
 SETTLE = {
     "inquisitor": {"fall": {}, "lie": _lie(0.84, -0.017, 0.335, 0.035, 0.108, -0.006)},
     "sazed": {"fall": {}, "lie": _lie(0.88, -0.006, 0.374, 0.031, 0.115, -0.004)},
     "marsh": {"fall": {}, "lie": _lie(0.93, -0.016, 0.364, 0.05, 0.118, -0.001)},
     "obligator": {"fall": {}, "lie": _lie(0.76, -0.041, 0.292, 0.054, 0.108, -0.01)},
-    "obligator_b": {"fall": {}, "lie": _lie(0.64, -0.061, 0.376, 0.149, 0.1, -0.04)},
+    "obligator_b": {"fall": {}, "lie": _lie(0.772, -0.038, 0.383, 0.132, 0.106, -0.061)},
     # (the hoop skirts flatten further, and are fitted to stay over the feet:
     # their hems reach the floor, and the toes poked through)
     "gown": {"fall": {}, "lie": _lie(0.196, -0.082, 0.416, 0.142, 0.107, 0.149, lat=(1.0, 0.93, 0.91))},
