@@ -5,7 +5,8 @@ extends Node
 const SoakStory := preload("res://tests/story_jump.gd")
 const ROUTE: Array[StringName] = [&"player_spawn", &"rooftop_lesson_1", &"rooftop_lesson_2", &"cp_1",
 		&"cp_2", &"cp_3", &"keep_courtyard"]
-const LEG_FRAMES := 1500
+## A leg that has not arrived by now is cut (a long stall is dead footage).
+const LEG_FRAMES := 720
 const REACH := 3.5
 const TERMINAL_RADIUS := 30.0
 const TERMINAL_SPEED := 14.0
@@ -46,11 +47,11 @@ func _run() -> void:
 	# invisible: Movie Maker records at a fixed step).
 	for i in pts.size() - 1:
 		world.streamer.load_now((pts[i] + pts[i + 1]) * 0.5, pts[i].distance_to(pts[i + 1]) * 0.5 + 60.0)
-	player.respawn(Transform3D(Basis.IDENTITY, pts[0] + Vector3.UP * 0.5))
-	# A moment standing on the roof before the first jump.
-	for f in 45:
-		await get_tree().physics_frame
 	for i in _legs:
+		# Each leg starts standing on its objective, like the traversal test:
+		# landing "inside reach" can leave the player somewhere (a street, an
+		# alley) the autopilot can't launch from. On video this is a cut.
+		await _start_leg(pts[i], pts[i + 1])
 		var r := await _fly_leg(pts[i + 1])
 		print("leg %s -> %s: %s" % [ROUTE[i], ROUTE[i + 1], r])
 		for f in 20:
@@ -61,6 +62,21 @@ func _run() -> void:
 	for f in 60:
 		await get_tree().physics_frame
 	get_tree().quit()
+
+
+## Drops the player onto `at`, facing `toward`, and waits until it has stood
+## there a few frames (tests/test_traversal.gd `_start_leg`).
+func _start_leg(at: Vector3, toward: Vector3) -> void:
+	player.allomancer.set_flaring(false)
+	player.respawn(Transform3D(Basis.IDENTITY, at + Vector3.UP * 0.5))
+	var d := toward - at
+	player.camera_rig.yaw = atan2(-d.x, -d.z)
+	var grounded := 0
+	for f in 60:
+		await get_tree().physics_frame
+		grounded = grounded + 1 if player.is_on_floor() else 0
+		if grounded >= 20:
+			break
 
 
 func _marker(id: StringName) -> Vector3:
