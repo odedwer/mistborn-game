@@ -25,7 +25,7 @@ const FILL_COLOR := Color(0.52, 0.6, 0.86)
 ## the Compatibility value (tuned for readability on opengl3, where the sooty
 ## albedos sit deep in the tonemapper's toe) washed the player's cloak out.
 const FILL_ENERGY := 3.0
-const FILL_ENERGY_FORWARD := 1.5
+const FILL_ENERGY_FORWARD := 0.7
 
 
 ## Night fill energy for the current renderer.
@@ -65,11 +65,11 @@ static func build(parent: Node3D, with_fill := false) -> Dictionary:
 	# geometry (a wall or the player's own shadow side) read as near-black.
 	# This keeps the cold-moonlight cast but lifts the floor enough that nothing
 	# goes fully dark up close.
-	env.ambient_light_energy = 1.8
+	env.ambient_light_energy = 1.8 if RenderingServer.get_current_rendering_method() == "gl_compatibility" else 1.0
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.3
+	env.tonemap_exposure = 1.35
 	env.tonemap_white = 6.0
 
 	env.ssao_enabled = true
@@ -139,7 +139,7 @@ static func build(parent: Node3D, with_fill := false) -> Dictionary:
 	var to_moon := Vector3(sin(az) * cos(el), sin(el), -cos(az) * cos(el))
 	moon.basis = Basis.looking_at(-to_moon, Vector3.UP)
 	moon.light_color = Color(0.62, 0.7, 0.92)
-	moon.light_energy = 0.9
+	moon.light_energy = 1.25
 	moon.light_indirect_energy = 0.5
 	moon.light_volumetric_fog_energy = 0.7
 	moon.shadow_enabled = true

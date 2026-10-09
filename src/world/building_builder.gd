@@ -123,7 +123,7 @@ static func _windows(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumb
 						var lp := o + rv * (u + 1.05) + n * 0.42 + Vector3.UP * 2.9
 						data.add_instance(&"wall_lantern", Transform3D(Basis.looking_at(-n), lp))
 						data.add_metal(lp + Vector3.UP * 0.35, 4.0)
-						data.add_light(lp, Color(1.0, 0.6, 0.28), 7.0, 1.6)
+						data.add_light(lp, Color(1.0, 0.6, 0.28), 9.0, 2.6)
 					continue
 				var p0 := o + rv * (u - ww * 0.5) + n * 0.04 + Vector3.UP * y0
 				var p1 := o + rv * (u + ww * 0.5) + n * 0.04 + Vector3.UP * y0
@@ -143,7 +143,7 @@ static func _windows(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumb
 			var lp2 := o + rv * (length * 0.5) + n * 0.42 + Vector3.UP * 3.1
 			data.add_instance(&"wall_lantern", Transform3D(Basis.looking_at(-n), lp2))
 			data.add_metal(lp2 + Vector3.UP * 0.35, 4.0)
-			data.add_light(lp2, Color(1.0, 0.6, 0.28), 7.0, 1.6)
+			data.add_light(lp2, Color(1.0, 0.6, 0.28), 9.0, 2.6)
 
 
 ## Merchant/noble facade dressing: vertical pilaster strips between windows,

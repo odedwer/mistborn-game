@@ -55,7 +55,7 @@ static func _lamps(data: ChunkBuildData, L: ChunkLayout, rng: RandomNumberGenera
 		data.add_nav_box(base - Vector3(0.15, 0, 0.15), base + Vector3(0.15, 4.2, 0.15), false)
 		if lit:
 			var lp := base + Vector3(dir.x * 0.75, 3.75, dir.y * 0.75)
-			data.add_light(lp, LAMP_LIGHT_COLOR, 11.0 if shadow else 9.5, 2.4 if shadow else 1.9, shadow)
+			data.add_light(lp, LAMP_LIGHT_COLOR, 14.0 if shadow else 12.5, 3.6 if shadow else 3.0, shadow)
 
 
 static func _pick_kind(rng: RandomNumberGenerator) -> StringName:

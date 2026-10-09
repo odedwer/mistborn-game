@@ -219,6 +219,19 @@ func _connect_checkpoints() -> void:
 	for area in get_tree().get_nodes_in_group("checkpoint"):
 		if area is Area3D and not area.body_entered.is_connected(_on_checkpoint_body_entered):
 			area.body_entered.connect(_on_checkpoint_body_entered.bind(area))
+			_check_checkpoint_overlap(area)
+
+
+## A checkpoint area is connected when its chunk finishes loading, but the
+## physics server may already have reported the player inside it (the area
+## exists from an earlier instancing stage): the enter signal then fired
+## unheard. Check the overlap once the next physics step has run.
+func _check_checkpoint_overlap(area: Area3D) -> void:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var player := get_tree().get_first_node_in_group("player") as PhysicsBody3D
+	if is_instance_valid(area) and area.is_inside_tree() and player != null and area.overlaps_body(player):
+		_on_checkpoint_body_entered(player, area)
 
 
 func _on_checkpoint_body_entered(body: Node, area: Area3D) -> void:
