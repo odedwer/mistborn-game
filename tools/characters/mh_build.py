@@ -573,11 +573,20 @@ def write_shader_tres(path, shader: str, params: dict, textures: dict, resource_
 
 def write_cloth(mdir, name, part, color, kind, uv, dye=0, metallic=0.0, normal_scale=0.8):
     """materials/<name>/<part>.tres: hd_cloth.gdshader over the shared maps
-    of `kind`, tinted to `color` (sRGB 0..1) or dyed through `dye` slot."""
-    write_shader_tres(os.path.join(mdir, part + ".tres"), "hd_cloth.gdshader",
-                      {"albedo_color": fabric_tint(color), "uv_scale": f"Vector2({uv}, {uv})",
-                       "normal_scale": normal_scale, "metallic": metallic, "dye_slot": dye},
-                      shared_fabric(kind), f"{name}_{part}")
+    of `kind`, tinted to `color` (sRGB 0..1) or dyed through `dye` slot.
+    Soft fabrics also get the shared crease map."""
+    folds = os.path.join(SHARED, "folds_normal.png")
+    if not os.path.exists(folds):
+        os.makedirs(SHARED, exist_ok=True)
+        tx.folds_map(folds)
+    tex = dict(shared_fabric(kind))
+    params = {"albedo_color": fabric_tint(color), "uv_scale": f"Vector2({uv}, {uv})",
+              "normal_scale": normal_scale, "metallic": metallic, "dye_slot": dye}
+    if kind in ("linen", "wool", "cloak"):
+        tex["folds_texture"] = f"{SHARED_RES}/folds_normal.png"
+        params["folds_strength"] = 0.7
+        params["folds_scale"] = 5.0
+    write_shader_tres(os.path.join(mdir, part + ".tres"), "hd_cloth.gdshader", params, tex, f"{name}_{part}")
 
 
 def write_hair(mdir, name, part, tex_res, dye=0, roughness=0.55, specular=0.35, mean_luma=0.05):
@@ -1311,7 +1320,7 @@ def build(name):
         k = np.array([loose.get(dominant(weights[i]).removeprefix("Left").removeprefix("Right"), 1.0) for i in ids])
         gv = verts[ids] + norms[ids] * (off * k)[:, None]
         gf = [tuple(remap[i] for i in f) for f in gfaces]
-        gv = taubin(gv, gf, {"shirt": 60, "trousers": 25, "boots": 6, "cuirass": 120, "pauldron": 60,
+        gv = taubin(gv, gf, {"shirt": 120, "trousers": 40, "boots": 6, "cuirass": 120, "pauldron": 60,
                              "gloves": 10}.get(region, 20))
         o = make_obj(gname, gv, gf, guv,
                      [weights[i] for i in ids], gltf_mat(name + "_" + gname.lower()), arm)

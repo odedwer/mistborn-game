@@ -137,3 +137,18 @@ def alpha_card(src: str, dst: str, tint=None, size: int | None = None):
         im = Image.fromarray((a * 255).astype(np.uint8))
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     im.save(dst, optimize=True)
+
+
+def folds_map(out_path: str, size: int = 1024, seed: int = 77):
+    """Soft cloth creases (ridged, slightly stretched noise) as a tileable
+    normal map: the hd_cloth shader blends it over the weave at a coarser
+    scale so garments read as cloth rather than a body-tight knit."""
+    a = tile_noise(size, 6, seed, 4)
+    b = tile_noise(size, 11, seed + 1, 3)
+    ridged = 1.0 - np.abs(a - 0.5) * 2.0
+    ridged = ridged ** 3
+    h = ridged * 0.7 + b * 0.3
+    from PIL import Image as _I
+    img = _I.fromarray((h * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(2.0))
+    h = np.asarray(img, dtype=np.float64) / 255.0
+    save(height_to_normal(h, 6.0), out_path)

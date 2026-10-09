@@ -1,9 +1,10 @@
-[gd_resource type="ShaderMaterial" load_steps=5 format=3]
+[gd_resource type="ShaderMaterial" load_steps=6 format=3]
 
 [ext_resource type="Shader" path="res://assets/models/characters/materials/hd_cloth.gdshader" id="1"]
 [ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/wool_albedo.png" id="2"]
 [ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/wool_normal.png" id="3"]
 [ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/wool_roughness.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/folds_normal.png" id="5"]
 
 [resource]
 resource_name = "noble_man_hat_bowler"
@@ -13,6 +14,9 @@ shader_parameter/uv_scale = Vector2(6, 6)
 shader_parameter/normal_scale = 0.8
 shader_parameter/metallic = 0.0
 shader_parameter/dye_slot = 0
+shader_parameter/folds_strength = 0.7
+shader_parameter/folds_scale = 5.0
 shader_parameter/albedo_texture = ExtResource("2")
 shader_parameter/normal_texture = ExtResource("3")
 shader_parameter/roughness_texture = ExtResource("4")
+shader_parameter/folds_texture = ExtResource("5")

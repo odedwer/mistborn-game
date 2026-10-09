@@ -15,6 +15,10 @@ uniform float normal_scale = 0.8;
 uniform float metallic = 0.0;
 uniform float roughness_scale = 1.0;
 uniform int dye_slot = 0;
+// soft creases over the weave (shared folds map, coarser scale)
+uniform sampler2D folds_texture : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform float folds_scale = 4.0;
+uniform float folds_strength = 0.0;
 instance uniform vec4 dye_1 : source_color = vec4(1.0, 1.0, 1.0, 0.0);
 instance uniform vec4 dye_2 : source_color = vec4(1.0, 1.0, 1.0, 0.0);
 instance uniform vec4 dye_3 : source_color = vec4(1.0, 1.0, 1.0, 0.0);
@@ -34,6 +38,10 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = clamp(texture(roughness_texture, uv).r * roughness_scale, 0.03, 1.0);
 	METALLIC = metallic;
-	NORMAL_MAP = texture(normal_texture, uv).rgb;
-	NORMAL_MAP_DEPTH = normal_scale;
+	vec3 n1 = texture(normal_texture, uv).rgb * 2.0 - 1.0;
+	n1.xy *= normal_scale;
+	vec3 n2 = texture(folds_texture, UV * folds_scale).rgb * 2.0 - 1.0;
+	n2.xy *= folds_strength;
+	// whiteout blend
+	NORMAL_MAP = normalize(vec3(n1.xy + n2.xy, n1.z * n2.z)) * 0.5 + 0.5;
 }
