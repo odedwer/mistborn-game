@@ -44,6 +44,8 @@ var shadow_quality: Quality = Quality.MEDIUM
 var ssao_enabled: bool = false
 var ssil_enabled: bool = false
 var sdfgi_enabled: bool = false
+## Screen-space reflections (wet streets and puddles mirror lanterns and windows).
+var ssr_enabled: bool = false
 var volumetric_fog_quality: Quality = Quality.MEDIUM
 var ash_particle_density: float = 1.0
 var lod_bias: float = 1.0
@@ -103,6 +105,11 @@ var stick_deadzone: float = 0.2
 
 func _ready() -> void:
 	load_settings()
+	# MISTBORN_PRESET=low|medium|high|ultra forces a preset for this run
+	# (screenshot and capture tools; not saved)
+	var forced := OS.get_environment("MISTBORN_PRESET").to_upper()
+	if forced in Preset.keys():
+		set_preset(Preset[forced])
 	apply_all()
 
 
@@ -132,6 +139,7 @@ func set_preset(p: Preset) -> void:
 			ssao_enabled = false
 			ssil_enabled = false
 			sdfgi_enabled = false
+			ssr_enabled = false
 			volumetric_fog_quality = Quality.LOW
 			ash_particle_density = 0.3
 			lod_bias = 2.0
@@ -145,6 +153,7 @@ func set_preset(p: Preset) -> void:
 			ssao_enabled = true
 			ssil_enabled = false
 			sdfgi_enabled = false
+			ssr_enabled = false
 			volumetric_fog_quality = Quality.MEDIUM
 			ash_particle_density = 0.7
 			lod_bias = 1.5
@@ -158,6 +167,7 @@ func set_preset(p: Preset) -> void:
 			ssao_enabled = true
 			ssil_enabled = true
 			sdfgi_enabled = false
+			ssr_enabled = true
 			volumetric_fog_quality = Quality.HIGH
 			ash_particle_density = 1.0
 			lod_bias = 1.0
@@ -171,6 +181,7 @@ func set_preset(p: Preset) -> void:
 			ssao_enabled = true
 			ssil_enabled = true
 			sdfgi_enabled = true
+			ssr_enabled = true
 			volumetric_fog_quality = Quality.ULTRA
 			ash_particle_density = 1.0
 			lod_bias = 0.5
@@ -204,6 +215,7 @@ func save_settings() -> void:
 	cfg.set_value("graphics", "ssao_enabled", ssao_enabled)
 	cfg.set_value("graphics", "ssil_enabled", ssil_enabled)
 	cfg.set_value("graphics", "sdfgi_enabled", sdfgi_enabled)
+	cfg.set_value("graphics", "ssr_enabled", ssr_enabled)
 	cfg.set_value("graphics", "volumetric_fog_quality", int(volumetric_fog_quality))
 	cfg.set_value("graphics", "ash_particle_density", ash_particle_density)
 	cfg.set_value("graphics", "lod_bias", lod_bias)
@@ -266,6 +278,7 @@ func load_settings() -> void:
 	ssao_enabled = cfg.get_value("graphics", "ssao_enabled", false)
 	ssil_enabled = cfg.get_value("graphics", "ssil_enabled", false)
 	sdfgi_enabled = cfg.get_value("graphics", "sdfgi_enabled", false)
+	ssr_enabled = cfg.get_value("graphics", "ssr_enabled", false)
 	volumetric_fog_quality = int(cfg.get_value("graphics", "volumetric_fog_quality", Quality.MEDIUM)) as Quality
 	ash_particle_density = cfg.get_value("graphics", "ash_particle_density", 1.0)
 	lod_bias = cfg.get_value("graphics", "lod_bias", 1.0)
@@ -373,6 +386,7 @@ func _apply_world_environment() -> void:
 		env.ssao_enabled = ssao_enabled
 		env.ssil_enabled = ssil_enabled
 		env.sdfgi_enabled = sdfgi_enabled
+		env.ssr_enabled = ssr_enabled
 		env.volumetric_fog_enabled = volumetric_fog_quality != Quality.OFF
 
 

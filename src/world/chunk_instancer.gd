@@ -332,7 +332,7 @@ func _add_light(i: int) -> void:
 	o.light_energy = l["energy"]
 	o.omni_range = l["range"]
 	o.omni_attenuation = 1.2
-	o.light_specular = 0.4
+	o.light_specular = 1.0  # glints on the wet stone (world_surface.gdshader)
 	o.light_volumetric_fog_energy = 2.5
 	o.shadow_enabled = l["shadow"]
 	o.distance_fade_enabled = true

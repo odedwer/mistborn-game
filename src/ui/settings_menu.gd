@@ -162,6 +162,14 @@ func _build_graphics_tab() -> Control:
 	)
 	box.add_child(sdfgi_row)
 
+	var ssr_row := UIHelpers.labeled_checkbox("Reflections (SSR)", GameSettings.ssr_enabled)
+	UIHelpers.get_checkbox(ssr_row).toggled.connect(func(v: bool):
+		GameSettings.ssr_enabled = v
+		GameSettings.mark_custom()
+		GameSettings.apply_graphics()
+	)
+	box.add_child(ssr_row)
+
 	var fog_row := UIHelpers.labeled_option("Volumetric Fog", ["Off", "Low", "Medium", "High", "Ultra"], int(GameSettings.volumetric_fog_quality))
 	UIHelpers.get_option(fog_row).item_selected.connect(func(i: int):
 		GameSettings.volumetric_fog_quality = i as GameSettings.Quality

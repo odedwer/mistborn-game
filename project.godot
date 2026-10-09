@@ -53,6 +53,13 @@ window/vsync/vsync_mode=1
 3d_physics/layer_6="triggers"
 3d_physics/layer_7="ragdoll"
 
+[shader_globals]
+
+world_wetness={
+"type": "float",
+"value": 0.0
+}
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

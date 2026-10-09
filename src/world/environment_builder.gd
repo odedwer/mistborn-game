@@ -79,6 +79,12 @@ static func build(parent: Node3D, with_fill := false) -> Dictionary:
 	env.ssao_intensity = 1.7
 	env.ssao_power = 1.5
 	env.ssil_enabled = false
+	# Reflections for the wet streets (GameSettings.ssr_enabled turns them on
+	# from the High preset up)
+	env.ssr_max_steps = 48
+	env.ssr_fade_in = 0.15
+	env.ssr_fade_out = 2.0
+	env.ssr_depth_tolerance = 0.3
 	env.sdfgi_enabled = false
 
 	env.glow_enabled = true

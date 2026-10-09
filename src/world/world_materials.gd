@@ -39,25 +39,26 @@ static func clear() -> void:
 static func _create(id: int) -> Material:
 	match id:
 		Mat.STONE:
-			return _triplanar("stone_wall", 2.6, 0.92, Color(1, 1, 1))
+			return _surface("stone_wall", 2.6, Color(1, 1, 1), 0.025, 0.0)
 		Mat.BRICK:
-			return _triplanar("brick_soot", 2.0, 0.9, Color(1, 1, 1))
+			return _surface("brick_soot", 2.0, Color(1, 1, 1), 0.012, 0.0)
 		Mat.PLASTER:
-			return _triplanar("plaster_dirty", 3.0, 0.95, Color(1, 1, 1))
+			return _surface("plaster_dirty", 3.0, Color(1, 1, 1), 0.01, 0.0)
 		Mat.TRIM:
-			return _triplanar("stone_wall", 1.6, 0.9, Color(0.55, 0.53, 0.52))
+			return _surface("ashlar", 1.6, Color(0.62, 0.6, 0.58), 0.008, 0.0)
 		Mat.SLATE:
-			var m := _triplanar("slate_roof", 2.2, 0.62, Color(1, 1, 1))
-			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+			var m := _surface("slate_roof", 2.2, Color(1, 1, 1), 0.02, 0.0, true)
+			if m is BaseMaterial3D:
+				(m as BaseMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
 			return m
 		Mat.ROOF_FLAT:
-			return _triplanar("slate_roof", 3.5, 0.85, Color(0.55, 0.55, 0.58))
+			return _surface("slate_roof", 3.5, Color(0.55, 0.55, 0.58), 0.015, 1.0)
 		Mat.WOOD:
-			return _triplanar("wood_planks", 1.6, 0.9, Color(1, 1, 1))
+			return _surface("wood_planks", 1.6, Color(1, 1, 1), 0.008, 0.0)
 		Mat.COBBLE:
-			return _triplanar("cobblestone", 2.4, 0.8, Color(1, 1, 1))
+			return _surface("cobblestone", 1.6, Color(1, 1, 1), 0.035, 1.0)
 		Mat.GROUND_DARK:
-			return _triplanar("cobblestone", 3.0, 0.9, Color(0.35, 0.34, 0.35))
+			return _surface("cobblestone", 1.6, Color(0.55, 0.54, 0.55), 0.035, 1.0)
 		Mat.ASH:
 			return _triplanar("plaster_dirty", 6.0, 1.0, Color(0.42, 0.41, 0.40))
 		Mat.IRON:
@@ -65,13 +66,13 @@ static func _create(id: int) -> Material:
 			m.metallic = 0.75
 			return m
 		Mat.KEEP_STONE:
-			return _triplanar("stone_wall", 3.2, 0.88, Color(1.08, 1.06, 1.04))
+			return _surface("stone_wall", 3.2, Color(1.08, 1.06, 1.04), 0.03, 0.0)
 		Mat.OBSIDIAN:
 			var m := _triplanar("stone_wall", 4.0, 0.35, Color(0.16, 0.15, 0.17))
 			m.metallic = 0.2
 			return m
 		Mat.CANAL_WALL:
-			return _triplanar("stone_wall", 2.0, 0.85, Color(0.6, 0.62, 0.6))
+			return _surface("stone_wall", 2.0, Color(0.6, 0.62, 0.6), 0.02, 0.0)
 		Mat.LANTERN_GLASS:
 			var m := StandardMaterial3D.new()
 			m.albedo_color = Color(1.0, 0.75, 0.45)
@@ -111,13 +112,13 @@ static func _create(id: int) -> Material:
 			# tile gives 0.2 m courses of 0.2-0.45 m bevelled blocks. The shared
 			# stone_wall texture is a polygonal rubble that read as crazy
 			# paving at any scale.
-			return _triplanar("ashlar", 2.4, 0.9, Color(1, 1, 1))
+			return _surface("ashlar", 2.4, Color(1, 1, 1), 0.01, 0.0)
 		Mat.DRESSED_STONE:
 			# The same coursed-block texture at three times the scale (0.6 m
 			# courses of 0.6-1.35 m blocks), slightly darker and weathered: big
 			# dressed blocks for statue plinths and fountain pedestals, where
 			# the 0.2 m facade courses read as brickwork.
-			return _triplanar("ashlar", 7.2, 0.92, Color(0.86, 0.84, 0.8))
+			return _surface("ashlar", 7.2, Color(0.86, 0.84, 0.8), 0.03, 0.0)
 		Mat.BRONZE:
 			return _bronze()
 	return StandardMaterial3D.new()
@@ -169,7 +170,14 @@ static func faded(id: int, fade_from: float, fade_to: float) -> Material:
 	var key := "faded_%d_%.1f_%.1f" % [id, fade_from, fade_to]
 	if _cache.has(key):
 		return _cache[key]
-	var m := (get_mat(id) as BaseMaterial3D).duplicate() as BaseMaterial3D
+	var src := get_mat(id)
+	if src is ShaderMaterial:
+		var sm := src.duplicate() as ShaderMaterial
+		sm.set_shader_parameter("fade_from", fade_from)
+		sm.set_shader_parameter("fade_to", fade_to)
+		_cache[key] = sm
+		return sm
+	var m := (src as BaseMaterial3D).duplicate() as BaseMaterial3D
 	m.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
 	# Max < min reverses the fade: opaque up to `fade_from`, gone at `fade_to`.
 	m.distance_fade_max_distance = fade_from
@@ -182,6 +190,50 @@ static func _shader_mat(file: String) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = load(SHADER_DIR + file) as Shader
 	return m
+
+
+## World-space triplanar PBR surface (world_surface.gdshader): parallax on
+## the ground projection, macro variation and wetness/puddles. Falls back to
+## the plain triplanar StandardMaterial3D when the set has no height map
+## (the gen_textures.py sets) or under the Compatibility renderer.
+static func _surface(tex: String, world_size: float, tint: Color, depth: float, puddles: float,
+		two_sided := false) -> Material:
+	var base := TEX_DIR + tex
+	if not ResourceLoader.exists(base + "_height.png") \
+			or RenderingServer.get_current_rendering_method() == "gl_compatibility":
+		return _triplanar(tex, world_size, 0.85, tint)
+	var m := _shader_mat("world_surface_2s.gdshader" if two_sided else "world_surface.gdshader")
+	var t := _textures(tex)
+	m.set_shader_parameter("albedo_tex", t[0])
+	m.set_shader_parameter("normal_tex", t[1])
+	m.set_shader_parameter("rough_tex", t[2])
+	m.set_shader_parameter("ao_tex", t[3])
+	m.set_shader_parameter("height_tex", load(base + "_height.png"))
+	m.set_shader_parameter("macro_noise", _macro_noise())
+	m.set_shader_parameter("tint", tint)
+	m.set_shader_parameter("world_size", world_size)
+	m.set_shader_parameter("height_depth", depth)
+	m.set_shader_parameter("puddle_amount", puddles)
+	return m
+
+
+## Shared large-scale seamless noise for the surfaces' macro variation and
+## puddle placement.
+static func _macro_noise() -> Texture2D:
+	if _tex_cache.has("_macro"):
+		return _tex_cache["_macro"]
+	var n := NoiseTexture2D.new()
+	n.seamless = true
+	n.width = 512
+	n.height = 512
+	n.generate_mipmaps = true
+	var f := FastNoiseLite.new()
+	f.seed = 0x5EA
+	f.frequency = 0.012
+	f.fractal_octaves = 4
+	n.noise = f
+	_tex_cache["_macro"] = n
+	return n
 
 
 ## Triplanar world-space material. `world_size` is metres per texture tile.

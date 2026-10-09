@@ -23,6 +23,8 @@ const NIGHT_LANTERN_ENERGY := 5.0
 const DAY_LANTERN_ENERGY := 0.7
 const NIGHT_FAR_WINDOW_ENERGY := 2.0
 const DAY_FAR_WINDOW_ENERGY := 0.05
+const NIGHT_WETNESS := 0.75
+const DAY_WETNESS := 0.2
 ## far_silhouette.gdshader's authored base colour, and its day counterpart.
 const NIGHT_FAR_BASE := Color(0.09, 0.088, 0.086)
 const DAY_FAR_BASE := Color(0.3, 0.29, 0.28)
@@ -110,6 +112,10 @@ func apply(force: bool) -> void:
 		environment.fog_light_color = DAY_FOG_COLOR.lerp(_night_fog_color, n)
 	if sky_material != null:
 		sky_material.set_shader_parameter("day_amount", d)
+	# Streets are damp by day (ash and drizzle) and wet under the night mists:
+	# darker, glossier stone and puddles that mirror the lanterns
+	# (world_surface.gdshader).
+	RenderingServer.global_shader_parameter_set(&"world_wetness", lerpf(DAY_WETNESS, NIGHT_WETNESS, n))
 	if mist != null:
 		mist.set_daylight(d)
 	(WorldMaterials.get_mat(WorldMaterials.Mat.WINDOW) as ShaderMaterial).set_shader_parameter(
