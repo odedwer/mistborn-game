@@ -1,14 +1,25 @@
 {
  "name": "vin",
  "style": "vin",
- "tris": 6180,
- "height": 1.6517589444709633,
+ "tris": 275628,
+ "height": 1.6043407917022705,
  "garments": {},
- "tris_max": 6180,
+ "tris_max": 275628,
  "materials": [
-  "Cloak",
-  "Cloth",
-  "Obsidian"
+  "vin_belt",
+  "vin_boots",
+  "vin_brows",
+  "vin_buckle",
+  "vin_cloak",
+  "vin_cornea",
+  "vin_eyes",
+  "vin_hair",
+  "vin_handle",
+  "vin_lashes",
+  "vin_obsidian",
+  "vin_shirt",
+  "vin_skin",
+  "vin_trousers"
  ],
  "tassel_chains": [
   [
@@ -106,39 +117,87 @@
    "Tassel_15_1",
    "Tassel_15_2",
    "Tassel_15_3"
+  ],
+  [
+   "Tassel_16_0",
+   "Tassel_16_1",
+   "Tassel_16_2",
+   "Tassel_16_3"
+  ],
+  [
+   "Tassel_17_0",
+   "Tassel_17_1",
+   "Tassel_17_2",
+   "Tassel_17_3"
+  ],
+  [
+   "Tassel_18_0",
+   "Tassel_18_1",
+   "Tassel_18_2",
+   "Tassel_18_3"
+  ],
+  [
+   "Tassel_19_0",
+   "Tassel_19_1",
+   "Tassel_19_2",
+   "Tassel_19_3"
+  ],
+  [
+   "Tassel_20_0",
+   "Tassel_20_1",
+   "Tassel_20_2",
+   "Tassel_20_3"
+  ],
+  [
+   "Tassel_21_0",
+   "Tassel_21_1",
+   "Tassel_21_2",
+   "Tassel_21_3"
+  ],
+  [
+   "Tassel_22_0",
+   "Tassel_22_1",
+   "Tassel_22_2",
+   "Tassel_22_3"
+  ],
+  [
+   "Tassel_23_0",
+   "Tassel_23_1",
+   "Tassel_23_2",
+   "Tassel_23_3"
   ]
  ],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5163251231565412,
-    -0.0007371398946484339,
-    0.8893530108558151
+    0.44229738216062486,
+    0.21580981392299706,
+    0.9396018864176221
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5163251231565412,
-    -0.0007371398946484339,
-    0.8893530108558151
+    -0.4492895896633614,
+    0.21854872796226585,
+    0.9398953563449426
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.09428571428571429,
-    1.24575
+    0.12934041599999999,
+    1.1598945360000001
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0018857142857142857,
-    1.5677357142857142
+    0.03954920800000001,
+    1.5691340880000002
    ]
   }
  },
@@ -172,5 +231,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

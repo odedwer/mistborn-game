@@ -121,7 +121,10 @@ def alpha_card(src: str, dst: str, tint=None, size: int | None = None):
     if tint is not None:
         a = np.asarray(im).astype(np.float64) / 255.0
         lum = a[..., :3].mean(-1, keepdims=True)
-        a[..., :3] = np.clip((0.55 + lum) * np.array(tint)[None, None, :], 0, 1)
+        # keep the strand-to-strand variation: scale luminance around its mean
+        m = float(np.average(lum[..., 0], weights=a[..., 3] + 1e-6))
+        rel = np.clip(lum / max(m, 1e-3), 0.0, 3.0) ** 1.4
+        a[..., :3] = np.clip(rel * np.array(tint)[None, None, :], 0, 1)
         im = Image.fromarray((a * 255).astype(np.uint8))
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     im.save(dst, optimize=True)

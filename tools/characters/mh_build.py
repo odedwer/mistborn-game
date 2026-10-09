@@ -59,6 +59,24 @@ SPECS = {
         skirt=dict(material="coat", hem_z=0.62, flare=0.08, front_gap=28.0),
         cloak=dict(color=(0.17, 0.18, 0.19), hem_z=0.36, split_z=1.05, strips=22),
     ),
+    "vin": dict(
+        style="vin",
+        body=dict(gender=0.0, age=0.47, muscle=0.55, weight=0.34, height=0.52, proportions=0.8),
+        skin="young_caucasian_female", skin_tint=(1.0, 0.96, 0.93),
+        eyes="brown", brows="eyebrow002", lashes="Eyelashes01",
+        hair=("bob02", (0.1, 0.07, 0.05)),
+        garments={
+            "Shirt": ("shirt", 0.008, "linen", (0.1, 0.09, 0.105)),
+            "Trousers": ("trousers", 0.008, "wool", (0.068, 0.06, 0.075)),
+            "Boots": ("boots", 0.009, "leather", (0.045, 0.032, 0.022)),
+        },
+        loose={"Shirt": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}},
+        collar="shirt",
+        belt=dict(color=(0.06, 0.038, 0.025)),
+        dagger="R",
+        skirt=dict(material="shirt", hem_drop=0.24, flare=0.03, front_gap=0.0, folds=5),
+        cloak=dict(color=(0.2, 0.21, 0.225), hem_z=0.3, split_z=0.86, span=180.0),
+    ),
 }
 
 
@@ -391,7 +409,8 @@ def build_skirt(S, col: Collider, spec):
         d = (math.sin(a), math.cos(a), 0.0)
         r = col.outer_radius((0.0, hips[1], zc), d, 0.16) + 0.012
         top.append((d[0] * r, hips[1] + d[1] * r, zc))
-    return hang(col, top, spec["hem_z"], 36, (0.0, hips[1]), clearance=0.02, flare=spec.get("flare", 0.06),
+    hem = spec["hem_z"] if "hem_z" in spec else zc - spec["hem_drop"]
+    return hang(col, top, hem, 36, (0.0, hips[1]), clearance=0.02, flare=spec.get("flare", 0.06),
                 folds=spec.get("folds", 7), fold_amp=0.012, seed=9)
 
 
@@ -419,6 +438,44 @@ def weights_from_nearest(obj, ref_verts: np.ndarray, ref_weights: list, S, free_
             if b not in groups:
                 groups[b] = obj.vertex_groups.new(name=b)
             groups[b].add([v.index], float(x), "REPLACE")
+
+
+# ---------------------------------------------------------------------- weapons
+def build_dagger(human, arm, name, side="R", blade=0.2, reverse=True):
+    """An obsidian dagger in the closed hand (reverse grip: the blade leaves
+    the fist on the little-finger side)."""
+    o, p, d, t = human.grip_frame(side)
+    g = -t if reverse else t
+    hand = ("Right" if side == "R" else "Left") + "Hand"
+    parts = []
+
+    def prism(a, b, ra, rb, n, flat=1.0, mat="handle"):
+        u = np.cross(b - a, p)
+        u /= np.linalg.norm(u)
+        w = np.cross(u, (b - a) / np.linalg.norm(b - a))
+        vs, fs = [], []
+        for ring, (c, r) in enumerate(((a, ra), (b, rb))):
+            for i in range(n):
+                ang = 2 * math.pi * i / n
+                vs.append(c + (u * math.cos(ang) * r) + (w * math.sin(ang) * r * flat))
+        for i in range(n):
+            j = (i + 1) % n
+            fs.append((i, j, n + j, n + i))
+        for i in range(1, n - 1):  # end caps as fans (glTF tangents need tris/quads)
+            fs.append((0, i + 1, i))
+            fs.append((n, n + i, n + i + 1))
+        parts.append((np.array(vs), fs, mat))
+
+    grip0 = o - g * 0.05
+    prism(grip0, grip0 + g * 0.11, 0.013, 0.012, 12)
+    prism(grip0 + g * 0.11, grip0 + g * 0.125, 0.03, 0.03, 4, flat=0.35)
+    b0 = grip0 + g * 0.125
+    prism(b0, b0 + g * blade * 0.5, 0.017, 0.016, 4, flat=0.25, mat="obsidian")
+    prism(b0 + g * blade * 0.5, b0 + g * blade, 0.016, 0.0008, 4, flat=0.25, mat="obsidian")
+    for k, (vs, fs, mat) in enumerate(parts):
+        uv = [[(0.0, 0.0)] * len(f) for f in fs]
+        ob = make_obj(f"Dagger{k}", vs, fs, uv, [{hand: 1.0}] * len(vs), gltf_mat(name + "_" + mat), arm,
+                      smooth=(mat == "handle"))
 
 
 # ----------------------------------------------------------------------- boots
@@ -510,7 +567,7 @@ def build(name):
     tres = lambda n: f"{RES}/textures/{name}/{n}"  # noqa: E731
 
     human = mh.Human(mh.macro_weights(**spec["body"]))
-    human.relax_hands()
+    human.relax_hands(grip="R" if spec.get("dagger") else "")
     S = human.skeleton()
     verts, faces, fuv, weights = human.body_mesh()
     col = Collider(verts, faces, weights, pad=0.014, shoulder_z=S.head("LeftUpperArm")[2] - 0.05)
@@ -635,7 +692,7 @@ def build(name):
         proxy(rel, label, dst, tint=tint)
         write_tres(os.path.join(mdir, label.lower() + ".tres"),
                    {"resource_name": f'"{name}_{label.lower()}"', "transparency": 3,  # alpha hash
-                    "cull_mode": 2, "roughness": 0.75, "metallic_specular": 0.25,
+                    "cull_mode": 2, "roughness": 0.55, "metallic_specular": 0.35,
                     "texture_filter": 5, "alpha_antialiasing_mode": 0},
                    {"albedo_texture": tres(dst)})
 
@@ -702,6 +759,16 @@ def build(name):
         cw = [{"Neck": 0.5, "UpperChest": 0.5} if p[2] > cz else {"UpperChest": 1.0} for p in cv]
         o = make_obj("Collar", np.array(cv), cf, cu, cw, gltf_mat(name + "_" + spec["collar"]), arm)
         solidify(o, 0.004)
+
+    if spec.get("dagger"):
+        build_dagger(human, arm, name)
+        write_tres(os.path.join(mdir, "handle.tres"),
+                   {"resource_name": f'"{name}_handle"', "albedo_color": "Color(0.09, 0.06, 0.045, 1)",
+                    "roughness": 0.7}, {})
+        write_tres(os.path.join(mdir, "obsidian.tres"),
+                   {"resource_name": f'"{name}_obsidian"', "albedo_color": "Color(0.015, 0.014, 0.018, 1)",
+                    "roughness": 0.05, "metallic_specular": 0.9, "clearcoat_enabled": "true", "clearcoat": 1.0,
+                    "clearcoat_roughness": 0.02}, {})
 
     if spec.get("skirt"):
         sk = spec["skirt"]

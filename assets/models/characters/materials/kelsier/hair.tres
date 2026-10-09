@@ -6,8 +6,8 @@
 resource_name = "kelsier_hair"
 transparency = 3
 cull_mode = 2
-roughness = 0.75
-metallic_specular = 0.25
+roughness = 0.55
+metallic_specular = 0.35
 texture_filter = 5
 alpha_antialiasing_mode = 0
 albedo_texture = ExtResource("1")

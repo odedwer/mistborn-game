@@ -75,7 +75,7 @@ func test_humanoid_bones_present() -> void:
 
 
 ## Characters built from MakeHuman bodies (realistic budget).
-const REALISTIC: Array[String] = ["kelsier"]
+const REALISTIC: Array[String] = ["kelsier", "vin"]
 
 
 func test_height_and_materials() -> void:

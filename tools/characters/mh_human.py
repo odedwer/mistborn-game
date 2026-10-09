@@ -249,7 +249,7 @@ class Human:
                     disp[vi] += x * (T[:3, :3] @ v + T[:3, 3] - v)
         self.coords = self.coords + disp
 
-    def relax_hands(self, curl: float = 1.0, pronate: float = 1.0):
+    def relax_hands(self, curl: float = 1.0, pronate: float = 1.0, grip: str = ""):
         """Turns the palms from MakeHuman's forward-facing rest pose towards
         the thighs (forearm twist spread along the forearm) and curls the
         fingers into a relaxed hand, since the humanoid skeleton has no
@@ -303,13 +303,25 @@ class Human:
                     r /= max(np.linalg.norm(r), 1e-9)
                     hw = T[:3, :3] @ h + T[:3, 3]
                     rw = T[:3, :3] @ r
-                    R = _rot(rw, np.radians(angs[k - 1] * curl))
+                    c = curl * (3.2 if s in grip else 1.0)   # a gripping hand closes
+                    R = _rot(rw, np.radians(angs[k - 1] * c))
                     M = np.eye(4)
                     M[:3, :3] = R
                     M[:3, 3] = hw - R @ hw
                     T = M @ T
                     tr[b] = T.copy()
             self._lbs(tr)
+
+    def grip_frame(self, s: str):
+        """(origin, palm normal, finger dir, thumb axis) of hand `s` in Blender
+        space (floor offset applied): the origin sits inside the closed fist."""
+        p, d, t = self._palm(s)
+        w = self._j(f"wrist.{s}")
+        k = self._j(f"finger3-1.{s}")
+        o = w * 0.35 + k * 0.65 + p * 0.25  # decimetres: ~2.5 cm into the palm
+        off = self.floor_offset()
+        tb = lambda x: to_blender(x) * 10.0  # noqa: E731  (directions: no scaling)
+        return to_blender(o) + off, tb(p), tb(d), tb(t)
 
     # joints ----------------------------------------------------------------
     def joint(self, mh_bone: str, end: str = "head") -> np.ndarray:

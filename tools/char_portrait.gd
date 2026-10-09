@@ -85,8 +85,15 @@ func _run() -> void:
 	cam.fov = 30.0 if not close else 22.0
 	if close:
 		var cx := (n - 1) * 0.5 * spacing
-		cam.position = Vector3(cx + 0.35, 1.78, 0.85)
-		cam.look_at(Vector3(cx, 1.72, 0))
+		var hz := 1.72
+		var sk := models[n - 1].find_children("*", "Skeleton3D", true, false)
+		if not sk.is_empty():
+			var skel := sk[0] as Skeleton3D
+			var hb := skel.find_bone("Head")
+			if hb >= 0:
+				hz = (skel.global_transform * skel.get_bone_global_rest(hb)).origin.y + 0.06
+		cam.position = Vector3(cx + 0.35, hz + 0.06, 0.85)
+		cam.look_at(Vector3(cx, hz, 0))
 	else:
 		cam.position = Vector3(0, 1.15, 3.6 + 1.2 * (n - 1))
 		cam.look_at(Vector3(0, 0.95, 0))
