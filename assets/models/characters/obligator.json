@@ -1,10 +1,10 @@
 {
  "name": "obligator",
  "style": "obligator",
- "tris": 176576,
- "height": 1.810049057006836,
+ "tris": 47524,
+ "height": 1.8108700513839722,
  "garments": {},
- "tris_max": 176576,
+ "tris_max": 47524,
  "materials": [
   "obligator_boots",
   "obligator_brows",

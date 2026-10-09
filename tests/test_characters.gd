@@ -107,7 +107,7 @@ func test_height_and_materials() -> void:
 			# MakeHuman-based (tools/characters/mh_build.py): skin, eyes, hair cards
 			# and each garment have their own material; LODs carry the distance
 			assert_true(mats.size() <= 20, "%s <= 20 materials (%s)" % [id, mats.keys()])
-			assert_gt(tris, 100000, "%s tris %d" % [id, tris])
+			assert_gt(tris, 30000, "%s tris %d" % [id, tris])
 			assert_lt(tris, 400000, "%s tris %d" % [id, tris])
 			continue
 		assert_true(mats.size() <= 3, "%s <= 3 materials (%s)" % [id, mats.keys()])

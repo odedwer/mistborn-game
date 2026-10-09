@@ -82,6 +82,7 @@ SPECS = {
         lantern=True,
     ),
     "skaa_man": dict(
+        crowd=True,
         style="skaa",
         body=dict(gender=1.0, age=0.62, muscle=0.45, weight=0.3, height=0.45, proportions=0.4),
         skin="middleage_caucasian_male", skin_tint=(0.94, 0.88, 0.82),
@@ -102,6 +103,7 @@ SPECS = {
         props=[dict(name="sack", kind="sack", optional=True, color=(0.4, 0.36, 0.28))],
     ),
     "skaa_woman": dict(
+        crowd=True,
         style="skaa",
         body=dict(gender=0.0, age=0.58, muscle=0.45, weight=0.32, height=0.42, proportions=0.45),
         skin="middleage_caucasian_female", skin_tint=(0.95, 0.9, 0.84),
@@ -125,6 +127,7 @@ SPECS = {
         props=[dict(name="basket", kind="basket", optional=True, color=(0.32, 0.24, 0.14))],
     ),
     "noble_man": dict(
+        crowd=True,
         style="noble_m",
         body=dict(gender=1.0, age=0.55, muscle=0.5, weight=0.5, height=0.55, proportions=0.7),
         skin="young_caucasian_male", skin_tint=(1.0, 0.96, 0.93),
@@ -149,6 +152,7 @@ SPECS = {
               dict(name="hat_bowler", style="bowler", optional=True, color=(0.06, 0.055, 0.05))],
     ),
     "noble_woman": dict(
+        crowd=True,
         style="gown",
         body=dict(gender=0.0, age=0.5, muscle=0.45, weight=0.38, height=0.5, proportions=0.85),
         skin="young_caucasian_female", skin_tint=(1.0, 0.96, 0.94),
@@ -306,14 +310,14 @@ SPECS.update({
         (None, (0.05, 0.05, 0.05)),
         {"Robe": ("shirt", 0.014, "wool", (0.24, 0.24, 0.25)), "Boots": SHOES},
         loose={"Robe": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}}, collar="robe",
-        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)]),
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)], crowd=True),
     "obligator_2": _spec(
         "obligator_b", dict(gender=1.0, age=0.72, muscle=0.35, weight=0.55, height=0.48), M, (0.96, 0.92, 0.89), "brown",
         (None, (0.05, 0.05, 0.05)),
         {"Robe": ("shirt", 0.014, "wool", (0.18, 0.18, 0.2)), "Boots": SHOES},
         loose={"Robe": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}}, collar="trim",
         rings=[dict(name="Trim", z0=-0.02, z1=0.02, bulge=0.012, color=(0.5, 0.48, 0.45), kind="linen")],
-        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)]),
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)], crowd=True),
 })
 SPECS["vin_gown"] = dict(SPECS["vin"], style="gown",
                          garments={"Bodice": ("shirt", 0.006, "linen", (0.3, 0.32, 0.4)),
@@ -463,7 +467,15 @@ def apply_mods(obj, *mods):
         bpy.ops.object.modifier_apply(modifier=m)
 
 
+# Subdivision levels are reduced by this for crowd characters (spec
+# "crowd": True): many of them on screen at once, all skinned every frame.
+SUBDIV_DROP = 0
+
+
 def subdivide(obj, levels=1):
+    levels = max(levels - SUBDIV_DROP, 0)
+    if levels == 0:
+        return
     m = obj.modifiers.new("Subsurf", "SUBSURF")
     m.levels = levels
     m.render_levels = levels
@@ -1258,8 +1270,10 @@ def build_belt(S, col, arm, name, spec, tdir, mdir, tres):
 
 # ---------------------------------------------------------------------- build
 def build(name):
+    global SUBDIV_DROP
     t0 = time.time()
     spec = SPECS[name]
+    SUBDIV_DROP = 1 if spec.get("crowd") else 0
     reset()
     tdir = os.path.join(OUT, "textures", name)
     mdir = os.path.join(OUT, "materials", name)

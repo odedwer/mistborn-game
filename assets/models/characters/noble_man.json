@@ -1,10 +1,10 @@
 {
  "name": "noble_man",
  "style": "noble_m",
- "tris": 342226,
- "height": 1.8161473274230957,
+ "tris": 90606,
+ "height": 1.8171600103378296,
  "garments": {},
- "tris_max": 342226,
+ "tris_max": 90606,
  "materials": [
   "noble_man_boots",
   "noble_man_brows",

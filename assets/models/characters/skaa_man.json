@@ -1,10 +1,10 @@
 {
  "name": "skaa_man",
  "style": "skaa",
- "tris": 159866,
- "height": 1.7029553651809692,
+ "tris": 46922,
+ "height": 1.7037580013275146,
  "garments": {},
- "tris_max": 159866,
+ "tris_max": 46922,
  "materials": [
   "skaa_man_beard",
   "skaa_man_belt",
