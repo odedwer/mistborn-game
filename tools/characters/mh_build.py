@@ -88,12 +88,12 @@ def region_of(kind: str, v: np.ndarray, w: dict, S) -> bool:
         if b.endswith(("UpperLeg", "LowerLeg")):
             return z > 0.22
         return False
-    if kind == "boots":
-        if b.endswith(("Foot", "Toes")):
-            return True
-        if b.endswith("LowerLeg"):
-            return z < 0.34
+    if kind == "boots":   # the shaft; the foot is a hull (foot_hull)
+        if b.endswith(("Foot", "Toes", "LowerLeg")):
+            return 0.07 < z < 0.34
         return False
+    if kind == "feet":
+        return b.endswith(("Foot", "Toes", "LowerLeg")) and z < 0.14
     raise ValueError(kind)
     return wrist_z
 
@@ -261,7 +261,7 @@ def build_cloak(S, col: Collider, arm, spec, mat):
     neck = S.head("Neck")
     sh_r = S.tail("RightShoulder")
     cols = 97
-    span = math.radians(spec.get("span", 205.0))
+    span = math.radians(spec.get("span", 176.0))
     ax_, ay_ = abs(sh_r[0]) + 0.05, 0.16
     top = []
     for c in range(cols):
@@ -322,6 +322,40 @@ def weights_from_nearest(obj, ref_verts: np.ndarray, ref_weights: list, S, free_
             if b not in groups:
                 groups[b] = obj.vertex_groups.new(name=b)
             groups[b].add([v.index], float(x), "REPLACE")
+
+
+# ----------------------------------------------------------------------- boots
+def foot_hull(mat_name, verts, norms, weights, S, side, off, arm):
+    """A shoe: the convex hull of one foot (toes and all) pushed out by
+    `off`, rounded by a subdivision and a light smooth."""
+    from scipy.spatial import ConvexHull
+    ids = [i for i in range(len(verts)) if region_of("feet", verts[i], weights[i], S) and verts[i][0] * side > 0]
+    pts = verts[ids] + norms[ids] * off
+    pts[:, 2] = np.maximum(pts[:, 2], 0.0)
+    hull = ConvexHull(pts)
+    used = sorted(set(hull.simplices.ravel()))
+    remap = {o: n for n, o in enumerate(used)}
+    hv = pts[used]
+    c = hv.mean(axis=0)
+    hf = []
+    for tri in hull.simplices:
+        a, b, d = (remap[i] for i in tri)
+        n = np.cross(hv[b] - hv[a], hv[d] - hv[a])
+        if np.dot(n, hv[a] - c) < 0:
+            b, d = d, b
+        hf.append((a, b, d))
+    huv = [[(hv[i][0] * 4, hv[i][1] * 4) for i in f] for f in hf]
+    foot = ("Right" if side > 0 else "Left")
+    hw = [{foot + "Foot": 1.0} if p[1] < S.head(foot + "Toes")[1] - 0.01 else {foot + "Toes": 0.6, foot + "Foot": 0.4}
+          for p in hv]
+    o = make_obj(f"Shoe{'R' if side > 0 else 'L'}", hv, hf, huv, hw, gltf_mat(mat_name), arm)
+    subdivide(o, 2)
+    sm = o.modifiers.new("Smooth", "LAPLACIANSMOOTH")
+    sm.iterations = 4
+    sm.lambda_factor = 1.0
+    sm.use_volume_preserve = True
+    apply_mods(o, "Smooth")
+    return o
 
 
 # ----------------------------------------------------------------------- belt
@@ -401,8 +435,9 @@ def build(name):
         o = make_obj(gname, gv, [tuple(remap[i] for i in f) for f in gfaces], guv,
                      [weights[i] for i in ids], gltf_mat(name + "_" + gname.lower()), arm)
         sm = o.modifiers.new("Smooth", "LAPLACIANSMOOTH")
-        sm.iterations = {"boots": 24}.get(region, 12)
-        sm.lambda_factor = 1.5 if region != "boots" else 0.8
+        # (volume preservation blows short open tubes like a boot shaft outwards)
+        sm.iterations = 12 if region != "boots" else 4
+        sm.lambda_factor = 1.5 if region != "boots" else 0.5
         sm.use_volume_preserve = region != "boots"
         sm.use_normalized = True
         apply_mods(o, "Smooth")
@@ -420,6 +455,10 @@ def build(name):
                    {"albedo_texture": tres(gname.lower() + "_albedo.png"),
                     "normal_texture": tres(gname.lower() + "_normal.png"),
                     "roughness_texture": tres(gname.lower() + "_roughness.png")})
+        if region == "boots":
+            covered |= np.array([region_of("feet", verts[i], weights[i], S) for i in range(len(verts))])
+            for side in (-1, 1):
+                foot_hull(name + "_" + gname.lower(), verts, norms, weights, S, side, off, arm)
         # hide the skin well inside the garment (keep a ring under its edge)
         core = inside.copy()
         for f in faces:
