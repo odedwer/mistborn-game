@@ -288,7 +288,7 @@ class Human:
                 M[:3, 3] = w0 - R @ w0
                 self._lbs({b: M for b in hand})
         # per finger: degrees at its three joints (thumb first)
-        angles = {1: (6, 16, 20), 2: (14, 26, 20), 3: (17, 31, 23), 4: (20, 35, 25), 5: (24, 39, 27)}
+        angles = {1: (4, 10, 12), 2: (9, 16, 12), 3: (11, 19, 14), 4: (13, 22, 15), 5: (15, 25, 16)}
         for s in ("L", "R"):
             p, _, t = self._palm(s)
             tr = {}

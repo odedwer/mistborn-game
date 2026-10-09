@@ -55,6 +55,7 @@ SPECS = {
         },
         belt=dict(color=(0.07, 0.045, 0.03)),
         collar="coat",
+        loose={"Coat": {"Spine": 2.4, "Chest": 2.4, "UpperChest": 2.0, "Hips": 2.2, "Shoulder": 1.4}},
         skirt=dict(material="coat", hem_z=0.62, flare=0.08, front_gap=28.0),
         cloak=dict(color=(0.17, 0.18, 0.19), hem_z=0.36, split_z=1.05, strips=22),
     ),
@@ -109,6 +110,40 @@ def vertex_normals(verts: np.ndarray, faces) -> np.ndarray:
         for i in f:
             n[i] += fn
     return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
+
+def taubin(v: np.ndarray, faces, iters: int, lam=0.5, mu=-0.53, pin_rings=2) -> np.ndarray:
+    """Taubin smoothing (shrink-free) with the open edges and `pin_rings`
+    rings inside them held still, so hems and cuffs keep their place."""
+    n = len(v)
+    nb = [set() for _ in range(n)]
+    edge_count: dict = {}
+    for f in faces:
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            nb[a].add(b)
+            nb[b].add(a)
+            e = (min(a, b), max(a, b))
+            edge_count[e] = edge_count.get(e, 0) + 1
+    pinned = np.zeros(n, bool)
+    for (a, b), c in edge_count.items():
+        if c == 1:
+            pinned[a] = pinned[b] = True
+    for _ in range(pin_rings):
+        ring = pinned.copy()
+        for i in np.nonzero(pinned)[0]:
+            for j in nb[i]:
+                ring[j] = True
+        pinned = ring
+    # free vertices move fully; pinned ones not at all
+    idx = [np.fromiter(x, int) for x in nb]
+    v = v.copy()
+    free = ~pinned
+    for it in range(iters * 2):
+        f = lam if it % 2 == 0 else mu
+        avg = np.array([v[j].mean(axis=0) if len(j) else v[i] for i, j in enumerate(idx)])
+        v[free] += f * (avg[free] - v[free])
+    return v
 
 
 def make_obj(name, verts, faces, face_uv, weights, mat, arm, smooth=True):
@@ -431,16 +466,13 @@ def build(name):
                 guv.append(u)
         ids = sorted({i for f in gfaces for i in f})
         remap = {o: n for n, o in enumerate(ids)}
-        gv = verts[ids] + norms[ids] * off
-        o = make_obj(gname, gv, [tuple(remap[i] for i in f) for f in gfaces], guv,
+        loose = spec.get("loose", {}).get(gname, {})
+        k = np.array([loose.get(dominant(weights[i]).removeprefix("Left").removeprefix("Right"), 1.0) for i in ids])
+        gv = verts[ids] + norms[ids] * (off * k)[:, None]
+        gf = [tuple(remap[i] for i in f) for f in gfaces]
+        gv = taubin(gv, gf, {"shirt": 60, "trousers": 25, "boots": 6}.get(region, 20))
+        o = make_obj(gname, gv, gf, guv,
                      [weights[i] for i in ids], gltf_mat(name + "_" + gname.lower()), arm)
-        sm = o.modifiers.new("Smooth", "LAPLACIANSMOOTH")
-        # (volume preservation blows short open tubes like a boot shaft outwards)
-        sm.iterations = 12 if region != "boots" else 4
-        sm.lambda_factor = 1.5 if region != "boots" else 0.5
-        sm.use_volume_preserve = region != "boots"
-        sm.use_normalized = True
-        apply_mods(o, "Smooth")
         subdivide(o, 1)
         solidify(o, 0.003)
         garment_objs.append(o)
@@ -545,6 +577,20 @@ def build(name):
     if spec.get("belt"):
         build_belt(S, col, arm, name, spec["belt"], tdir, mdir, tres)
 
+    def skirt_weights(points):
+        """Hips, with the lower skirt following each thigh on its side."""
+        hz = S.head("Hips")[2]
+        out = []
+        for p in points:
+            t = min(max((hz - p[2]) / 0.45, 0.0), 1.0)
+            side = "Right" if p[0] > 0 else "Left"
+            k = 0.65 * t * min(abs(p[0]) / 0.1, 1.0)
+            w = {"Hips": 1.0 - k}
+            if k > 0:
+                w[side + "UpperLeg"] = k
+            out.append(w)
+        return out
+
     def nearest_weights(points, free_below=None):
         ok = np.array([not dominant(w).endswith(("Arm", "Hand")) for w in weights])
         idx = np.nonzero(ok)[0]
@@ -595,7 +641,7 @@ def build(name):
         sk = spec["skirt"]
         v, f, uv = build_skirt(S, col, sk)
         o = make_obj("Skirt", v, f, [[(a * 6, b * 2) for a, b in u] for u in uv],
-                     nearest_weights(v, free_below=S.head("Hips")[2] - 0.05), gltf_mat(name + "_" + sk["material"]), arm)
+                     skirt_weights(v), gltf_mat(name + "_" + sk["material"]), arm)
         subdivide(o, 1)
         solidify(o, 0.004)
 
