@@ -75,7 +75,7 @@ func test_humanoid_bones_present() -> void:
 
 
 ## Characters built from MakeHuman bodies (realistic budget).
-const REALISTIC: Array[String] = ["kelsier", "vin"]
+const REALISTIC: Array[String] = ["kelsier", "vin", "guard"]
 
 
 func test_height_and_materials() -> void:
@@ -97,7 +97,7 @@ func test_height_and_materials() -> void:
 		if id in REALISTIC:
 			# MakeHuman-based (tools/characters/mh_build.py): skin, eyes, hair cards
 			# and each garment have their own material; LODs carry the distance
-			assert_true(mats.size() <= 14, "%s <= 14 materials (%s)" % [id, mats.keys()])
+			assert_true(mats.size() <= 20, "%s <= 20 materials (%s)" % [id, mats.keys()])
 			assert_gt(tris, 100000, "%s tris %d" % [id, tris])
 			assert_lt(tris, 320000, "%s tris %d" % [id, tris])
 			continue

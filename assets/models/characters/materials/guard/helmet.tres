@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" load_steps=1 format=3]
+
+
+[resource]
+resource_name = "guard_helmet"
+albedo_color = Color(0.42, 0.43, 0.45, 1)
+metallic = 0.85
+roughness = 0.38
+cull_mode = 2

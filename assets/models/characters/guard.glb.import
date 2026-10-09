@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dwmjqk7mfrdek"
+uid="uid://clmwflwq18cvn"
 path="res://.godot/imported/guard.glb-ae410c301a2d43da1b6e50b18cd684e7.scn"
 
 [deps]
@@ -41,23 +41,103 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"guard_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/belt.tres"
 },
-"Glow": {
+"guard_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/glow.tres",
-"use_external/path": "res://assets/models/characters/materials/glow.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/boots.tres"
 },
-"Metal": {
+"guard_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/brows.tres"
+},
+"guard_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/buckle.tres"
+},
+"guard_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/cornea.tres"
+},
+"guard_cuirass": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/cuirass.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/cuirass.tres"
+},
+"guard_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/eyes.tres"
+},
+"guard_gloves": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/gloves.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/gloves.tres"
+},
+"guard_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/hair.tres"
+},
+"guard_helmet": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/helmet.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/helmet.tres"
+},
+"guard_iron": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/iron.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/iron.tres"
+},
+"guard_lanternglass": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/lanternglass.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/lanternglass.tres"
+},
+"guard_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/lashes.tres"
+},
+"guard_pauldrons": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/pauldrons.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/pauldrons.tres"
+},
+"guard_shaft": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/shaft.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/shaft.tres"
+},
+"guard_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/skin.tres"
+},
+"guard_steel": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/steel.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/steel.tres"
+},
+"guard_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/trousers.tres"
+},
+"guard_tunic": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/guard/tunic.tres",
+"use_external/path": "res://assets/models/characters/materials/guard/tunic.tres"
 }
 }
 }
 gltf/naming_version=2
 gltf/embedded_image_handling=1
-gltf/texture_map_mode=1
+gltf/texture_map_mode=0

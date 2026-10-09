@@ -101,6 +101,15 @@ def fabric_maps(kind: str, color, out_prefix: str, size: int = 1024, seed: int =
         alb = base[None, None, :] * var[..., None]
         nrm = height_to_normal(h, 2.5 if kind == "wool" else 1.8)
         rough = 0.86 + 0.1 * fuzz - 0.04 * (h - 0.5)
+    elif kind == "metal":   # hammered plate: shallow dents, polish, a little rust in the dents
+        dents = tile_noise(n, 10, seed, 3)
+        fine = tile_noise(n, 80, seed + 4, 2)
+        h = dents * 0.8 + fine * 0.2
+        rust = np.clip((1 - dents) * 2.2 - 1.3, 0, 1) * tile_noise(n, 20, seed + 6, 3)
+        alb = base[None, None, :] * (0.85 + 0.25 * dents)[..., None]
+        alb = alb * (1 - rust[..., None]) + np.array([0.18, 0.08, 0.04]) * rust[..., None]
+        nrm = height_to_normal(h, 2.0)
+        rough = 0.28 + 0.2 * fine + 0.4 * rust
     else:  # leather
         cells = tile_noise(n, 48, seed, 3)
         crease = tile_noise(n, 6, seed + 2, 5)

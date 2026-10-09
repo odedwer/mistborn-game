@@ -1,55 +1,71 @@
 {
  "name": "guard",
  "style": "guard",
- "tris": 5230,
- "height": 1.804543089902425,
+ "tris": 251028,
+ "height": 1.8130329847335815,
  "garments": {},
- "tris_max": 5230,
+ "tris_max": 251028,
  "materials": [
-  "Cloth",
-  "Glow",
-  "Metal"
+  "guard_belt",
+  "guard_boots",
+  "guard_brows",
+  "guard_buckle",
+  "guard_cornea",
+  "guard_cuirass",
+  "guard_eyes",
+  "guard_gloves",
+  "guard_hair",
+  "guard_helmet",
+  "guard_iron",
+  "guard_lanternglass",
+  "guard_lashes",
+  "guard_pauldrons",
+  "guard_shaft",
+  "guard_skin",
+  "guard_steel",
+  "guard_trousers",
+  "guard_tunic"
  ],
  "tassel_chains": [],
  "sockets": {
-  "lantern": {
-   "bone": "Hips",
+  "hand_r": {
+   "bone": "RightHand",
    "pos": [
-    -0.2186857142857143,
-    0.02542857142857143,
-    0.8747428571428572
+    0.5260660156949633,
+    0.28343166824912835,
+    1.0960917149215115
+   ]
+  },
+  "hand_l": {
+   "bone": "LeftHand",
+   "pos": [
+    -0.5350650595323366,
+    0.2867354306243025,
+    1.096603636037385
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.11188571428571428,
-    1.2816
-   ]
-  },
-  "hand_r": {
-   "bone": "RightHand",
-   "pos": [
-    0.5844681415177926,
-    -0.0007952175833176989,
-    0.959423248074758
-   ]
-  },
-  "hand_l": {
-   "bone": "LeftHand",
-   "pos": [
-    -0.5844681415177926,
-    -0.0007952175833176989,
-    0.959423248074758
+    0.0909592,
+    1.3090459
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.002034285714285714,
-    1.6912542857142856
+    0.045180000000000005,
+    1.7622899999999997
+   ]
+  },
+  "lantern": {
+   "bone": "Hips",
+   "pos": [
+    -0.21282751436233516,
+    0.07887483285446166,
+    0.8911804
    ]
   }
  },
@@ -83,5 +99,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

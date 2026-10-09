@@ -59,6 +59,28 @@ SPECS = {
         skirt=dict(material="coat", hem_z=0.62, flare=0.08, front_gap=28.0),
         cloak=dict(color=(0.17, 0.18, 0.19), hem_z=0.36, split_z=1.05, strips=22),
     ),
+    "guard": dict(
+        style="guard",
+        body=dict(gender=1.0, age=0.6, muscle=0.7, weight=0.55, height=0.55, proportions=0.6),
+        skin="middleage_caucasian_male", skin_tint=(1.0, 0.95, 0.9),
+        eyes="brown", brows="eyebrow001", lashes="Eyelashes01",
+        hair=("short02", (0.1, 0.075, 0.055)),
+        garments={
+            "Tunic": ("shirt", 0.009, "wool", (0.2, 0.14, 0.085)),
+            "Trousers": ("trousers", 0.008, "wool", (0.09, 0.08, 0.07)),
+            "Boots": ("boots", 0.011, "leather", (0.06, 0.04, 0.026)),
+            "Cuirass": ("cuirass", 0.032, "metal", (0.4, 0.41, 0.43)),
+            "Pauldrons": ("pauldron", 0.04, "metal", (0.36, 0.37, 0.39)),
+            "Gloves": ("gloves", 0.004, "leather", (0.07, 0.05, 0.035)),
+        },
+        loose={"Tunic": {"Spine": 1.6, "Chest": 1.6, "UpperChest": 1.4, "Hips": 1.6}},
+        collar="tunic",
+        belt=dict(color=(0.05, 0.034, 0.022)),
+        skirt=dict(material="tunic", hem_drop=0.32, flare=0.06, front_gap=0.0, folds=6),
+        helmet=dict(depth=0.075, brim=0.05, material="helmet"),
+        spear="R",
+        lantern=True,
+    ),
     "vin": dict(
         style="vin",
         body=dict(gender=0.0, age=0.47, muscle=0.55, weight=0.34, height=0.52, proportions=0.8),
@@ -110,6 +132,22 @@ def region_of(kind: str, v: np.ndarray, w: dict, S) -> bool:
     if kind == "boots":   # the shaft; the foot is a hull (foot_hull)
         if b.endswith(("Foot", "Toes", "LowerLeg")):
             return 0.07 < z < 0.34
+        return False
+    if kind == "cuirass":   # breast and back plates: the trunk between waist and collarbones
+        if b in ("Spine", "Chest", "UpperChest") or (b == "Hips" and z > waist - 0.04):
+            return z < S.head("Neck")[2] - 0.05
+        return False
+    if kind == "pauldron":  # shoulder caps
+        if b.endswith(("Shoulder", "UpperArm")):
+            sh = S.head(("Left" if b.startswith("Left") else "Right") + "UpperArm")
+            return z > sh[2] - 0.13
+        return False
+    if kind == "gloves":
+        if b.endswith("Hand"):
+            return True
+        if b.endswith("LowerArm"):
+            side = "Left" if b.startswith("Left") else "Right"
+            return np.linalg.norm(v - S.head(side + "Hand")) < 0.07
         return False
     if kind == "feet":
         return b.endswith(("Foot", "Toes", "LowerLeg")) and z < 0.14
@@ -220,6 +258,45 @@ def gltf_mat(name):
     """A plain named material: Godot swaps it for materials/<char>/<name>.tres."""
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     return m
+
+
+SHARED = os.path.join(OUT, "textures", "shared")
+SHARED_RES = f"{RES}/textures/shared"
+
+
+def shared_fabric(kind: str) -> dict:
+    """Neutral (mid-grey) tileable maps of a fabric kind, shared by every
+    character: materials tint them with albedo_color (see fabric_tint)."""
+    pre = os.path.join(SHARED, kind)
+    if not os.path.exists(pre + "_albedo.png"):
+        tx.fabric_maps(kind, (0.5, 0.5, 0.5), pre, seed=17 + sum(map(ord, kind)))
+    return {"albedo_texture": f"{SHARED_RES}/{kind}_albedo.png", "normal_texture": f"{SHARED_RES}/{kind}_normal.png",
+            "roughness_texture": f"{SHARED_RES}/{kind}_roughness.png"}
+
+
+def fabric_tint(col) -> str:
+    """albedo_color that turns the 0.5 grey shared maps into `col` (sRGB
+    values; exact under a power-law transfer since (0.5 * 2c) = c)."""
+    r, g, b = (min(2.0 * c, 1.0) for c in col)
+    return f"Color({r:.4f}, {g:.4f}, {b:.4f}, 1)"
+
+
+def shared_skin(skin: str, tint) -> dict:
+    """Per skin-and-tint albedo; the pore normal and roughness detail (the
+    same for every skin) is one shared pair."""
+    key = skin + "_" + "".join(f"{int(t * 100):03d}" for t in tint)
+    pre = os.path.join(SHARED, "skin_" + key)
+    if not os.path.exists(pre + "_albedo.png"):
+        tx.skin_maps(mh.skin_texture(skin), pre, tint=tint)
+        for m in ("normal", "roughness"):
+            detail = os.path.join(SHARED, f"skin_detail_{m}.png")
+            if os.path.exists(detail):
+                os.remove(f"{pre}_{m}.png")
+            else:
+                os.replace(f"{pre}_{m}.png", detail)
+    return {"albedo_texture": f"{SHARED_RES}/skin_{key}_albedo.png",
+            "normal_texture": f"{SHARED_RES}/skin_detail_normal.png",
+            "roughness_texture": f"{SHARED_RES}/skin_detail_roughness.png"}
 
 
 def write_tres(path, props: dict, textures: dict):
@@ -478,6 +555,121 @@ def build_dagger(human, arm, name, side="R", blade=0.2, reverse=True):
                       smooth=(mat == "handle"))
 
 
+# --------------------------------------------------------------------- helmets
+def build_helmet(S, col, arm, name, spec):
+    """A helmet turned about the head's vertical axis: a skull cap sized to
+    the head (from the collider) and a brim (`brim` m wide) at `brim_z`
+    below the crown (kettle hat)."""
+    hd, tl = S.head("Head"), S.tail("Head")
+    cx, cy = (hd[0] + tl[0]) / 2, (hd[1] + tl[1]) / 2 - 0.01
+    top = col.top(cx, cy, tl[2]) + 0.012
+    rim_z = top - spec.get("depth", 0.11)
+    # head radius at the rim height, around
+    rr = [col.outer_radius((cx, cy, rim_z), (math.sin(a), math.cos(a), 0.0), 0.1) for a in np.linspace(0, 6.28, 16)]
+    r0 = max(rr) + spec.get("clear", 0.012)
+    prof = []                                   # (radius, z) crown -> rim -> brim edge
+    for k in range(9):
+        t = k / 8
+        ang = t * math.pi / 2
+        prof.append((r0 * math.sin(ang), rim_z + (top - rim_z) * math.cos(ang)))
+    brim = spec.get("brim", 0.0)
+    if brim > 0:
+        prof += [(r0 + brim * 0.45, rim_z - 0.012), (r0 + brim, rim_z - 0.03)]
+    n = 40
+    verts, faces, fuv = [], [], []
+    for r_, z in prof:
+        for i in range(n):
+            a = 2 * math.pi * i / n
+            verts.append((cx + math.sin(a) * r_, cy + math.cos(a) * r_ * 1.08, z))
+    for k in range(len(prof) - 1):
+        for i in range(n):
+            j = (i + 1) % n
+            faces.append((k * n + i, (k + 1) * n + i, (k + 1) * n + j, k * n + j))
+            fuv.append([(i / n * 4, k / 8), (i / n * 4, (k + 1) / 8), ((i + 1) / n * 4, (k + 1) / 8),
+                        ((i + 1) / n * 4, k / 8)])
+    o = make_obj("Helmet", np.array(verts), faces, fuv, [{"Head": 1.0}] * len(verts),
+                 gltf_mat(name + "_" + spec.get("material", "helmet")), arm)
+    subdivide(o, 1)
+    solidify(o, 0.004)
+    return o
+
+
+# -------------------------------------------------------------------- lantern
+def build_belt_lantern(S, col, arm, name, side=-1):
+    """A small iron lantern hanging from the belt at the hip (the guard's:
+    CharacterModel lights it from the `lantern` socket). Returns the socket
+    position."""
+    hips = S.head("Hips")
+    zc = S.head("Spine")[2] - 0.035
+    d = (side * 0.94, 0.34, 0.0)
+    r = col.outer_radius((hips[0], hips[1], zc), d, 0.17)
+    hook = np.array([hips[0] + d[0] * (r + 0.03), hips[1] + d[1] * (r + 0.03), zc - 0.02])
+    c = hook + np.array([side * 0.015, 0.0, -0.13])
+    bm = bmesh.new()
+    for (sx, sy, sz, off) in ((0.045, 0.045, 0.09, (0, 0, 0)),          # glass box
+                              (0.055, 0.055, 0.012, (0, 0, 0.051)),     # top plate
+                              (0.055, 0.055, 0.012, (0, 0, -0.051)),    # base
+                              (0.02, 0.02, 0.03, (0, 0, 0.072))):       # chimney
+        geom = bmesh.ops.create_cube(bm, size=1.0)
+        for v in geom["verts"]:
+            v.co = mathutils.Vector((v.co.x * sx * 2, v.co.y * sy * 2, v.co.z * sz * 2)) + \
+                mathutils.Vector(tuple(c + np.array(off)))
+    me = bpy.data.meshes.new("Lantern")
+    bm.to_mesh(me)
+    bm.free()
+    me.uv_layers.new(name="UVMap")
+    me.materials.append(gltf_mat(name + "_iron"))
+    me.materials.append(gltf_mat(name + "_lanternglass"))
+    for poly in me.polygons:   # the first cube (6 faces) is the glass
+        poly.material_index = 1 if poly.index < 6 else 0
+    o = bpy.data.objects.new("Lantern", me)
+    bpy.context.scene.collection.objects.link(o)
+    g = o.vertex_groups.new(name="Hips")
+    g.add(list(range(len(me.vertices))), 1.0, "REPLACE")
+    return c
+
+
+# ---------------------------------------------------------------------- spear
+def build_spear(human, arm, name, side="R", up=1.25, down=0.55):
+    """A spear held upright through the closed fist (along the grip axis)."""
+    o, p, d, t = human.grip_frame(side)
+    # the old rig's grip axis: forward, square to the fingers; the guard's
+    # carry pose (elbow ~80 degrees) stands it upright
+    fwd = np.array([0.0, 1.0, 0.0])
+    dn = d / np.linalg.norm(d)
+    g = fwd - dn * np.dot(dn, fwd)
+    g /= np.linalg.norm(g)
+    hand = ("Right" if side == "R" else "Left") + "Hand"
+    parts = []
+
+    def rod(a, b, ra, rb, n=10, mat="shaft", flat=1.0):
+        ax = (b - a) / np.linalg.norm(b - a)
+        u = np.cross(ax, p)
+        u /= np.linalg.norm(u)
+        w = np.cross(ax, u)
+        vs, fs = [], []
+        for c, r in ((a, ra), (b, rb)):
+            for i in range(n):
+                an = 2 * math.pi * i / n
+                vs.append(c + u * math.cos(an) * r + w * math.sin(an) * r * flat)
+        for i in range(n):
+            j = (i + 1) % n
+            fs.append((i, j, n + j, n + i))
+        for i in range(1, n - 1):
+            fs.append((0, i + 1, i))
+            fs.append((n, n + i, n + i + 1))
+        parts.append((np.array(vs), fs, mat))
+
+    rod(o - g * down, o + g * up, 0.016, 0.014)
+    tip = o + g * up
+    rod(tip - g * 0.02, tip + g * 0.05, 0.02, 0.012, mat="steel")       # socket
+    rod(tip + g * 0.05, tip + g * 0.12, 0.028, 0.02, n=4, mat="steel", flat=0.2)
+    rod(tip + g * 0.12, tip + g * 0.3, 0.02, 0.0008, n=4, mat="steel", flat=0.2)
+    for k, (vs, fs, mat) in enumerate(parts):
+        make_obj(f"Spear{k}", vs, fs, [[(0.0, 0.0)] * len(f) for f in fs], [{hand: 1.0}] * len(vs),
+                 gltf_mat(name + "_" + mat), arm, smooth=(mat == "shaft"))
+
+
 # ----------------------------------------------------------------------- boots
 def foot_hull(mat_name, verts, norms, weights, S, side, off, arm):
     """A shoe: the convex hull of one foot (toes and all) pushed out by
@@ -546,12 +738,10 @@ def build_belt(S, col, arm, name, spec, tdir, mdir, tres):
     me.materials.append(gltf_mat(name + "_buckle"))
     g = bo.vertex_groups.new(name="Hips")
     g.add(list(range(len(me.vertices))), 1.0, "REPLACE")
-    tx.fabric_maps("leather", spec["color"], os.path.join(tdir, "belt"), size=512, seed=41)
     write_tres(os.path.join(mdir, "belt.tres"),
                {"resource_name": f'"{name}_belt"', "roughness": 1.0, "normal_enabled": "true",
-                "uv1_scale": "Vector3(1, 1, 1)", "texture_filter": 5},
-               {"albedo_texture": tres("belt_albedo.png"), "normal_texture": tres("belt_normal.png"),
-                "roughness_texture": tres("belt_roughness.png")})
+                "albedo_color": fabric_tint(spec["color"]), "uv1_scale": "Vector3(1, 1, 1)", "texture_filter": 5},
+               shared_fabric("leather"))
     write_tres(os.path.join(mdir, "buckle.tres"),
                {"resource_name": f'"{name}_buckle"', "albedo_color": "Color(0.55, 0.5, 0.42, 1)",
                 "metallic": 0.9, "roughness": 0.35}, {})
@@ -567,7 +757,7 @@ def build(name):
     tres = lambda n: f"{RES}/textures/{name}/{n}"  # noqa: E731
 
     human = mh.Human(mh.macro_weights(**spec["body"]))
-    human.relax_hands(grip="R" if spec.get("dagger") else "")
+    human.relax_hands(grip="R" if (spec.get("dagger") or spec.get("spear")) else "")
     S = human.skeleton()
     verts, faces, fuv, weights = human.body_mesh()
     col = Collider(verts, faces, weights, pad=0.014, shoulder_z=S.head("LeftUpperArm")[2] - 0.05)
@@ -594,23 +784,22 @@ def build(name):
         k = np.array([loose.get(dominant(weights[i]).removeprefix("Left").removeprefix("Right"), 1.0) for i in ids])
         gv = verts[ids] + norms[ids] * (off * k)[:, None]
         gf = [tuple(remap[i] for i in f) for f in gfaces]
-        gv = taubin(gv, gf, {"shirt": 60, "trousers": 25, "boots": 6}.get(region, 20))
+        gv = taubin(gv, gf, {"shirt": 60, "trousers": 25, "boots": 6, "cuirass": 120, "pauldron": 60,
+                             "gloves": 10}.get(region, 20))
         o = make_obj(gname, gv, gf, guv,
                      [weights[i] for i in ids], gltf_mat(name + "_" + gname.lower()), arm)
         subdivide(o, 1)
         solidify(o, 0.003)
         garment_objs.append(o)
-        tx.fabric_maps(kind, gcol, os.path.join(tdir, gname.lower()), seed=hash(gname) % 1000)
-        uvs = {"linen": 22, "wool": 18, "leather": 6}[kind]
-        write_tres(os.path.join(mdir, gname.lower() + ".tres"),
-                   {"resource_name": f'"{name}_{gname.lower()}"', "cull_mode": 2,
-                    "albedo_color": "Color(1, 1, 1, 1)", "roughness": 1.0,
-                    "normal_enabled": "true", "normal_scale": 0.8,
-                    "uv1_scale": f"Vector3({uvs}, {uvs}, 1)",
-                    "roughness_texture_channel": 0, "texture_filter": 5},
-                   {"albedo_texture": tres(gname.lower() + "_albedo.png"),
-                    "normal_texture": tres(gname.lower() + "_normal.png"),
-                    "roughness_texture": tres(gname.lower() + "_roughness.png")})
+        uvs = {"linen": 22, "wool": 18, "leather": 6, "metal": 3}[kind]
+        props = {"resource_name": f'"{name}_{gname.lower()}"', "cull_mode": 2,
+                 "albedo_color": fabric_tint(gcol), "roughness": 1.0,
+                 "normal_enabled": "true", "normal_scale": 0.8,
+                 "uv1_scale": f"Vector3({uvs}, {uvs}, 1)",
+                 "roughness_texture_channel": 0, "texture_filter": 5}
+        if kind == "metal":
+            props["metallic"] = 0.85
+        write_tres(os.path.join(mdir, gname.lower() + ".tres"), props, shared_fabric(kind))
         if region == "boots":
             covered |= np.array([region_of("feet", verts[i], weights[i], S) for i in range(len(verts))])
             for side in (-1, 1):
@@ -638,7 +827,6 @@ def build(name):
     bm.to_mesh(body.data)
     bm.free()
     subdivide(body, 1)
-    tx.skin_maps(mh.skin_texture(spec["skin"]), os.path.join(tdir, "skin"), tint=spec["skin_tint"])
     write_tres(os.path.join(mdir, "skin.tres"),
                {"resource_name": f'"{name}_skin"', "roughness": 1.0,
                 "normal_enabled": "true", "normal_scale": 0.35,
@@ -646,8 +834,7 @@ def build(name):
                 "subsurf_scatter_skin_mode": "true",
                 "rim_enabled": "true", "rim": 0.25, "rim_tint": 0.6,
                 "texture_filter": 5},
-               {"albedo_texture": tres("skin_albedo.png"), "normal_texture": tres("skin_normal.png"),
-                "roughness_texture": tres("skin_roughness.png")})
+               shared_skin(spec["skin"], spec["skin_tint"]))
 
     # proxies: eyes, brows, lashes, hair
     def proxy(rel, mat_name, tex_dst, tint=None, solid=False):
@@ -678,12 +865,13 @@ def build(name):
                {})
     import shutil
     os.makedirs(tdir, exist_ok=True)
+    os.makedirs(SHARED, exist_ok=True)
     shutil.copy(os.path.join(mh.DATA, "proxies", "eyes", "HighPolyEyes", "textures", spec["eyes"] + "_eye.png"),
-                os.path.join(tdir, "eyes.png"))
+                os.path.join(SHARED, f"eyes_{spec['eyes']}.png"))
     write_tres(os.path.join(mdir, "eyes.tres"),
                {"resource_name": f'"{name}_eyes"', "roughness": 0.08, "metallic_specular": 0.7,
                 "clearcoat_enabled": "true", "clearcoat": 1.0, "clearcoat_roughness": 0.02},
-               {"albedo_texture": tres("eyes.png")})
+               {"albedo_texture": f"{SHARED_RES}/eyes_{spec['eyes']}.png"})
     hair_name, hair_tint = spec["hair"]
     for rel, label, dst, tint in (
             (f"eyebrows/{spec['brows']}/{spec['brows']}.json", "Brows", "brows.png", hair_tint),
@@ -760,6 +948,34 @@ def build(name):
         o = make_obj("Collar", np.array(cv), cf, cu, cw, gltf_mat(name + "_" + spec["collar"]), arm)
         solidify(o, 0.004)
 
+    if spec.get("helmet"):
+        hs = spec["helmet"]
+        build_helmet(S, col, arm, name, hs)
+        write_tres(os.path.join(mdir, hs.get("material", "helmet") + ".tres"),
+                   {"resource_name": f'"{name}_{hs.get("material", "helmet")}"',
+                    "albedo_color": "Color(0.42, 0.43, 0.45, 1)", "metallic": 0.85, "roughness": 0.38,
+                    "cull_mode": 2}, {})
+
+    lantern_at = None
+    if spec.get("lantern"):
+        lantern_at = build_belt_lantern(S, col, arm, name)
+        write_tres(os.path.join(mdir, "iron.tres"),
+                   {"resource_name": f'"{name}_iron"', "albedo_color": "Color(0.12, 0.11, 0.1, 1)",
+                    "metallic": 0.8, "roughness": 0.55}, {})
+        write_tres(os.path.join(mdir, "lanternglass.tres"),
+                   {"resource_name": f'"{name}_lanternglass"', "albedo_color": "Color(1, 0.75, 0.45, 1)",
+                    "emission_enabled": "true", "emission": "Color(1, 0.6, 0.28, 1)",
+                    "emission_energy_multiplier": 3.0, "roughness": 0.3}, {})
+
+    if spec.get("spear"):
+        build_spear(human, arm, name)
+        write_tres(os.path.join(mdir, "shaft.tres"),
+                   {"resource_name": f'"{name}_shaft"', "albedo_color": "Color(0.26, 0.18, 0.11, 1)",
+                    "roughness": 0.75}, {})
+        write_tres(os.path.join(mdir, "steel.tres"),
+                   {"resource_name": f'"{name}_steel"', "albedo_color": "Color(0.55, 0.56, 0.58, 1)",
+                    "metallic": 0.9, "roughness": 0.3}, {})
+
     if spec.get("dagger"):
         build_dagger(human, arm, name)
         write_tres(os.path.join(mdir, "handle.tres"),
@@ -787,13 +1003,12 @@ def build(name):
                      gltf_mat(name + "_cloak"), arm)
         subdivide(o, 1)
         solidify(o, 0.004)
-        tx.fabric_maps("cloak", c["color"], os.path.join(tdir, "cloak"), seed=17)
         write_tres(os.path.join(mdir, "cloak.tres"),
                    {"resource_name": f'"{name}_cloak"', "cull_mode": 2, "roughness": 1.0,
+                    "albedo_color": fabric_tint(c["color"]),
                     "normal_enabled": "true", "normal_scale": 0.9, "uv1_scale": "Vector3(2, 2, 1)",
                     "texture_filter": 5},
-                   {"albedo_texture": tres("cloak_albedo.png"), "normal_texture": tres("cloak_normal.png"),
-                    "roughness_texture": tres("cloak_roughness.png")})
+                   shared_fabric("cloak"))
 
     for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
         bind(o, arm)
@@ -820,6 +1035,8 @@ def build(name):
     sockets["chest"] = dict(bone="UpperChest", pos=[0.0, float(S.head("UpperChest")[1] + 0.12),
                                                    float(S.head("UpperChest")[2] + 0.1)])
     sockets["head"] = dict(bone="Head", pos=[float(x) for x in S.head("Head") + np.array([0, 0, 0.1])])
+    if lantern_at is not None:
+        sockets["lantern"] = dict(bone="Hips", pos=[float(x) for x in lantern_at])
     mats = sorted({m.name for o in bpy.context.scene.objects if o.type == "MESH" for m in o.data.materials})
     meta = dict(name=name, style=spec["style"], tris=tris, height=float(max(v.co.z for v in body.data.vertices)),
                 garments={}, tris_max=tris, materials=mats, tassel_chains=[ch["bones"] for ch in chains], sockets=sockets,

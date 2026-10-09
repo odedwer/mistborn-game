@@ -486,6 +486,7 @@ func complete_objective(obj: Dictionary) -> void:
 	_unresolved_triggers.erase(obj)
 	Events.objective_updated.emit(id, obj.get("text", ""), true)
 	AudioManager.play_ui(&"objective_complete")
+	_record_marker_checkpoint(obj)
 	for action: Dictionary in obj.get("on_complete", []):
 		_run_action(action)
 	if not _active_objectives.is_empty():
@@ -494,6 +495,26 @@ func complete_objective(obj: Dictionary) -> void:
 		_activate_next_pending()
 	else:
 		_advance_stage()
+
+
+## Reaching a `reach_marker` objective whose marker is also a checkpoint
+## records that checkpoint, whether or not the chunk's checkpoint area has
+## streamed in and fired yet (the objective's own trigger works from the
+## plan data; under load the area can arrive after the player).
+func _record_marker_checkpoint(obj: Dictionary) -> void:
+	if obj.get("type", "") != "reach_marker":
+		return
+	var marker_id := str(obj.get("marker_id", ""))
+	var world := _find_world_node()
+	if marker_id == "" or world == null or not world.has_method("get_marker_data"):
+		return
+	for entry: Dictionary in world.call("get_marker_data", str(obj.get("marker_group", "objective_point"))):
+		var meta: Dictionary = entry.get("meta", {})
+		if str(meta.get("objective_id", "")) == marker_id and meta.has("checkpoint_id"):
+			var cp := StringName(str(meta["checkpoint_id"]))
+			if GameState.last_checkpoint_id != cp:
+				Events.checkpoint_reached.emit(cp)
+			return
 
 
 func _advance_stage() -> void:
