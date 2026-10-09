@@ -74,6 +74,10 @@ func test_humanoid_bones_present() -> void:
 			assert_true(m.skeleton.find_bone(b) >= 0, "%s has bone %s" % [id, b])
 
 
+## Characters built from MakeHuman bodies (realistic budget).
+const REALISTIC: Array[String] = ["kelsier"]
+
+
 func test_height_and_materials() -> void:
 	for id: String in HEIGHTS:
 		var m := _spawn(id)
@@ -90,6 +94,13 @@ func test_height_and_materials() -> void:
 				tris += mi.mesh.surface_get_array_index_len(s) / 3
 				var mat := mi.mesh.surface_get_material(s)
 				mats[mat.resource_path if mat != null else "none"] = true
+		if id in REALISTIC:
+			# MakeHuman-based (tools/characters/mh_build.py): skin, eyes, hair cards
+			# and each garment have their own material; LODs carry the distance
+			assert_true(mats.size() <= 14, "%s <= 14 materials (%s)" % [id, mats.keys()])
+			assert_gt(tris, 100000, "%s tris %d" % [id, tris])
+			assert_lt(tris, 320000, "%s tris %d" % [id, tris])
+			continue
 		assert_true(mats.size() <= 3, "%s <= 3 materials (%s)" % [id, mats.keys()])
 		assert_gt(tris, 2500, "%s tris %d" % [id, tris])
 		assert_lt(tris, 8000, "%s tris %d" % [id, tris])

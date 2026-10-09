@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://boculted37c03"
+uid="uid://b5r6m0k1adxfu"
 path="res://.godot/imported/kelsier.glb-80a3b3c8ef3935a6acc166d2e7371558.scn"
 
 [deps]
@@ -41,20 +41,65 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloak": {
+"kelsier_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloak.tres",
-"use_external/path": "res://assets/models/characters/materials/cloak.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/belt.tres"
 },
-"Cloth": {
+"kelsier_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/boots.tres"
 },
-"Metal": {
+"kelsier_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/brows.tres"
+},
+"kelsier_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/buckle.tres"
+},
+"kelsier_cloak": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/cloak.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/cloak.tres"
+},
+"kelsier_coat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/coat.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/coat.tres"
+},
+"kelsier_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/cornea.tres"
+},
+"kelsier_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/eyes.tres"
+},
+"kelsier_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/hair.tres"
+},
+"kelsier_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/lashes.tres"
+},
+"kelsier_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/skin.tres"
+},
+"kelsier_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/kelsier/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/kelsier/trousers.tres"
 }
 }
 }

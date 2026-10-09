@@ -7,10 +7,10 @@
 script = ExtResource("1")
 character_id = &"kelsier"
 sockets = {
-"hand_r": ["RightHand", Vector3(-0.6053, 0.9972, -0.0008)],
-"hand_l": ["LeftHand", Vector3(0.6053, 0.9972, -0.0008)],
-"chest": ["UpperChest", Vector3(-0.0000, 1.3968, 0.1057)],
-"head": ["Head", Vector3(-0.0000, 1.7578, -0.0021)]
+"hand_r": ["RightHand", Vector3(-0.5581, 1.1232, 0.2964)],
+"hand_l": ["LeftHand", Vector3(0.5581, 1.1232, 0.2964)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.3420, 0.0929)],
+"head": ["Head", Vector3(-0.0000, 1.8059, 0.0462)]
 }
 lantern_light = false
 

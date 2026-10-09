@@ -28,6 +28,8 @@ import chars  # noqa: E402
 import chars_npc  # noqa: E402
 
 BUILDERS = {**chars.BUILDERS, **chars_npc.BUILDERS}
+# characters rebuilt from MakeHuman bodies by mh_build.py (not by this script)
+HD = ("kelsier",)
 
 MAT_PBR = {  # name: (base rgba, metallic, roughness, emission)
     "Cloth": ((0.5, 0.5, 0.5, 1), 0.0, 0.85, None),
@@ -240,7 +242,8 @@ def build(name):
 
 
 if __name__ == "__main__":
-    names = [a for a in sys.argv[1:] if a in BUILDERS] or list(BUILDERS)
+    names = [a for a in sys.argv[1:] if a in BUILDERS] or [n for n in BUILDERS if n not in HD]
+    names = [n for n in names if n not in HD]
     for n in names:
         build(n)
     import godot_files

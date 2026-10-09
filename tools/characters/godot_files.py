@@ -159,6 +159,8 @@ def write_all(names=None):
         if names and name not in names:
             continue
         meta = json.load(open(os.path.join(OUT, fn)))
+        if meta.get("realistic"):
+            continue  # mh_build.py writes its own import settings and scene
         write_import(name, meta)
         write_scene(name, meta)
         for pid, (base, garments, dyes, scale) in PRESETS.items():

@@ -1,14 +1,23 @@
 {
  "name": "kelsier",
  "style": "kelsier",
- "tris": 5020,
- "height": 1.8670398720660963,
+ "tris": 277068,
+ "height": 1.8588632345199585,
  "garments": {},
- "tris_max": 5020,
+ "tris_max": 277068,
  "materials": [
-  "Cloak",
-  "Cloth",
-  "Metal"
+  "kelsier_belt",
+  "kelsier_boots",
+  "kelsier_brows",
+  "kelsier_buckle",
+  "kelsier_cloak",
+  "kelsier_coat",
+  "kelsier_cornea",
+  "kelsier_eyes",
+  "kelsier_hair",
+  "kelsier_lashes",
+  "kelsier_skin",
+  "kelsier_trousers"
  ],
  "tassel_chains": [
   [
@@ -118,39 +127,75 @@
    "Tassel_17_1",
    "Tassel_17_2",
    "Tassel_17_3"
+  ],
+  [
+   "Tassel_18_0",
+   "Tassel_18_1",
+   "Tassel_18_2",
+   "Tassel_18_3"
+  ],
+  [
+   "Tassel_19_0",
+   "Tassel_19_1",
+   "Tassel_19_2",
+   "Tassel_19_3"
+  ],
+  [
+   "Tassel_20_0",
+   "Tassel_20_1",
+   "Tassel_20_2",
+   "Tassel_20_3"
+  ],
+  [
+   "Tassel_21_0",
+   "Tassel_21_1",
+   "Tassel_21_2",
+   "Tassel_21_3"
+  ],
+  [
+   "Tassel_22_0",
+   "Tassel_22_1",
+   "Tassel_22_2",
+   "Tassel_22_3"
+  ],
+  [
+   "Tassel_23_0",
+   "Tassel_23_1",
+   "Tassel_23_2",
+   "Tassel_23_3"
   ]
  ],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.6053385579980267,
-    -0.0008264901849088504,
-    0.9971533758080352
+    0.5580953935683152,
+    0.29640096836914853,
+    1.1231783276501726
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.6053385579980267,
-    -0.0008264901849088504,
-    0.9971533758080352
+    -0.5580953935683152,
+    0.29640096836914853,
+    1.1231783276501726
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10571428571428572,
-    1.3967500000000002
+    0.09289296159999999,
+    1.3419724032000002
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0021142857142857144,
-    1.7577642857142857
+    0.046233,
+    1.8059070000000002
    ]
   }
  },
@@ -184,5 +229,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

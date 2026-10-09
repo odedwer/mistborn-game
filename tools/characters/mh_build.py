@@ -42,9 +42,9 @@ from build_characters import bake_actions, build_armature, reset  # noqa: E402
 # body: MakeHuman macro sliders; skin: MakeHuman skin set; garments: name ->
 # (body region, offset m, fabric kind, linear colour); cloak: mistcloak or None
 SPECS = {
-    "kelsier_hd": dict(
+    "kelsier": dict(
         style="kelsier",
-        body=dict(gender=1.0, age=0.56, muscle=0.66, weight=0.42, height=0.64, proportions=0.75),
+        body=dict(gender=1.0, age=0.56, muscle=0.66, weight=0.42, height=0.58, proportions=0.75),
         skin="young_caucasian_male", skin_tint=(1.0, 0.97, 0.95),
         eyes="grey", brows="eyebrow001", lashes="Eyelashes01",
         hair=("short02", (0.3, 0.21, 0.13)),
@@ -296,6 +296,7 @@ def build_cloak(S, col: Collider, arm, spec, mat):
     neck = S.head("Neck")
     sh_r = S.tail("RightShoulder")
     cols = 97
+    spec["_cols"] = cols
     span = math.radians(spec.get("span", 176.0))
     ax_, ay_ = abs(sh_r[0]) + 0.05, 0.16
     top = []
@@ -315,6 +316,67 @@ def build_cloak(S, col: Collider, arm, spec, mat):
         keep_f.append(face)
         keep_uv.append([(a * 4.0, b * 3.0) for a, b in u])
     return v, keep_f, keep_uv
+
+
+CHAIN = 4
+
+
+def cloak_chains(S, geo, spec, parent="Chest"):
+    """One spring-bone chain (Tassel_kk_0..3, the CharacterModel's cloak
+    dynamics) per ribbon, from the split down its centre to the hem. Adds the
+    bones to `S`; returns [{bones, cols, z0, z1}]."""
+    v, f, uv = geo
+    cols = spec["_cols"]
+    rows = len(v) // cols - 1
+    grid = np.asarray(v).reshape(rows + 1, cols, 3)
+    split, hem = spec["split_z"], spec["hem_z"]
+    out = []
+    k = 0
+    for c0 in range(0, cols - 1, 4):
+        cs = [c for c in range(c0, min(c0 + 4, cols))]   # vertex columns of this ribbon
+        line = grid[:, cs, :].mean(axis=1)               # centre line, top to hem
+        zs = line[:, 2]
+        pts = []
+        for j in range(CHAIN + 1):
+            z = split + (hem - split) * j / CHAIN
+            i = int(np.clip(np.searchsorted(-zs, -z), 1, rows))
+            t = (zs[i - 1] - z) / max(zs[i - 1] - zs[i], 1e-6)
+            pts.append(line[i - 1] + (line[i] - line[i - 1]) * np.clip(t, 0, 1))
+        names = [f"Tassel_{k:02d}_{j}" for j in range(CHAIN)]
+        par = parent
+        for j in range(CHAIN):
+            S.add(names[j], par, pts[j], pts[j + 1])
+            par = names[j]
+        out.append(dict(bones=names, cols=(c0, c0 + 4), xy=line[:, :2]))
+        k += 1
+    return out
+
+
+def chain_weights(v, base_w, chains, spec):
+    """Below the split, each ribbon's vertices follow its chain (blended with
+    the cloak's body weights just under the split)."""
+    cols = spec["_cols"]
+    split, hem = spec["split_z"], spec["hem_z"]
+    out = []
+    for vi, p in enumerate(v):
+        c = vi % cols
+        w = base_w[vi]
+        if p[2] < split + 0.02:
+            ch = next(ch for ch in chains if ch["cols"][0] <= c < ch["cols"][1] or ch is chains[-1])
+            f = (split + 0.02 - p[2]) / (split + 0.02 - hem) * CHAIN
+            j = int(np.clip(np.floor(f), 0, CHAIN - 1))
+            t = f - j
+            nw = {ch["bones"][j]: 1.0}
+            if j == 0 and t < 0.5:
+                k = (0.5 - t) * 2
+                nw = {ch["bones"][0]: 1 - k}
+                for b, x in w.items():
+                    nw[b] = nw.get(b, 0.0) + x * k
+            elif t < 0.3 and j > 0:
+                nw = {ch["bones"][j - 1]: 0.5 * (0.3 - t) / 0.3, ch["bones"][j]: 1 - 0.5 * (0.3 - t) / 0.3}
+            w = nw
+        out.append(w)
+    return out
 
 
 def build_skirt(S, col: Collider, spec):
@@ -450,14 +512,19 @@ def build(name):
     human = mh.Human(mh.macro_weights(**spec["body"]))
     human.relax_hands()
     S = human.skeleton()
-    arm = build_armature(S)
     verts, faces, fuv, weights = human.body_mesh()
+    col = Collider(verts, faces, weights, pad=0.014, shoulder_z=S.head("LeftUpperArm")[2] - 0.05)
+    cloak_geo, chains = None, []
+    if spec.get("cloak"):
+        cloak_geo = build_cloak(S, col, None, spec["cloak"], None)
+        chains = cloak_chains(S, cloak_geo, spec["cloak"])
+    arm = build_armature(S)
 
     # garments cut from the body surface
     norms = vertex_normals(verts, faces)
     covered = np.zeros(len(verts), bool)
     garment_objs = []
-    for gname, (region, off, kind, col) in spec["garments"].items():
+    for gname, (region, off, kind, gcol) in spec["garments"].items():
         inside = np.array([region_of(region, verts[i], weights[i], S) for i in range(len(verts))])
         gfaces, guv = [], []
         for f, u in zip(faces, fuv):
@@ -476,7 +543,7 @@ def build(name):
         subdivide(o, 1)
         solidify(o, 0.003)
         garment_objs.append(o)
-        tx.fabric_maps(kind, col, os.path.join(tdir, gname.lower()), seed=hash(gname) % 1000)
+        tx.fabric_maps(kind, gcol, os.path.join(tdir, gname.lower()), seed=hash(gname) % 1000)
         uvs = {"linen": 22, "wool": 18, "leather": 6}[kind]
         write_tres(os.path.join(mdir, gname.lower() + ".tres"),
                    {"resource_name": f'"{name}_{gname.lower()}"', "cull_mode": 2,
@@ -573,7 +640,6 @@ def build(name):
                    {"albedo_texture": tres(dst)})
 
     # draped pieces: coat skirt and mistcloak, resting on the dressed body
-    col = Collider(verts, faces, weights, pad=0.014, shoulder_z=S.head("LeftUpperArm")[2] - 0.05)
     if spec.get("belt"):
         build_belt(S, col, arm, name, spec["belt"], tdir, mdir, tres)
 
@@ -647,8 +713,10 @@ def build(name):
 
     if spec.get("cloak"):
         c = spec["cloak"]
-        v, f, uv = build_cloak(S, col, arm, c, None)
-        o = make_obj("Cloak", v, f, uv, nearest_weights(v, free_below=S.head("Spine")[2]),
+        v, f, uv = cloak_geo
+        cw = nearest_weights(v, free_below=S.head("Spine")[2])
+        cw = chain_weights(v, cw, chains, c)
+        o = make_obj("Cloak", v, f, uv, cw,
                      gltf_mat(name + "_cloak"), arm)
         subdivide(o, 1)
         solidify(o, 0.004)
@@ -687,7 +755,7 @@ def build(name):
     sockets["head"] = dict(bone="Head", pos=[float(x) for x in S.head("Head") + np.array([0, 0, 0.1])])
     mats = sorted({m.name for o in bpy.context.scene.objects if o.type == "MESH" for m in o.data.materials})
     meta = dict(name=name, style=spec["style"], tris=tris, height=float(max(v.co.z for v in body.data.vertices)),
-                garments={}, tris_max=tris, materials=mats, tassel_chains=[], sockets=sockets,
+                garments={}, tris_max=tris, materials=mats, tassel_chains=[ch["bones"] for ch in chains], sockets=sockets,
                 loops=sorted(LOOPING), animations=ANIM_NAMES, realistic=True)
     with open(os.path.join(OUT, name + ".json"), "w") as f:
         json.dump(meta, f, indent=1)

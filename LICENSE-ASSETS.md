@@ -23,6 +23,8 @@ You are free to:
 
 Any third-party assets included in the project are used under their respective licenses. See comments in relevant asset files or the tools directory for attribution.
 
+- **MakeHuman** (makehuman.org): the realistic characters (`tools/characters/mh_build.py`, e.g. Kelsier) are built from the MakeHuman hm08 base mesh, its morph targets, default skins and system proxies (eyes, eyebrows, eyelashes, hair). These assets are released under **CC0** by the MakeHuman team (since MakeHuman 1.1); the build fetches them with `tools/characters/fetch_mh.py`.
+
 ## Engine & Libraries
 
 - **Godot Engine:** MIT License (see https://github.com/godotengine/godot/blob/master/LICENSE.txt)

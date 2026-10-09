@@ -1,0 +1,13 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/kelsier/hair.png" id="1"]
+
+[resource]
+resource_name = "kelsier_hair"
+transparency = 3
+cull_mode = 2
+roughness = 0.75
+metallic_specular = 0.25
+texture_filter = 5
+alpha_antialiasing_mode = 0
+albedo_texture = ExtResource("1")
