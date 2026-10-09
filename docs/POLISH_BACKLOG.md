@@ -459,3 +459,31 @@ There are regression tests for the audio, battle and both streaming fixes. One t
 Follow-ups:
 - Closing the game window quits without `AudioManager.shutdown()`. This only affects what the engine prints at exit. It could be hooked to `NOTIFICATION_WM_CLOSE_REQUEST`.
 - With `--verbose`, Godot prints "unclaimed string names at exit" for its built-in type names. These are engine-held, not part of the leak report, and documented.
+
+## Visual overhaul ("looks indie, not AAA")
+The player asked for a Spider-Man 2 or Horizon look instead of "lego people". This pass has two parts. The first rebuilds every character from MakeHuman bodies. The second rebuilds the city's surfaces, lighting and facade detail.
+
+### Done
+- **Characters**: all 22 GLBs come from `tools/characters/mh_build.py`. They are MakeHuman hm08 bodies built from npm/PyPI data, which `fetch_mh.py` downloads.
+  - The body is morphed, and the hands are posed relaxed.
+  - Skin uses SSS, eyes have a glossy cornea, and hair, brow and lash cards are alpha-hashed.
+  - Garments are cut from the body surface and Taubin-smoothed with pinned hems.
+  - Skirts, capes and the mistcloak hang under gravity, are pushed out of the body, and get folds. The mistcloak's ribbons have spring-bone chains.
+  - Other parts: lathed hats and helmets, armour shells, props, beards, and Inquisitor spikes.
+  - Optional `G_` garments and the `hd_cloth`/`hd_hair` dye slots cover the existing crowd pools.
+  - Crowd bases skip one subdivision level, so they are 50-90k triangles; hero characters are 180-280k.
+- **Surfaces**: `tools/gen_textures_hd.py` generates the 2048 px sets:
+  - setts, coursed rubble, ashlar, brick, render over brick, overlapping slates, and boards;
+  - each set has a 16-bit height map.
+  
+  `world_surface.gdshader` adds triplanar POM on the dominant projection and macro variation. It also adds global `world_wetness`: damp by day, wet at night with puddles. A new SSR setting covers High and Ultra.
+- **Lighting**: brighter lantern pools and darker Forward+ ambient and fill. The moon is the key light.
+- **Facades**: window surrounds (stone architrave or timber frame) and door cases.
+
+### Still open
+- **Network-blocked photoscans**: `polyhaven.com`, `dl.polyhaven.org` and `ambientcg.com` are denied by the environment's network policy. Allowing them would replace the procedural sets with CC0 photoscans. `tools/fetch_assets.py` already exists.
+- **Clothing still reads as fitted knit**: garments follow the body. Real folds need a loose-garment pass, such as a cloth sim on a slack copy, or fold normal maps by bone.
+- **Hands**: the procedural clips have no finger bones, so idle hands look slightly clawed. Either add finger bones to the humanoid rig, or curl them less.
+- **Animation**: the procedural clips are the next "indie" tell. Motion-capture data such as CMU or Mixamo is not reachable through the registries.
+- **Roofs**: gables need eave thickness, ridge caps, gutters and dormers. Flat roofs need coping on the parapets.
+- **Test flake**: `test_crowd_member::test_member_positioned_after_add_stays_home` once ended 5.02 m from home against a 5.0 m bound under full parallel load. It passed on rerun and in isolation.
