@@ -381,6 +381,82 @@ static func _flat_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNu
 		data.add_rigid(&"crate", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), cp))
 
 
+## Gable roof trim (purely visual): a ridge cap of rounded tiles, timber
+## fascia boards with a soffit along both eaves, and barge boards up the
+## verges on the free gable ends, so the slate slabs read as a built roof
+## with thickness instead of two paper planes.
+static func _roof_trim(data: ChunkBuildData, lot: ChunkLayout.Lot, rise: float, along_x: bool, ov: float,
+		sc: Color) -> void:
+	var r := lot.rect
+	var h := lot.height
+	var ry := h + rise
+	var wood := data.mb(M.WOOD)
+	var cap := data.mb(M.TRIM)
+	var fc := Color(0.42, 0.4, 0.38) * (0.7 + lot.tint * 0.4)
+	var cc := sc * 0.55
+	# Work in a frame where the ridge runs along `u` (x or z) and the slopes
+	# fall along `v`.
+	var u0 := (r.position.x if along_x else r.position.y) - ov * 0.5
+	var u1 := (r.end.x if along_x else r.end.y) + ov * 0.5
+	var vm := (r.get_center().y if along_x else r.get_center().x)
+	var half := (r.size.y if along_x else r.size.x) * 0.5
+	var drop := rise * ov / maxf(half, 0.1)
+	var pt := func(u: float, y: float, v: float) -> Vector3:
+		return Vector3(u, y, v) if along_x else Vector3(v, y, u)
+	var U := Vector3.RIGHT if along_x else Vector3.BACK
+	var V := Vector3.BACK if along_x else Vector3.RIGHT
+	# ridge cap: a low ridge of rounded tiles (three faces)
+	var cw := 0.16
+	var ch := 0.13
+	cap.add_quad(pt.call(u0, ry + ch, vm - cw * 0.5), pt.call(u1, ry + ch, vm - cw * 0.5),
+			pt.call(u1, ry + ch, vm + cw * 0.5), pt.call(u0, ry + ch, vm + cw * 0.5), Vector3.UP, cc, cc)
+	for sgn: float in [-1.0, 1.0]:
+		var a: Vector3 = pt.call(u0, ry - 0.04, vm + sgn * cw * 1.2)
+		var b: Vector3 = pt.call(u1, ry - 0.04, vm + sgn * cw * 1.2)
+		var c: Vector3 = pt.call(u1, ry + ch, vm + sgn * cw * 0.5)
+		var d: Vector3 = pt.call(u0, ry + ch, vm + sgn * cw * 0.5)
+		var nrm := (V * sgn + Vector3.UP).normalized()
+		if sgn > 0:
+			cap.add_quad(a, b, c, d, nrm, cc * 0.8, cc)
+		else:
+			cap.add_quad(b, a, d, c, nrm, cc * 0.8, cc)
+	# fascia + soffit along both eaves
+	for sgn: float in [-1.0, 1.0]:
+		var ve := vm + sgn * (half + ov)
+		var ye := h - drop
+		var top_a: Vector3 = pt.call(u0, ye + 0.02, ve)
+		var top_b: Vector3 = pt.call(u1, ye + 0.02, ve)
+		var bot_a: Vector3 = pt.call(u0, ye - 0.22, ve)
+		var bot_b: Vector3 = pt.call(u1, ye - 0.22, ve)
+		var out := V * sgn
+		if sgn > 0:
+			wood.add_quad(bot_a, bot_b, top_b, top_a, out, fc * 0.8, fc)
+		else:
+			wood.add_quad(bot_b, bot_a, top_a, top_b, out, fc * 0.8, fc)
+		var wall_a: Vector3 = pt.call(u0, h - 0.22, vm + sgn * half)
+		var wall_b: Vector3 = pt.call(u1, h - 0.22, vm + sgn * half)
+		wood.add_quad(bot_a, bot_b, wall_b, wall_a, Vector3.DOWN, fc * 0.45, fc * 0.45)
+	# barge boards up the verges of free gable ends
+	for end: int in [0, 1]:
+		var bit: int
+		if along_x:
+			bit = ChunkLayout.FACE_W if end == 0 else ChunkLayout.FACE_E
+		else:
+			bit = ChunkLayout.FACE_N if end == 0 else ChunkLayout.FACE_S
+		if lot.shared & bit:
+			continue
+		var ue := u0 if end == 0 else u1
+		var out_u := -U if end == 0 else U
+		for sgn: float in [-1.0, 1.0]:
+			var e0: Vector3 = pt.call(ue, h - drop + 0.02, vm + sgn * (half + ov))
+			var e1: Vector3 = pt.call(ue, ry + 0.02, vm)
+			var down := Vector3.DOWN * 0.24
+			if (sgn > 0) == (end == 1):
+				wood.add_quad(e0 + down, e1 + down, e1, e0, out_u, fc * 0.75, fc)
+			else:
+				wood.add_quad(e1 + down, e0 + down, e0, e1, out_u, fc * 0.75, fc)
+
+
 static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumberGenerator, cols: Array[Color]) -> void:
 	var r := lot.rect
 	var h := lot.height
@@ -393,6 +469,7 @@ static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomN
 	data.mb(M.TRIM).add_banded_box(Vector3(r.position.x - 0.15, h - 0.35, r.position.y - 0.15),
 			Vector3(r.end.x + 0.15, h, r.end.y + 0.15), h - 0.2, dark * 0.6, dark * 0.7, dark * 0.6, dark * 0.5, lot.shared, false)
 	data.mb(M.SLATE).add_gable_roof(r.position, r.end, h, rise, along_x, 0.4, sc, walls, cols[2] * 0.85)
+	_roof_trim(data, lot, rise, along_x, 0.4, sc)
 	var x0 := r.position.x
 	var x1 := r.end.x
 	var z0 := r.position.y
