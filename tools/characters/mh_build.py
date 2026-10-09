@@ -315,6 +315,38 @@ def write_tres(path, props: dict, textures: dict):
         f.write("\n".join(lines) + "\n")
 
 
+def write_shader_tres(path, shader: str, params: dict, textures: dict, resource_name: str):
+    lines = [f'[gd_resource type="ShaderMaterial" load_steps={len(textures) + 2} format=3]', "",
+             f'[ext_resource type="Shader" path="{RES}/materials/{shader}" id="1"]']
+    ids = {}
+    for i, (slot, tex) in enumerate(textures.items(), start=2):
+        lines.append(f'[ext_resource type="Texture2D" path="{tex}" id="{i}"]')
+        ids[slot] = i
+    lines += ["", "[resource]", f'resource_name = "{resource_name}"', 'shader = ExtResource("1")']
+    for k, v in params.items():
+        lines.append(f"shader_parameter/{k} = {v}")
+    for slot, i in ids.items():
+        lines.append(f'shader_parameter/{slot} = ExtResource("{i}")')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def write_cloth(mdir, name, part, color, kind, uv, dye=0, metallic=0.0, normal_scale=0.8):
+    """materials/<name>/<part>.tres: hd_cloth.gdshader over the shared maps
+    of `kind`, tinted to `color` (sRGB 0..1) or dyed through `dye` slot."""
+    write_shader_tres(os.path.join(mdir, part + ".tres"), "hd_cloth.gdshader",
+                      {"albedo_color": fabric_tint(color), "uv_scale": f"Vector2({uv}, {uv})",
+                       "normal_scale": normal_scale, "metallic": metallic, "dye_slot": dye},
+                      shared_fabric(kind), f"{name}_{part}")
+
+
+def write_hair(mdir, name, part, tex_res, dye=0, roughness=0.55, specular=0.35, mean_luma=0.05):
+    write_shader_tres(os.path.join(mdir, part + ".tres"), "hd_hair.gdshader",
+                      {"dye_slot": dye, "roughness": roughness, "specular": specular, "mean_luma": mean_luma},
+                      {"albedo_texture": tex_res}, f"{name}_{part}")
+
+
 # ------------------------------------------------------------------ draping
 class Collider:
     """Ray queries against the body without its forearms and hands (they hang
@@ -738,10 +770,7 @@ def build_belt(S, col, arm, name, spec, tdir, mdir, tres):
     me.materials.append(gltf_mat(name + "_buckle"))
     g = bo.vertex_groups.new(name="Hips")
     g.add(list(range(len(me.vertices))), 1.0, "REPLACE")
-    write_tres(os.path.join(mdir, "belt.tres"),
-               {"resource_name": f'"{name}_belt"', "roughness": 1.0, "normal_enabled": "true",
-                "albedo_color": fabric_tint(spec["color"]), "uv1_scale": "Vector3(1, 1, 1)", "texture_filter": 5},
-               shared_fabric("leather"))
+    write_cloth(mdir, name, "belt", spec["color"], "leather", 1, dye=spec.get("dye", 0))
     write_tres(os.path.join(mdir, "buckle.tres"),
                {"resource_name": f'"{name}_buckle"', "albedo_color": "Color(0.55, 0.5, 0.42, 1)",
                 "metallic": 0.9, "roughness": 0.35}, {})
@@ -792,14 +821,8 @@ def build(name):
         solidify(o, 0.003)
         garment_objs.append(o)
         uvs = {"linen": 22, "wool": 18, "leather": 6, "metal": 3}[kind]
-        props = {"resource_name": f'"{name}_{gname.lower()}"', "cull_mode": 2,
-                 "albedo_color": fabric_tint(gcol), "roughness": 1.0,
-                 "normal_enabled": "true", "normal_scale": 0.8,
-                 "uv1_scale": f"Vector3({uvs}, {uvs}, 1)",
-                 "roughness_texture_channel": 0, "texture_filter": 5}
-        if kind == "metal":
-            props["metallic"] = 0.85
-        write_tres(os.path.join(mdir, gname.lower() + ".tres"), props, shared_fabric(kind))
+        write_cloth(mdir, name, gname.lower(), gcol, kind, uvs, dye=spec.get("dyes", {}).get(gname, 0),
+                    metallic=0.85 if kind == "metal" else 0.0)
         if region == "boots":
             covered |= np.array([region_of("feet", verts[i], weights[i], S) for i in range(len(verts))])
             for side in (-1, 1):
@@ -878,11 +901,12 @@ def build(name):
             (f"eyelashes/{spec['lashes']}/{spec['lashes']}.json", "Lashes", "lashes.png", (0.09, 0.07, 0.055)),
             (f"hair/{hair_name}/{hair_name}.json", "Hair", "hair.png", hair_tint)):
         proxy(rel, label, dst, tint=tint)
-        write_tres(os.path.join(mdir, label.lower() + ".tres"),
-                   {"resource_name": f'"{name}_{label.lower()}"', "transparency": 3,  # alpha hash
-                    "cull_mode": 2, "roughness": 0.55, "metallic_specular": 0.35,
-                    "texture_filter": 5, "alpha_antialiasing_mode": 0},
-                   {"albedo_texture": tres(dst)})
+        from PIL import Image
+        a_ = np.asarray(Image.open(os.path.join(tdir, dst)).convert("RGBA")).astype(np.float64) / 255.0
+        lin = np.where(a_[..., :3] <= 0.04045, a_[..., :3] / 12.92, ((a_[..., :3] + 0.055) / 1.055) ** 2.4)
+        luma = float(np.average(lin @ np.array([0.2126, 0.7152, 0.0722]), weights=a_[..., 3] + 1e-6))
+        write_hair(mdir, name, label.lower(), tres(dst), dye=spec.get("hair_dye", 0) if label != "Lashes" else 0,
+                   mean_luma=round(luma, 5))
 
     # draped pieces: coat skirt and mistcloak, resting on the dressed body
     if spec.get("belt"):
@@ -1003,12 +1027,7 @@ def build(name):
                      gltf_mat(name + "_cloak"), arm)
         subdivide(o, 1)
         solidify(o, 0.004)
-        write_tres(os.path.join(mdir, "cloak.tres"),
-                   {"resource_name": f'"{name}_cloak"', "cull_mode": 2, "roughness": 1.0,
-                    "albedo_color": fabric_tint(c["color"]),
-                    "normal_enabled": "true", "normal_scale": 0.9, "uv1_scale": "Vector3(2, 2, 1)",
-                    "texture_filter": 5},
-                   shared_fabric("cloak"))
+        write_cloth(mdir, name, "cloak", c["color"], "cloak", 2, dye=c.get("dye", 0), normal_scale=0.9)
 
     for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
         bind(o, arm)
