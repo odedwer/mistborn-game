@@ -20,13 +20,16 @@ const INSTANCE_RANGE := {
 	&"hedge": 320.0, &"topiary": 320.0, &"statue": 400.0, &"carriage": 200.0,
 	&"plinth": 400.0, &"statue_bronze": 400.0, &"modillion": 68.0,
 	&"shop_sign_board": 110.0, &"shop_sign_medallion": 110.0, &"shop_sign_coin": 110.0,
+	&"window_surround": 120.0, &"window_surround_g": 120.0, &"window_frame_wood": 100.0,
+	&"window_frame_wood_g": 100.0, &"door_surround": 140.0,
 }
 ## Kinds that are many and small (about 900 modillions per merchant/noble
 ## chunk): split into square cells of this size (m), one MultiMesh each, so
 ## their short visibility range culls by cell around the camera. A visibility
 ## range is measured to the instance's AABB centre, so a whole-chunk
 ## MultiMesh would vanish or stay as one block.
-const INSTANCE_CELL := {&"modillion": 24.0}
+const INSTANCE_CELL := {&"modillion": 24.0, &"window_surround": 32.0, &"window_surround_g": 32.0,
+	&"window_frame_wood": 32.0, &"window_frame_wood_g": 32.0}
 ## Visibility-range hysteresis (m) per kind; the default is 10. A cell appears
 ## inside range - margin and goes beyond range + margin, both measured to its
 ## centre. Modillions dither out by themselves (PropMeshes.MODILLION_FADE,

@@ -368,6 +368,44 @@ static func _build(kind: StringName) -> Mesh:
 			_box_c(iron, Vector3(0, -0.28, 0), Vector3(0.24, 0.05, 0.24), white)
 			_box_c(glass, Vector3(0, 0.0, 0), Vector3(0.2, 0.5, 0.2), white)
 			iron.add_pyramid(Vector3(0, 0.33, 0), 0.16, 0.18, white)
+		&"window_surround", &"window_surround_g":
+			# Dressed-stone architrave around a window opening (local: x along
+			# the facade, +z out of the wall, y = 0 at the sill line; opening
+			# 1.0 x 1.6 m, ground floor 1.1 x 1.75 m): jambs, a projecting
+			# sill on two corbels, a lintel with a keystone. The glazing quad
+			# sits 4 cm out, so the 7 cm jambs leave a shadowed reveal.
+			var w := 1.1 if kind == &"window_surround_g" else 1.0
+			var h := 1.75 if kind == &"window_surround_g" else 1.6
+			var sc := Color(0.92, 0.89, 0.83)
+			for sx: float in [-1.0, 1.0]:
+				_box_c(ashlar, Vector3(sx * (w * 0.5 + 0.06), h * 0.5, 0.035), Vector3(0.12, h + 0.04, 0.07), sc * 0.9)
+			_box_c(ashlar, Vector3(0, -0.035, 0.08), Vector3(w + 0.32, 0.07, 0.16), sc)
+			for sx: float in [-1.0, 1.0]:
+				_box_c(ashlar, Vector3(sx * (w * 0.5 + 0.02), -0.13, 0.05), Vector3(0.1, 0.12, 0.1), sc * 0.8)
+			_box_c(ashlar, Vector3(0, h + 0.1, 0.045), Vector3(w + 0.36, 0.2, 0.09), sc)
+			_box_c(ashlar, Vector3(0, h + 0.08, 0.06), Vector3(0.16, 0.26, 0.12), sc * 1.04)
+			_box_c(ashlar, Vector3(0, h + 0.215, 0.07), Vector3(w + 0.46, 0.05, 0.14), sc * 0.95)
+		&"window_frame_wood", &"window_frame_wood_g":
+			# Plain timber frame and board sill for the skaa quarter and docks.
+			var w := 1.1 if kind == &"window_frame_wood_g" else 1.0
+			var h := 1.75 if kind == &"window_frame_wood_g" else 1.6
+			var wc := Color(0.62, 0.6, 0.58)
+			for sx: float in [-1.0, 1.0]:
+				_box_c(wood, Vector3(sx * (w * 0.5 + 0.045), h * 0.5, 0.03), Vector3(0.09, h + 0.06, 0.06), wc)
+			_box_c(wood, Vector3(0, h + 0.05, 0.035), Vector3(w + 0.2, 0.1, 0.07), wc)
+			_box_c(wood, Vector3(0, -0.03, 0.06), Vector3(w + 0.16, 0.06, 0.12), wc * 0.9)
+			# a mullion and transom
+			_box_c(wood, Vector3(0, h * 0.5, 0.045), Vector3(0.05, h, 0.03), wc * 0.8)
+			_box_c(wood, Vector3(0, h * 0.62, 0.045), Vector3(w, 0.05, 0.03), wc * 0.8)
+		&"door_surround":
+			# Stone door case for a 1.4 x 2.5 m door (local as above, y = 0 at
+			# the street): pilaster jambs, a lintel with a cornice, a step.
+			var sc := Color(0.9, 0.87, 0.81)
+			for sx: float in [-1.0, 1.0]:
+				_box_c(ashlar, Vector3(sx * 0.83, 1.3, 0.06), Vector3(0.26, 2.6, 0.12), sc * 0.9)
+			_box_c(ashlar, Vector3(0, 2.72, 0.07), Vector3(2.0, 0.26, 0.14), sc)
+			_box_c(ashlar, Vector3(0, 2.9, 0.12), Vector3(2.2, 0.1, 0.24), sc * 0.95)
+			_box_c(ashlar, Vector3(0, 0.08, 0.3), Vector3(1.9, 0.16, 0.6), sc * 0.75)
 		&"window_bars":
 			# Unit square in the XY plane, bars slightly proud of the wall.
 			for i in 5:

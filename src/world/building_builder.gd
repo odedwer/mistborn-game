@@ -91,6 +91,7 @@ static func _windows(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumb
 	var lantern_p := float(st.get("wall_lantern", 0.06))
 	var win := data.db(M.WINDOW)
 	var wood := data.db(M.WOOD)
+	var ornate := bool(st.get("facade_ornament", false))
 	for bit: int in [ChunkLayout.FACE_S, ChunkLayout.FACE_N, ChunkLayout.FACE_E, ChunkLayout.FACE_W]:
 		if lot.shared & bit:
 			continue
@@ -119,6 +120,7 @@ static func _windows(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumb
 					var d1 := o + rv * (u + 0.7) + n * 0.06
 					wood.add_quad(d0, d1, d1 + Vector3.UP * 2.5, d0 + Vector3.UP * 2.5, n,
 							Color(0.5, 0.5, 0.5), Color(0.75, 0.75, 0.75))
+					data.add_instance(&"door_surround", Transform3D(Basis(rv, Vector3.UP, n), o + rv * u))
 					if rng.randf() < lantern_p * 3.0:
 						var lp := o + rv * (u + 1.05) + n * 0.42 + Vector3.UP * 2.9
 						data.add_instance(&"wall_lantern", Transform3D(Basis.looking_at(-n), lp))
@@ -133,6 +135,11 @@ static func _windows(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumb
 				var shutter := 1.0 if rng.randf() < 0.22 else 0.0
 				var c := Color(lit, rng.randf(), shutter, 1.0)
 				win.add_quad(p0, p1, p1 + Vector3.UP * wh, p0 + Vector3.UP * wh, n, c, c)
+				# Stone architrave (ornamented districts) or a timber frame.
+				var frame: StringName = &"window_surround" if ornate else &"window_frame_wood"
+				if f == 0:
+					frame = StringName(String(frame) + "_g")
+				data.add_instance(frame, Transform3D(Basis(rv, Vector3.UP, n), o + rv * u + Vector3.UP * y0))
 				if f == 0 and rng.randf() < bars_p:
 					var center := o + rv * u + n * 0.14 + Vector3.UP * (y0 + wh * 0.5)
 					var bx := Basis(rv * (ww + 0.1), Vector3.UP * (wh + 0.1), n)
