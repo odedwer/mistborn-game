@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://camyiwh2f8qqo"
+uid="uid://djvlcm1fij032"
 path="res://.godot/imported/noble_woman.glb-d65ce4b3fc98f1074498a0002a616d15.scn"
 
 [deps]
@@ -41,20 +41,70 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloak": {
+"noble_woman_bodice": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloak.tres",
-"use_external/path": "res://assets/models/characters/materials/cloak.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/bodice.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/bodice.tres"
 },
-"Cloth": {
+"noble_woman_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/boots.tres"
 },
-"Metal": {
+"noble_woman_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/brows.tres"
+},
+"noble_woman_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/cornea.tres"
+},
+"noble_woman_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/eyes.tres"
+},
+"noble_woman_gown": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/gown.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/gown.tres"
+},
+"noble_woman_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/hair.tres"
+},
+"noble_woman_hat_small": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/hat_small.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/hat_small.tres"
+},
+"noble_woman_hat_wide": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/hat_wide.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/hat_wide.tres"
+},
+"noble_woman_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/lashes.tres"
+},
+"noble_woman_shawl": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/shawl.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/shawl.tres"
+},
+"noble_woman_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/skin.tres"
+},
+"noble_woman_trim": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_woman/trim.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_woman/trim.tres"
 }
 }
 }

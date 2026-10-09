@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b8rrdmsx012j"
+uid="uid://bwfuhkemlv6r2"
 path="res://.godot/imported/skaa_woman.glb-4f46687ec8a4a81cd5bd888e35148038.scn"
 
 [deps]
@@ -41,15 +41,80 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloak": {
+"skaa_woman_basket": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloak.tres",
-"use_external/path": "res://assets/models/characters/materials/cloak.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/basket.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/basket.tres"
 },
-"Cloth": {
+"skaa_woman_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/belt.tres"
+},
+"skaa_woman_blouse": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/blouse.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/blouse.tres"
+},
+"skaa_woman_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/boots.tres"
+},
+"skaa_woman_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/brows.tres"
+},
+"skaa_woman_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/buckle.tres"
+},
+"skaa_woman_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/cornea.tres"
+},
+"skaa_woman_dress": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/dress.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/dress.tres"
+},
+"skaa_woman_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/eyes.tres"
+},
+"skaa_woman_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/hair.tres"
+},
+"skaa_woman_headscarf": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/headscarf.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/headscarf.tres"
+},
+"skaa_woman_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/lashes.tres"
+},
+"skaa_woman_shawl": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/shawl.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/shawl.tres"
+},
+"skaa_woman_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/skin.tres"
+},
+"skaa_woman_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_woman/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_woman/trousers.tres"
 }
 }
 }

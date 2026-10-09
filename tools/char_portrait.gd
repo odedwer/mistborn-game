@@ -78,8 +78,6 @@ func _run() -> void:
 		c.rotation_degrees.y = yaw
 		w.add_child(c)
 		models.append(c)
-		for mi: MeshInstance3D in c.find_children("*", "MeshInstance3D", true, false):
-			mi.visible = true
 	var cam := Camera3D.new()
 	w.add_child(cam)
 	cam.fov = 30.0 if not close else 22.0

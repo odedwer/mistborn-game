@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://btt8llkb863oe"
+uid="uid://b85tfnwphfen6"
 path="res://.godot/imported/skaa_man.glb-f95df890d9e77571491b3621bf152532.scn"
 
 [deps]
@@ -41,10 +41,85 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"skaa_man_beard": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/beard.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/beard.tres"
+},
+"skaa_man_belt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/belt.tres"
+},
+"skaa_man_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/boots.tres"
+},
+"skaa_man_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/brows.tres"
+},
+"skaa_man_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/buckle.tres"
+},
+"skaa_man_cap": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/cap.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/cap.tres"
+},
+"skaa_man_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/cornea.tres"
+},
+"skaa_man_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/eyes.tres"
+},
+"skaa_man_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/hair.tres"
+},
+"skaa_man_hood": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/hood.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/hood.tres"
+},
+"skaa_man_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/lashes.tres"
+},
+"skaa_man_sack": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/sack.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/sack.tres"
+},
+"skaa_man_scarf": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/scarf.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/scarf.tres"
+},
+"skaa_man_shirt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/shirt.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/shirt.tres"
+},
+"skaa_man_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/skin.tres"
+},
+"skaa_man_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/skaa_man/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/skaa_man/trousers.tres"
 }
 }
 }

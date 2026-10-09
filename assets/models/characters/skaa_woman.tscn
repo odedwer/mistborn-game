@@ -7,10 +7,10 @@
 script = ExtResource("1")
 character_id = &"skaa_woman"
 sockets = {
-"hand_r": ["RightHand", Vector3(-0.5042, 0.8732, -0.0007)],
-"hand_l": ["LeftHand", Vector3(0.5042, 0.8732, -0.0007)],
-"chest": ["UpperChest", Vector3(-0.0000, 1.2231, 0.0926)],
-"head": ["Head", Vector3(-0.0000, 1.5392, -0.0019)]
+"hand_r": ["RightHand", Vector3(-0.4363, 0.9045, 0.2195)],
+"hand_l": ["LeftHand", Vector3(0.4363, 0.9045, 0.2195)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.1179, 0.1326)],
+"head": ["Head", Vector3(-0.0000, 1.5077, 0.0467)]
 }
 lantern_light = false
 garments = PackedStringArray("headscarf")

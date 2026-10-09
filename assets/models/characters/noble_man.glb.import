@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://by4rl6hvlu1m6"
+uid="uid://dq52v3wdofd18"
 path="res://.godot/imported/noble_man.glb-70d82fd66fd58d55a535f20c2c2b24c6.scn"
 
 [deps]
@@ -41,15 +41,70 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloak": {
+"noble_man_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloak.tres",
-"use_external/path": "res://assets/models/characters/materials/cloak.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/boots.tres"
 },
-"Cloth": {
+"noble_man_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/brows.tres"
+},
+"noble_man_cape": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/cape.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/cape.tres"
+},
+"noble_man_coat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/coat.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/coat.tres"
+},
+"noble_man_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/cornea.tres"
+},
+"noble_man_cravat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/cravat.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/cravat.tres"
+},
+"noble_man_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/eyes.tres"
+},
+"noble_man_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/hair.tres"
+},
+"noble_man_hat_bowler": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/hat_bowler.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/hat_bowler.tres"
+},
+"noble_man_hat_top": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/hat_top.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/hat_top.tres"
+},
+"noble_man_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/lashes.tres"
+},
+"noble_man_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/skin.tres"
+},
+"noble_man_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/noble_man/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/noble_man/trousers.tres"
 }
 }
 }

@@ -81,6 +81,96 @@ SPECS = {
         spear="R",
         lantern=True,
     ),
+    "skaa_man": dict(
+        style="skaa",
+        body=dict(gender=1.0, age=0.62, muscle=0.45, weight=0.3, height=0.45, proportions=0.4),
+        skin="middleage_caucasian_male", skin_tint=(0.94, 0.88, 0.82),
+        eyes="brown", brows="eyebrow001", lashes="Eyelashes01",
+        hair=("short01", (0.12, 0.09, 0.065)), hair_dye=3, beards=["Moustache"],
+        garments={
+            "Shirt": ("shirt", 0.009, "linen", (0.3, 0.27, 0.22)),
+            "Trousers": ("trousers", 0.009, "wool", (0.2, 0.18, 0.15)),
+            "Boots": ("boots", 0.008, "leather", (0.1, 0.075, 0.05)),
+        },
+        dyes={"Shirt": 1, "Trousers": 2},
+        loose={"Shirt": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}},
+        collar="shirt",
+        belt=dict(color=(0.16, 0.13, 0.09)),
+        hats=[dict(name="cap", style="cap", optional=True, color=(0.22, 0.2, 0.17), dye=2, brim=0.0, depth=0.08),
+              dict(name="hood", style="hood", optional=True, color=(0.25, 0.23, 0.19), dye=2, kind="linen")],
+        rings=[dict(name="scarf", optional=True, z0=-0.06, z1=0.05, bulge=0.025, color=(0.3, 0.25, 0.2), dye=2)],
+        props=[dict(name="sack", kind="sack", optional=True, color=(0.4, 0.36, 0.28))],
+    ),
+    "skaa_woman": dict(
+        style="skaa",
+        body=dict(gender=0.0, age=0.58, muscle=0.45, weight=0.32, height=0.42, proportions=0.45),
+        skin="middleage_caucasian_female", skin_tint=(0.95, 0.9, 0.84),
+        eyes="brown", brows="eyebrow002", lashes="Eyelashes01",
+        hair=("ponytail01", (0.14, 0.1, 0.07)), hair_dye=3,
+        garments={
+            "Blouse": ("shirt", 0.008, "linen", (0.32, 0.29, 0.24)),
+            "Trousers": ("trousers", 0.006, "wool", (0.2, 0.18, 0.15)),
+            "Boots": ("boots", 0.008, "leather", (0.1, 0.075, 0.05)),
+        },
+        dyes={"Blouse": 2},
+        loose={"Blouse": {"Spine": 1.8, "Chest": 1.6, "UpperChest": 1.4, "Hips": 1.6}},
+        collar="blouse",
+        skirts=[dict(name="Dress", color=(0.3, 0.26, 0.2), kind="wool", dye=1, hem_z=0.12, flare=0.16,
+                     front_gap=0.0, folds=9, fold_amp=0.018)],
+        belt=dict(color=(0.16, 0.13, 0.09)),
+        hats=[dict(name="headscarf", style="headscarf", optional=True, color=(0.35, 0.3, 0.24), dye=2,
+                   kind="linen")],
+        capes=[dict(name="shawl", optional=True, hem_rel=0.12, span=200.0, color=(0.28, 0.24, 0.2), dye=2,
+                    folds=6)],
+        props=[dict(name="basket", kind="basket", optional=True, color=(0.32, 0.24, 0.14))],
+    ),
+    "noble_man": dict(
+        style="noble_m",
+        body=dict(gender=1.0, age=0.55, muscle=0.5, weight=0.5, height=0.55, proportions=0.7),
+        skin="young_caucasian_male", skin_tint=(1.0, 0.96, 0.93),
+        eyes="grey", brows="eyebrow001", lashes="Eyelashes01",
+        hair=("short04", (0.12, 0.09, 0.065)), hair_dye=3,
+        garments={
+            "Coat": ("shirt", 0.013, "wool", (0.17, 0.17, 0.2)),
+            "Trousers": ("trousers", 0.008, "wool", (0.1, 0.1, 0.11)),
+            "Boots": ("boots", 0.009, "leather", (0.03, 0.025, 0.022)),
+        },
+        dyes={"Coat": 1},
+        loose={"Coat": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}},
+        collar="cravat",
+        rings=[dict(name="Cravat", z0=-0.07, z1=0.06, bulge=0.02, color=(0.85, 0.82, 0.76), kind="linen")],
+        skirts=[dict(name="tails", optional=True, material="coat", hem_drop=0.52, flare=0.05, front_gap=170.0,
+                     folds=4),
+                dict(name="longcoat", optional=True, material="coat", hem_drop=0.6, flare=0.1, front_gap=26.0,
+                     folds=7)],
+        capes=[dict(name="cape", optional=True, hem_rel=-0.2, span=230.0, color=(0.15, 0.15, 0.18), dye=2,
+                    folds=8)],
+        hats=[dict(name="hat_top", style="top", optional=True, color=(0.05, 0.05, 0.055)),
+              dict(name="hat_bowler", style="bowler", optional=True, color=(0.06, 0.055, 0.05))],
+    ),
+    "noble_woman": dict(
+        style="gown",
+        body=dict(gender=0.0, age=0.5, muscle=0.45, weight=0.38, height=0.5, proportions=0.85),
+        skin="young_caucasian_female", skin_tint=(1.0, 0.96, 0.94),
+        eyes="green", brows="eyebrow002", lashes="Eyelashes01",
+        hair=("Wig_bun_blonde", (0.2, 0.15, 0.1)), hair_dye=3,
+        garments={
+            "Bodice": ("shirt", 0.006, "linen", (0.36, 0.22, 0.4)),
+            "Boots": ("boots", 0.006, "leather", (0.05, 0.04, 0.035)),
+        },
+        dyes={"Bodice": 1},
+        loose={"Bodice": {"Spine": 1.2, "Chest": 1.2, "UpperChest": 1.1}},
+        collar="trim",
+        rings=[dict(name="Trim", z0=-0.06, z1=0.0, bulge=0.01, color=(0.85, 0.8, 0.7), kind="linen", dye=2)],
+        skirts=[dict(name="Gown", color=(0.36, 0.22, 0.4), kind="linen", dye=1, hem_z=0.02, flare=0.34,
+                     front_gap=0.0, folds=12, fold_amp=0.022),
+                dict(name="bustle", optional=True, material="gown", hem_drop=0.4, flare=0.08, back_flare=0.2,
+                     front_gap=200.0, folds=5)],
+        capes=[dict(name="shawl", optional=True, hem_rel=0.1, span=210.0, color=(0.3, 0.12, 0.16),
+                    folds=6, kind="wool")],
+        hats=[dict(name="hat_wide", style="wide", optional=True, color=(0.75, 0.68, 0.5), kind="linen"),
+              dict(name="hat_small", style="small", optional=True, color=(0.3, 0.2, 0.3), dye=1)],
+    ),
     "vin": dict(
         style="vin",
         body=dict(gender=0.0, age=0.47, muscle=0.55, weight=0.34, height=0.52, proportions=0.8),
@@ -397,7 +487,8 @@ def hang(col: Collider, top_pts, bottom_z, rows, axis_xy, clearance=0.025, flare
         for r in range(rows + 1):
             t = r / rows
             z = z0 + (bottom_z - z0) * t
-            rad = np.hypot(x - ax, y - ay) + flare * t
+            fl = flare[c] if isinstance(flare, (list, tuple, np.ndarray)) else flare
+            rad = np.hypot(x - ax, y - ay) + fl * t
             body = col.outer_radius((ax, ay, z), d, 0.0)
             rad = max(rad, body + clearance, r_prev - 0.02 if r > 0 else 0)
             # a falling sheet keeps the widest radius it has passed, eased
@@ -420,6 +511,8 @@ def hang(col: Collider, top_pts, bottom_z, rows, axis_xy, clearance=0.025, flare
 def build_cloak(S, col: Collider, arm, spec, mat):
     """The mistcloak: over the shoulders and down the back, ribbons below
     `split_z`. Draped by `hang` (deterministic; no solver)."""
+    if "hem_z" not in spec:
+        spec["hem_z"] = S.head("Spine")[2] + spec["hem_rel"]
     neck = S.head("Neck")
     sh_r = S.tail("RightShoulder")
     cols = 97
@@ -519,8 +612,12 @@ def build_skirt(S, col: Collider, spec):
         r = col.outer_radius((0.0, hips[1], zc), d, 0.16) + 0.012
         top.append((d[0] * r, hips[1] + d[1] * r, zc))
     hem = spec["hem_z"] if "hem_z" in spec else zc - spec["hem_drop"]
-    return hang(col, top, hem, 36, (0.0, hips[1]), clearance=0.02, flare=spec.get("flare", 0.06),
-                folds=spec.get("folds", 7), fold_amp=0.012, seed=9)
+    # a bustle (`back_flare`) pushes the back of the skirt out
+    fl = [spec.get("flare", 0.06) + spec.get("back_flare", 0.0) * max(0.0, -math.cos(gap / 2 + (2 * math.pi - gap)
+                                                                                       * c / (cols - 1)))
+          for c in range(cols)]
+    return hang(col, top, hem, 36, (0.0, hips[1]), clearance=0.02, flare=fl,
+                folds=spec.get("folds", 7), fold_amp=spec.get("fold_amp", 0.012), seed=9)
 
 
 def weights_from_nearest(obj, ref_verts: np.ndarray, ref_weights: list, S, free_below=None):
@@ -585,6 +682,244 @@ def build_dagger(human, arm, name, side="R", blade=0.2, reverse=True):
         uv = [[(0.0, 0.0)] * len(f) for f in fs]
         ob = make_obj(f"Dagger{k}", vs, fs, uv, [{hand: 1.0}] * len(vs), gltf_mat(name + "_" + mat), arm,
                       smooth=(mat == "handle"))
+
+
+# ------------------------------------------------------- lathes, hats, props
+def lathe(objname, mat, cx, cy, prof, arm, n=40, arc=None, ystretch=1.08, weights=None, solid=0.004, sub=1):
+    """A surface of revolution about the vertical axis at (cx, cy): `prof`
+    is [(radius, z), ...]; `arc` (deg from, deg to; 0 = front +Y) leaves it
+    open (hoods)."""
+    verts, faces, fuv = [], [], []
+    closed = arc is None
+    cols = n if closed else n + 1
+    a0, a1 = (0.0, 360.0) if closed else arc
+    for r_, z in prof:
+        for i in range(cols):
+            a = math.radians(a0 + (a1 - a0) * i / n)
+            verts.append((cx + math.sin(a) * r_, cy + math.cos(a) * r_ * ystretch, z))
+    for k in range(len(prof) - 1):
+        for i in range(n):
+            j = (i + 1) % cols if closed else i + 1
+            faces.append((k * cols + i, (k + 1) * cols + i, (k + 1) * cols + j, k * cols + j))
+            fuv.append([(i / n * 4, k / 8), (i / n * 4, (k + 1) / 8), ((i + 1) / n * 4, (k + 1) / 8),
+                        ((i + 1) / n * 4, k / 8)])
+    w = weights if weights is not None else [{"Head": 1.0}] * len(verts)
+    if callable(w):
+        w = [w(v) for v in verts]
+    o = make_obj(objname, np.array(verts), faces, fuv, w, mat, arm)
+    if sub:
+        subdivide(o, sub)
+    if solid:
+        solidify(o, solid)
+    return o
+
+
+def head_frame(S, col):
+    """(cx, cy, crown z, radius(z)) of the skull for fitting hats."""
+    hd, tl = S.head("Head"), S.tail("Head")
+    cx, cy = (hd[0] + tl[0]) / 2, (hd[1] + tl[1]) / 2 - 0.01
+    top = col.top(cx, cy, tl[2])
+
+    def radius(z, clear=0.012):
+        rr = [col.outer_radius((cx, cy, z), (math.sin(a), math.cos(a), 0.0), 0.09)
+              for a in np.linspace(0, 6.28, 16, endpoint=False)]
+        return max(rr) + clear
+    return cx, cy, top, radius
+
+
+def build_hat(S, col, arm, name, h):
+    """Hats and head cloths by `style`: top, bowler, wide, small, cap, hood,
+    headscarf, kettle."""
+    cx, cy, top, radius = head_frame(S, col)
+    style = h["style"]
+    objname = ("G_" if h.get("optional") else "") + h["name"]
+    mat = gltf_mat(name + "_" + h["name"].lower())
+    if style in ("hood", "headscarf"):
+        deep = 0.3 if style == "hood" else 0.15
+        prof = []
+        for k in range(12):
+            t = k / 11
+            z = top + 0.02 - deep * t
+            r_ = radius(max(z, top - 0.22), 0.025 if style == "hood" else 0.012)
+            if style == "hood" and t > 0.7:
+                r_ += (t - 0.7) * 0.25   # spreads onto the shoulders
+            prof.append((r_ * math.sin(min(t * 3.0, 1.0) * math.pi / 2) + 0.004, z))
+        arc = (60, 300) if style == "hood" else (70, 290)
+        nk = S.head("Neck")[2]
+        wfn = lambda v: {"Head": 1.0} if v[2] > nk + 0.03 else {"Neck": 0.5, "UpperChest": 0.5}  # noqa: E731
+        return lathe(objname, mat, cx, cy, prof, arm, n=36, arc=arc, weights=wfn)
+    rim_z = top - h.get("depth", {"top": 0.05, "bowler": 0.06, "wide": 0.05, "small": 0.02, "cap": 0.05,
+                                  "kettle": 0.075}[style])
+    r0 = radius(rim_z)
+    brim = h.get("brim", {"top": 0.05, "bowler": 0.035, "wide": 0.13, "small": 0.0, "cap": 0.03,
+                          "kettle": 0.05}[style])
+    crown = {"top": 0.17, "bowler": 0.07, "wide": 0.07, "small": 0.05, "cap": 0.04, "kettle": 0.08}[style]
+    prof = [(0.0, top + crown)]
+    if style in ("bowler", "kettle", "cap"):
+        for k in range(1, 8):
+            ang = k / 7 * math.pi / 2
+            prof.append((r0 * math.sin(ang), rim_z + (top + crown - rim_z) * math.cos(ang)))
+    elif style == "small":
+        rs = r0 * 0.7
+        prof += [(rs, top + crown), (rs, rim_z)]
+    else:
+        prof += [(r0 * 0.96, top + crown), (r0 * 0.99, top + crown - 0.02), (r0, rim_z)]
+    if brim > 0:
+        prof += [(r0 + brim * 0.5, rim_z - 0.004), (r0 + brim, rim_z + (0.012 if style in ("top", "bowler") else -0.01))]
+    return lathe(objname, mat, cx, cy, prof, arm)
+
+
+def build_ring(S, col, arm, name, r):
+    """A band hugging the body between two heights (scarves, sashes)."""
+    c = S.head("Neck") if r.get("at", "neck") == "neck" else S.head("Hips")
+    z0, z1 = c[2] + r["z0"], c[2] + r["z1"]
+    rows, n = 5, 48
+    verts, faces, fuv = [], [], []
+    for k in range(rows + 1):
+        z = z0 + (z1 - z0) * k / rows
+        bulge = math.sin(math.pi * k / rows) * r.get("bulge", 0.02)
+        for i in range(n):
+            a = 2 * math.pi * i / n
+            d = (math.sin(a), math.cos(a), 0.0)
+            rad = col.outer_radius((c[0], c[1], z), d, 0.08) + r.get("off", 0.01) + bulge
+            verts.append((c[0] + d[0] * rad, c[1] + d[1] * rad, z))
+    for k in range(rows):
+        for i in range(n):
+            j = (i + 1) % n
+            faces.append((k * n + i, k * n + j, (k + 1) * n + j, (k + 1) * n + i))
+            fuv.append([(i / n * 6, k / rows), ((i + 1) / n * 6, k / rows), ((i + 1) / n * 6, (k + 1) / rows),
+                        (i / n * 6, (k + 1) / rows)])
+    bone = r.get("bone", "Neck")
+    o = make_obj(("G_" if r.get("optional") else "") + r["name"], np.array(verts), faces, fuv,
+                 [{bone: 0.6, "UpperChest": 0.4} if bone == "Neck" else {bone: 1.0}] * len(verts),
+                 gltf_mat(name + "_" + r["name"].lower()), arm)
+    subdivide(o, 1)
+    solidify(o, 0.004)
+    return o
+
+
+def blob(objname, mat, center, radii, bone, arm, segs=16):
+    """An ellipsoid prop (sack, pouch, bun)."""
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=segs, v_segments=segs // 2, radius=1.0)
+    for v in bm.verts:
+        v.co = mathutils.Vector((v.co.x * radii[0], v.co.y * radii[1], v.co.z * radii[2])) + \
+            mathutils.Vector(tuple(center))
+    me = bpy.data.meshes.new(objname)
+    bm.to_mesh(me)
+    bm.free()
+    me.uv_layers.new(name="UVMap")
+    me.materials.append(mat)
+    for p_ in me.polygons:
+        p_.use_smooth = True
+    o = bpy.data.objects.new(objname, me)
+    bpy.context.scene.collection.objects.link(o)
+    g = o.vertex_groups.new(name=bone)
+    g.add(list(range(len(me.vertices))), 1.0, "REPLACE")
+    return o
+
+
+def rods(objname_prefix, mat_of, parts, bone, arm, p_hint):
+    """Cylinders/prisms [(a, b, ra, rb, n, mat, flat)] bound to `bone`."""
+    for k, (a, b, ra, rb, n, mat, flat) in enumerate(parts):
+        ax = (b - a) / np.linalg.norm(b - a)
+        u = np.cross(ax, p_hint)
+        if np.linalg.norm(u) < 1e-6:
+            u = np.cross(ax, np.array([1.0, 0, 0]))
+        u /= np.linalg.norm(u)
+        w = np.cross(ax, u)
+        vs, fs = [], []
+        for c, r_ in ((a, ra), (b, rb)):
+            for i in range(n):
+                an = 2 * math.pi * i / n
+                vs.append(c + u * math.cos(an) * r_ + w * math.sin(an) * r_ * flat)
+        for i in range(n):
+            j = (i + 1) % n
+            fs.append((i, j, n + j, n + i))
+        for i in range(1, n - 1):
+            fs.append((0, i + 1, i))
+            fs.append((n, n + i, n + i + 1))
+        make_obj(f"{objname_prefix}{k}", np.array(vs), fs, [[(0.0, 0.0)] * len(f) for f in fs],
+                 [{bone: 1.0}] * len(vs), mat_of(mat), arm, smooth=(n > 6))
+
+
+def build_prop(human, S, col, arm, name, pr):
+    """Carried and worn props: sack, basket, pouch, book, cane, staff, axe."""
+    kind = pr["kind"]
+    objname = ("G_" if pr.get("optional") else "") + pr["name"]
+    mat_of = lambda m: gltf_mat(name + "_" + m)  # noqa: E731
+    if kind == "sack":   # a bundle slung on the back
+        c = S.head("UpperChest") + np.array([0.0, -0.2, -0.02])
+        return blob(objname, mat_of(pr["name"].lower()), c, (0.17, 0.12, 0.2), "UpperChest", arm)
+    if kind == "pouch":
+        side = pr.get("side", 1)
+        hips = S.head("Hips")
+        zc = S.head("Spine")[2] - 0.08
+        r = col.outer_radius((hips[0], hips[1], zc), (side * 0.95, 0.3, 0.0), 0.17)
+        c = np.array([hips[0] + side * 0.95 * (r + 0.03), hips[1] + 0.3 * (r + 0.03), zc])
+        return blob(objname, mat_of(pr["name"].lower()), c, (0.035, 0.03, 0.05), "Hips", arm, segs=12)
+    if kind == "basket":  # on the left forearm
+        a0, a1 = S.head("LeftLowerArm"), S.head("LeftHand")
+        c = a0 * 0.45 + a1 * 0.55 + np.array([0.0, 0.02, -0.16])
+        lathe(objname, mat_of(pr["name"].lower()), c[0], c[1],
+              [(0.0, c[2] - 0.08), (0.13, c[2] - 0.08), (0.16, c[2] + 0.06)], arm, n=24, ystretch=0.75,
+              weights=[{"LeftLowerArm": 1.0}] * 75, solid=0.006, sub=1)
+        return None
+    o, p, d, t = human.grip_frame(pr.get("hand", "R"))
+    hand = ("Right" if pr.get("hand", "R") == "R" else "Left") + "Hand"
+    fwd = np.array([0.0, 1.0, 0.0])
+    dn = d / np.linalg.norm(d)
+    g = fwd - dn * np.dot(dn, fwd)
+    g /= np.linalg.norm(g)
+    if kind == "book":
+        c = o + p * 0.03
+        bm = bmesh.new()
+        bmesh.ops.create_cube(bm, size=1.0)
+        R = np.column_stack([np.cross(g, dn), g, dn])
+        for v in bm.verts:
+            v.co = mathutils.Vector(tuple(R @ np.array([v.co.x * 0.04, v.co.y * 0.17, v.co.z * 0.23]) + c))
+        me = bpy.data.meshes.new(objname)
+        bm.to_mesh(me)
+        bm.free()
+        me.uv_layers.new(name="UVMap")
+        me.materials.append(mat_of(pr["name"].lower()))
+        ob = bpy.data.objects.new(objname, me)
+        bpy.context.scene.collection.objects.link(ob)
+        gr = ob.vertex_groups.new(name=hand)
+        gr.add(list(range(len(me.vertices))), 1.0, "REPLACE")
+        return ob
+    if kind == "cane":     # from the fist to the ground
+        rods(objname, mat_of, [(o + g * 0.05, o - g * 0.92, 0.012, 0.011, 10, "shaft", 1.0),
+                               (o + g * 0.05, o + g * 0.1, 0.02, 0.02, 10, "steel", 1.0)], hand, arm, p)
+        return None
+    if kind == "staff":    # a quarterstaff through the fist
+        rods(objname, mat_of, [(o - g * 0.75, o + g * 1.1, 0.018, 0.017, 10, "shaft", 1.0)], hand, arm, p)
+        return None
+    if kind == "axe":      # an obsidian-headed axe
+        top = o + g * 0.62
+        side = np.cross(g, p)
+        side /= np.linalg.norm(side)
+        rods(objname, mat_of, [(o - g * 0.2, top, 0.016, 0.015, 10, "shaft", 1.0),
+                               (top - g * 0.05 + side * 0.02, top + g * 0.05 + side * 0.2, 0.06, 0.04, 4,
+                                "obsidian", 0.15)], hand, arm, p)
+        return None
+    raise ValueError(kind)
+
+
+def build_spikes(S, arm, name, eyes_v):
+    """Inquisitor spikes: steel cones driven through both eyes, their flat
+    heads in the sockets and their points out of the back of the skull."""
+    pts = np.asarray(eyes_v)
+    left = pts[pts[:, 0] < 0].mean(axis=0)
+    right = pts[pts[:, 0] > 0].mean(axis=0)
+    back = np.array([0.0, -1.0, 0.0])
+    for k, e in enumerate((left, right)):
+        head = e + np.array([0, 0.012, 0])
+        rods(f"Spike{k}_", lambda m: gltf_mat(name + "_" + m),
+             [(head + np.array([0, 0.004, 0]), head, 0.021, 0.021, 16, "spike", 1.0),
+              (head, head + back * 0.2, 0.014, 0.004, 12, "spike", 1.0),
+              (head + back * 0.2, head + back * 0.26, 0.004, 0.0005, 8, "spike", 1.0)],
+             "Head", arm, np.array([1.0, 0.0, 0.0]))
 
 
 # --------------------------------------------------------------------- helmets
@@ -875,6 +1210,7 @@ def build(name):
     # eyes: MakeHuman maps the cornea shell to a transparent corner of the
     # texture; it gets its own glossy see-through material
     pv, pf, pu, pw, _ = human.proxy("eyes/HighPolyEyes/HighPolyEyes.json")
+    eye_verts = pv
     is_cornea = [np.mean([c[0] for c in u]) > 0.85 and np.mean([c[1] for c in u]) < 0.15 for u in pu]
     for label, sel in (("Eyes", False), ("Cornea", True)):
         fsel = [k for k, c in enumerate(is_cornea) if c == sel]
@@ -899,7 +1235,11 @@ def build(name):
     for rel, label, dst, tint in (
             (f"eyebrows/{spec['brows']}/{spec['brows']}.json", "Brows", "brows.png", hair_tint),
             (f"eyelashes/{spec['lashes']}/{spec['lashes']}.json", "Lashes", "lashes.png", (0.09, 0.07, 0.055)),
-            (f"hair/{hair_name}/{hair_name}.json", "Hair", "hair.png", hair_tint)):
+            (f"hair/{hair_name}/{hair_name}.json", "Hair", "hair.png", hair_tint)) + \
+            tuple((f"hair/{bd}/{bd}.json", "Beard" if i == 0 else f"Beard{i}", f"beard{i}.png", hair_tint)
+                  for i, bd in enumerate(spec.get("beards", []))):
+        if label == "Hair" and hair_name is None:
+            continue
         proxy(rel, label, dst, tint=tint)
         from PIL import Image
         a_ = np.asarray(Image.open(os.path.join(tdir, dst)).convert("RGBA")).astype(np.float64) / 255.0
@@ -1029,6 +1369,56 @@ def build(name):
         solidify(o, 0.004)
         write_cloth(mdir, name, "cloak", c["color"], "cloak", 2, dye=c.get("dye", 0), normal_scale=0.9)
 
+    # generic extra pieces
+    def cloth_mat(part, d, default_kind="wool", uv=12):
+        write_cloth(mdir, name, part, d.get("color", (0.3, 0.3, 0.3)), d.get("kind", default_kind),
+                    d.get("uv", uv), dye=d.get("dye", 0), metallic=d.get("metallic", 0.0))
+
+    for sk in spec.get("skirts", []):
+        v, f, uv = build_skirt(S, col, sk)
+        o = make_obj(("G_" if sk.get("optional") else "") + sk["name"], v, f,
+                     [[(a * 6, b * 2) for a, b in u] for u in uv], skirt_weights(v),
+                     gltf_mat(name + "_" + sk.get("material", sk["name"].lower())), arm)
+        subdivide(o, 1)
+        solidify(o, 0.004)
+        if "material" not in sk:
+            cloth_mat(sk["name"].lower(), sk)
+    for cp in spec.get("capes", []):
+        cp = dict(cp)
+        cp.setdefault("split_z", -1.0)
+        v, f, uv = build_cloak(S, col, None, cp, None)
+        o = make_obj(("G_" if cp.get("optional") else "") + cp["name"], v, f, uv,
+                     nearest_weights(v, free_below=S.head("Spine")[2]), gltf_mat(name + "_" + cp["name"].lower()), arm)
+        subdivide(o, 1)
+        solidify(o, 0.004)
+        cloth_mat(cp["name"].lower(), cp, "cloak", 3)
+    for h in spec.get("hats", []):
+        build_hat(S, col, arm, name, h)
+        cloth_mat(h["name"].lower(), h, h.get("kind", "wool"), 6)
+    for r in spec.get("rings", []):
+        build_ring(S, col, arm, name, r)
+        cloth_mat(r["name"].lower(), r, r.get("kind", "wool"), 8)
+    for pr in spec.get("props", []):
+        build_prop(human, S, col, arm, name, pr)
+        if pr["kind"] in ("sack", "basket", "pouch", "book"):
+            cloth_mat(pr["name"].lower(), pr, {"sack": "linen", "basket": "leather", "pouch": "leather",
+                                               "book": "leather"}[pr["kind"]], 4)
+        else:
+            write_tres(os.path.join(mdir, "shaft.tres"),
+                       {"resource_name": f'"{name}_shaft"', "albedo_color": "Color(0.26, 0.18, 0.11, 1)",
+                        "roughness": 0.75}, {})
+            write_tres(os.path.join(mdir, "steel.tres"),
+                       {"resource_name": f'"{name}_steel"', "albedo_color": "Color(0.55, 0.56, 0.58, 1)",
+                        "metallic": 0.9, "roughness": 0.3}, {})
+            write_tres(os.path.join(mdir, "obsidian.tres"),
+                       {"resource_name": f'"{name}_obsidian"', "albedo_color": "Color(0.015, 0.014, 0.018, 1)",
+                        "roughness": 0.05, "metallic_specular": 0.9}, {})
+    if spec.get("spikes"):
+        build_spikes(S, arm, name, eye_verts)
+        write_tres(os.path.join(mdir, "spike.tres"),
+                   {"resource_name": f'"{name}_spike"', "albedo_color": "Color(0.5, 0.5, 0.52, 1)",
+                    "metallic": 0.9, "roughness": 0.25}, {})
+
     for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
         bind(o, arm)
 
@@ -1082,6 +1472,10 @@ def write_godot_files(name, meta):
     with open(path, "w") as f:
         f.write(txt)
     gf.write_scene(name, meta)
+    from chars_npc import PRESETS
+    for pid, (base, garments, dyes, scale) in PRESETS.items():
+        if base == name:
+            gf.write_scene(pid, meta, base=base, variant=(garments, dyes, scale))
 
 
 if __name__ == "__main__":

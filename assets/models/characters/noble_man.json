@@ -1,52 +1,57 @@
 {
  "name": "noble_man",
  "style": "noble_m",
- "tris": 4416,
- "height": 1.8165781309927678,
- "garments": {
-  "tails": 96,
-  "longcoat": 216,
-  "hat_top": 184,
-  "hat_bowler": 208,
-  "cape": 160
- },
- "tris_max": 5280,
+ "tris": 342226,
+ "height": 1.8161473274230957,
+ "garments": {},
+ "tris_max": 342226,
  "materials": [
-  "Cloak",
-  "Cloth"
+  "noble_man_boots",
+  "noble_man_brows",
+  "noble_man_cape",
+  "noble_man_coat",
+  "noble_man_cornea",
+  "noble_man_cravat",
+  "noble_man_eyes",
+  "noble_man_hair",
+  "noble_man_hat_bowler",
+  "noble_man_hat_top",
+  "noble_man_lashes",
+  "noble_man_skin",
+  "noble_man_trousers"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.587949485001941,
-    -0.0008041526123437484,
-    0.9702032845699801
+    0.5442200613492081,
+    0.29001565739752844,
+    1.094750235862165
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.587949485001941,
-    -0.0008041526123437484,
-    0.9702032845699801
+    -0.5442200613492081,
+    0.29001565739752844,
+    1.094750235862165
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10285714285714287,
-    1.359
+    0.0932875,
+    1.3117950000000003
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.002057142857142857,
-    1.710257142857143
+    0.0462525,
+    1.7656625000000004
    ]
   }
  },
@@ -80,5 +85,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

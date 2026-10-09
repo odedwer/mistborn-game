@@ -1,52 +1,57 @@
 {
  "name": "noble_woman",
  "style": "gown",
- "tris": 4782,
- "height": 1.6787349099919273,
- "garments": {
-  "bustle": 80,
-  "hat_wide": 216,
-  "hat_small": 108,
-  "shawl": 160
- },
- "tris_max": 5346,
+ "tris": 331412,
+ "height": 1.6106047630310059,
+ "garments": {},
+ "tris_max": 331412,
  "materials": [
-  "Cloak",
-  "Cloth",
-  "Metal"
+  "noble_woman_bodice",
+  "noble_woman_boots",
+  "noble_woman_brows",
+  "noble_woman_cornea",
+  "noble_woman_eyes",
+  "noble_woman_gown",
+  "noble_woman_hair",
+  "noble_woman_hat_small",
+  "noble_woman_hat_wide",
+  "noble_woman_lashes",
+  "noble_woman_shawl",
+  "noble_woman_skin",
+  "noble_woman_trim"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5175572234700441,
-    -0.0007416074091614513,
-    0.8947430291034258
+    0.4519412442115418,
+    0.21788137686036554,
+    0.9417780706267385
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5175572234700441,
-    -0.0007416074091614513,
-    0.8947430291034258
+    -0.4519412442115418,
+    0.21788137686036554,
+    0.9417780706267385
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.09485714285714286,
-    1.2532999999999999
+    0.1292166,
+    1.1628776000000003
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.001897142857142857,
-    1.5772371428571428
+    0.0407382,
+    1.5765542000000003
    ]
   }
  },
@@ -80,5 +85,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

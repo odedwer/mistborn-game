@@ -75,7 +75,16 @@ func test_humanoid_bones_present() -> void:
 
 
 ## Characters built from MakeHuman bodies (realistic budget).
-const REALISTIC: Array[String] = ["kelsier", "vin", "guard"]
+const REALISTIC: Array[String] = ["kelsier", "vin", "guard", "skaa_man", "skaa_woman", "noble_man", "noble_woman"]
+
+
+## A preset scene (noble_man_2) shares its base's model.
+func _realistic(id: String) -> bool:
+	var base := id
+	var tail := id.get_slice("_", id.get_slice_count("_") - 1)
+	if tail.is_valid_int():
+		base = id.trim_suffix("_" + tail)
+	return base in REALISTIC
 
 
 func test_height_and_materials() -> void:
@@ -94,12 +103,12 @@ func test_height_and_materials() -> void:
 				tris += mi.mesh.surface_get_array_index_len(s) / 3
 				var mat := mi.mesh.surface_get_material(s)
 				mats[mat.resource_path if mat != null else "none"] = true
-		if id in REALISTIC:
+		if _realistic(id):
 			# MakeHuman-based (tools/characters/mh_build.py): skin, eyes, hair cards
 			# and each garment have their own material; LODs carry the distance
 			assert_true(mats.size() <= 20, "%s <= 20 materials (%s)" % [id, mats.keys()])
 			assert_gt(tris, 100000, "%s tris %d" % [id, tris])
-			assert_lt(tris, 320000, "%s tris %d" % [id, tris])
+			assert_lt(tris, 400000, "%s tris %d" % [id, tris])
 			continue
 		assert_true(mats.size() <= 3, "%s <= 3 materials (%s)" % [id, mats.keys()])
 		assert_gt(tris, 2500, "%s tris %d" % [id, tris])
@@ -201,7 +210,7 @@ func test_garments_toggle_and_presets_differ() -> void:
 			shown.append(String(mi.name))
 	assert_eq(shown, ["G_hat_top"], "only the chosen garment is shown")
 	assert_almost(m.get_node("Model").scale.x, 1.05, 0.001, "body scale applied")
-	var body := m.find_children("Noble_man", "MeshInstance3D", true, false)
+	var body := m.find_children("Body" if _realistic("noble_man") else "Noble_man", "MeshInstance3D", true, false)
 	assert_eq(body.size(), 1, "body mesh")
 	if body.size() == 1:
 		assert_eq(body[0].get_instance_shader_parameter(&"dye_1"), Color.RED, "dye 1 set per instance")

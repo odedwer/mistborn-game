@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=3]
+
+[ext_resource type="Shader" path="res://assets/models/characters/materials/hd_cloth.gdshader" id="1"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/wool_albedo.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/wool_normal.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/wool_roughness.png" id="4"]
+
+[resource]
+resource_name = "noble_man_coat"
+shader = ExtResource("1")
+shader_parameter/albedo_color = Color(0.3400, 0.3400, 0.4000, 1)
+shader_parameter/uv_scale = Vector2(18, 18)
+shader_parameter/normal_scale = 0.8
+shader_parameter/metallic = 0.0
+shader_parameter/dye_slot = 1
+shader_parameter/albedo_texture = ExtResource("2")
+shader_parameter/normal_texture = ExtResource("3")
+shader_parameter/roughness_texture = ExtResource("4")

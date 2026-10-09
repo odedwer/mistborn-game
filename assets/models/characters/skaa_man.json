@@ -1,50 +1,60 @@
 {
  "name": "skaa_man",
  "style": "skaa",
- "tris": 4428,
- "height": 1.7560243627384668,
- "garments": {
-  "cap": 288,
-  "hood": 176,
-  "sack": 110,
-  "scarf": 24
- },
- "tris_max": 5026,
+ "tris": 159866,
+ "height": 1.7029553651809692,
+ "garments": {},
+ "tris_max": 159866,
  "materials": [
-  "Cloth"
+  "skaa_man_beard",
+  "skaa_man_belt",
+  "skaa_man_boots",
+  "skaa_man_brows",
+  "skaa_man_buckle",
+  "skaa_man_cap",
+  "skaa_man_cornea",
+  "skaa_man_eyes",
+  "skaa_man_hair",
+  "skaa_man_hood",
+  "skaa_man_lashes",
+  "skaa_man_sack",
+  "skaa_man_scarf",
+  "skaa_man_shirt",
+  "skaa_man_skin",
+  "skaa_man_trousers"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5643740259780669,
-    -0.0007773475252656203,
-    0.9378631750843143
+    0.4959319937719069,
+    0.26792518244062824,
+    1.0246335402280762
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5643740259780669,
-    -0.0007773475252656203,
-    0.9378631750843143
+    -0.4959319937719069,
+    0.26792518244062824,
+    1.0246335402280762
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.09942857142857144,
-    1.3137
+    0.08978649999999999,
+    1.2297815
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0019885714285714285,
-    1.6532485714285714
+    0.044281000000000015,
+    1.6577680000000001
    ]
   }
  },
@@ -78,5 +88,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }
