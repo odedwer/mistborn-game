@@ -1,0 +1,12 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/eyes_grey.png" id="1"]
+
+[resource]
+resource_name = "clubs_eyes"
+roughness = 0.08
+metallic_specular = 0.7
+clearcoat_enabled = true
+clearcoat = 1.0
+clearcoat_roughness = 0.02
+albedo_texture = ExtResource("1")

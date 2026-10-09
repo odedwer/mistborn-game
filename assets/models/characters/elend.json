@@ -1,45 +1,55 @@
 {
  "name": "elend",
  "style": "elend",
- "tris": 4520,
- "height": 1.836762332448243,
+ "tris": 192950,
+ "height": 1.8338394165039062,
  "garments": {},
- "tris_max": 4520,
+ "tris_max": 192950,
  "materials": [
-  "Cloth"
+  "elend_book",
+  "elend_boots",
+  "elend_brows",
+  "elend_coat",
+  "elend_cornea",
+  "elend_cravat",
+  "elend_eyes",
+  "elend_hair",
+  "elend_lashes",
+  "elend_skin",
+  "elend_trousers"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5882422570575181,
-    -0.0008130876413697859,
-    0.9809833210652021
+    0.5411567375493003,
+    0.29565333434777247,
+    1.1007783713958217
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5882422570575181,
-    -0.0008130876413697859,
-    0.9809833210652021
+    -0.5318455147943968,
+    0.29224197195984714,
+    1.1002497813077547
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10400000000000001,
-    1.3741
+    0.095724,
+    1.3235700000000004
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0020800000000000003,
-    1.7292600000000002
+    0.047390000000000015,
+    1.7827280000000005
    ]
   }
  },
@@ -73,5 +83,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

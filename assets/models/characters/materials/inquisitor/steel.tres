@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" load_steps=1 format=3]
+
+
+[resource]
+resource_name = "inquisitor_steel"
+albedo_color = Color(0.55, 0.56, 0.58, 1)
+metallic = 0.9
+roughness = 0.3

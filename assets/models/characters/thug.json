@@ -1,45 +1,56 @@
 {
  "name": "thug",
  "style": "thug",
- "tris": 4334,
- "height": 2.1193516862331707,
+ "tris": 136054,
+ "height": 2.0650267601013184,
  "garments": {},
- "tris_max": 4334,
+ "tris_max": 136054,
  "materials": [
-  "Cloth"
+  "thug_belt",
+  "thug_boots",
+  "thug_brows",
+  "thug_buckle",
+  "thug_cornea",
+  "thug_eyes",
+  "thug_hair",
+  "thug_lashes",
+  "thug_shaft",
+  "thug_skin",
+  "thug_trousers",
+  "thug_vest"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.7170286378968705,
-    -0.0009381780477343647,
-    1.1159399584382792
+    0.5901754268840966,
+    0.32984200799317187,
+    1.2474556853555296
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.7170286378968705,
-    -0.0009381780477343647,
-    1.1159399584382792
+    -0.600372120848214,
+    0.3334452134250828,
+    1.2481656069906708
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.12,
-    1.5855000000000001
+    0.095468,
+    1.4970499999999998
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0024,
-    1.9953000000000003
+    0.04843,
+    2.001016
    ]
   }
  },
@@ -73,5 +84,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

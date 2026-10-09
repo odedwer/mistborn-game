@@ -7,10 +7,10 @@
 script = ExtResource("1")
 character_id = &"obligator"
 sockets = {
-"hand_r": ["RightHand", Vector3(-0.5753, 0.9740, -0.0008)],
-"hand_l": ["LeftHand", Vector3(0.5753, 0.9740, -0.0008)],
-"chest": ["UpperChest", Vector3(-0.0000, 1.3741, 0.1040)],
-"head": ["Head", Vector3(-0.0000, 1.7293, -0.0021)]
+"hand_r": ["RightHand", Vector3(-0.5259, 1.0986, 0.2834)],
+"hand_l": ["LeftHand", Vector3(0.5259, 1.0986, 0.2834)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.3102, 0.0884)],
+"head": ["Head", Vector3(-0.0000, 1.7590, 0.0441)]
 }
 lantern_light = false
 variant_pool = {

@@ -75,7 +75,7 @@ func test_humanoid_bones_present() -> void:
 
 
 ## Characters built from MakeHuman bodies (realistic budget).
-const REALISTIC: Array[String] = ["kelsier", "vin", "guard", "skaa_man", "skaa_woman", "noble_man", "noble_woman"]
+const REALISTIC: Array[String] = ["kelsier", "vin", "guard", "skaa_man", "skaa_woman", "noble_man", "noble_woman", "hazekiller", "thug", "coinshot", "inquisitor", "dockson", "breeze", "ham", "clubs", "spook", "sazed", "marsh", "elend", "obligator", "obligator_2", "vin_gown"]
 
 
 ## A preset scene (noble_man_2) shares its base's model.

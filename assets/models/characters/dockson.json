@@ -1,45 +1,56 @@
 {
  "name": "dockson",
  "style": "dockson",
- "tris": 5460,
- "height": 1.7762097280818172,
+ "tris": 191328,
+ "height": 1.7261186838150024,
  "garments": {},
- "tris_max": 5460,
+ "tris_max": 191328,
  "materials": [
-  "Cloth"
+  "dockson_beard",
+  "dockson_belt",
+  "dockson_boots",
+  "dockson_brows",
+  "dockson_buckle",
+  "dockson_coat",
+  "dockson_cornea",
+  "dockson_eyes",
+  "dockson_hair",
+  "dockson_lashes",
+  "dockson_skin",
+  "dockson_trousers"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5829296551765012,
-    -0.0007862825542916622,
-    0.948643211579536
+    0.5066049927850182,
+    0.27259726506918225,
+    1.039587963409973
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5829296551765012,
-    -0.0007862825542916622,
-    0.948643211579536
+    -0.5066049927850182,
+    0.27259726506918225,
+    1.039587963409973
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10057142857142859,
-    1.3288
+    0.090856,
+    1.246041
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0020114285714285716,
-    1.6722514285714285
+    0.044797000000000003,
+    1.6800590000000004
    ]
   }
  },
@@ -73,5 +84,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

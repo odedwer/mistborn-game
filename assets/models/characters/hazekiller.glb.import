@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cpsd6je4fkfm0"
+uid="uid://dabbosuekeo5i"
 path="res://.godot/imported/hazekiller.glb-39da4be828acff47ca110c023d58dce2.scn"
 
 [deps]
@@ -41,13 +41,83 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"hazekiller_beard": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/beard.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/beard.tres"
+},
+"hazekiller_belt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/belt.tres"
+},
+"hazekiller_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/boots.tres"
+},
+"hazekiller_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/brows.tres"
+},
+"hazekiller_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/buckle.tres"
+},
+"hazekiller_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/cornea.tres"
+},
+"hazekiller_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/eyes.tres"
+},
+"hazekiller_gloves": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/gloves.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/gloves.tres"
+},
+"hazekiller_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/hair.tres"
+},
+"hazekiller_jerkin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/jerkin.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/jerkin.tres"
+},
+"hazekiller_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/lashes.tres"
+},
+"hazekiller_shaft": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/shaft.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/shaft.tres"
+},
+"hazekiller_shirt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/shirt.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/shirt.tres"
+},
+"hazekiller_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/skin.tres"
+},
+"hazekiller_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/hazekiller/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/hazekiller/trousers.tres"
 }
 }
 }
 gltf/naming_version=2
 gltf/embedded_image_handling=1
-gltf/texture_map_mode=1
+gltf/texture_map_mode=0

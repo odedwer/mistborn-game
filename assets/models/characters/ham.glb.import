@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b7dg5v03yj70c"
+uid="uid://bemwj5ry6ywhr"
 path="res://.godot/imported/ham.glb-85724651dcc6e527477f5a303299b251.scn"
 
 [deps]
@@ -41,15 +41,60 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"ham_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/belt.tres"
 },
-"Metal": {
+"ham_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/boots.tres"
+},
+"ham_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/brows.tres"
+},
+"ham_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/buckle.tres"
+},
+"ham_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/cornea.tres"
+},
+"ham_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/eyes.tres"
+},
+"ham_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/hair.tres"
+},
+"ham_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/lashes.tres"
+},
+"ham_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/skin.tres"
+},
+"ham_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/trousers.tres"
+},
+"ham_vest": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/ham/vest.tres",
+"use_external/path": "res://assets/models/characters/materials/ham/vest.tres"
 }
 }
 }

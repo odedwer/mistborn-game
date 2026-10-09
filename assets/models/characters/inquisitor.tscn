@@ -7,10 +7,10 @@
 script = ExtResource("1")
 character_id = &"inquisitor"
 sockets = {
-"chest": ["UpperChest", Vector3(-0.0000, 1.4900, 0.1143)],
-"hand_r": ["RightHand", Vector3(-0.6563, 1.0237, 0.0010)],
-"hand_l": ["LeftHand", Vector3(0.6563, 1.0237, 0.0010)],
-"head": ["Head", Vector3(-0.0000, 1.9003, -0.0023)]
+"hand_r": ["RightHand", Vector3(-0.5715, 1.2156, 0.3138)],
+"hand_l": ["LeftHand", Vector3(0.5813, 1.2163, 0.3172)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.4501, 0.0908)],
+"head": ["Head", Vector3(-0.0000, 1.9397, 0.0460)]
 }
 lantern_light = false
 

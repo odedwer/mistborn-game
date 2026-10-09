@@ -1,45 +1,59 @@
 {
  "name": "hazekiller",
  "style": "haze",
- "tris": 4718,
- "height": 1.7872844677044843,
+ "tris": 238100,
+ "height": 1.8161473274230957,
  "garments": {},
- "tris_max": 4718,
+ "tris_max": 238100,
  "materials": [
-  "Cloth"
+  "hazekiller_beard",
+  "hazekiller_belt",
+  "hazekiller_boots",
+  "hazekiller_brows",
+  "hazekiller_buckle",
+  "hazekiller_cornea",
+  "hazekiller_eyes",
+  "hazekiller_gloves",
+  "hazekiller_hair",
+  "hazekiller_jerkin",
+  "hazekiller_lashes",
+  "hazekiller_shaft",
+  "hazekiller_shirt",
+  "hazekiller_skin",
+  "hazekiller_trousers"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5728725123193582,
-    -0.0007862825542916623,
-    0.948643211579536
+    0.5243002843043302,
+    0.2866711963447238,
+    1.0932948904573072
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5728725123193582,
-    -0.0007862825542916623,
-    0.948643211579536
+    -0.5334242031117133,
+    0.29002234529824633,
+    1.0938083049417033
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10057142857142859,
-    1.3288
+    0.09334959999999999,
+    1.3108617000000002
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0020114285714285716,
-    1.6722514285714285
+    0.04625250000000001,
+    1.7656625000000004
    ]
   }
  },
@@ -73,5 +87,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cyjp3jr1pixf2"
+uid="uid://cje26fyc3pmyv"
 path="res://.godot/imported/sazed.glb-cba7d808609145ecb16d680ff471bfd9.scn"
 
 [deps]
@@ -41,15 +41,50 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"sazed_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/boots.tres"
 },
-"Metal": {
+"sazed_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/brows.tres"
+},
+"sazed_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/cornea.tres"
+},
+"sazed_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/eyes.tres"
+},
+"sazed_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/lashes.tres"
+},
+"sazed_robe": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/robe.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/robe.tres"
+},
+"sazed_sash": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/sash.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/sash.tres"
+},
+"sazed_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/skin.tres"
+},
+"sazed_trim": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/sazed/trim.tres",
+"use_external/path": "res://assets/models/characters/materials/sazed/trim.tres"
 }
 }
 }

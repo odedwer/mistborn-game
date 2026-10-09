@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cxc38ja045aoh"
+uid="uid://8rjdrowuwf21"
 path="res://.godot/imported/coinshot.glb-cf18c6dd25391598b76837928d1aee7b.scn"
 
 [deps]
@@ -41,20 +41,75 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloak": {
+"coinshot_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloak.tres",
-"use_external/path": "res://assets/models/characters/materials/cloak.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/belt.tres"
 },
-"Cloth": {
+"coinshot_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/boots.tres"
 },
-"Metal": {
+"coinshot_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/brows.tres"
+},
+"coinshot_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/buckle.tres"
+},
+"coinshot_cloak": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/cloak.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/cloak.tres"
+},
+"coinshot_coat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/coat.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/coat.tres"
+},
+"coinshot_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/cornea.tres"
+},
+"coinshot_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/eyes.tres"
+},
+"coinshot_gloves": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/gloves.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/gloves.tres"
+},
+"coinshot_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/hair.tres"
+},
+"coinshot_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/lashes.tres"
+},
+"coinshot_pouch": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/pouch.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/pouch.tres"
+},
+"coinshot_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/skin.tres"
+},
+"coinshot_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/coinshot/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/coinshot/trousers.tres"
 }
 }
 }

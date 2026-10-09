@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cgpkvmh25jm60"
+uid="uid://b8c7426mc5ns6"
 path="res://.godot/imported/elend.glb-69c4a0190289be4cb5c44b2f17dc8390.scn"
 
 [deps]
@@ -41,10 +41,60 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"elend_book": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/book.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/book.tres"
+},
+"elend_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/boots.tres"
+},
+"elend_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/brows.tres"
+},
+"elend_coat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/coat.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/coat.tres"
+},
+"elend_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/cornea.tres"
+},
+"elend_cravat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/cravat.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/cravat.tres"
+},
+"elend_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/eyes.tres"
+},
+"elend_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/hair.tres"
+},
+"elend_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/lashes.tres"
+},
+"elend_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/skin.tres"
+},
+"elend_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/elend/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/elend/trousers.tres"
 }
 }
 }

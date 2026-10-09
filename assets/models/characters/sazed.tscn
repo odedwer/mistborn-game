@@ -7,10 +7,10 @@
 script = ExtResource("1")
 character_id = &"sazed"
 sockets = {
-"hand_r": ["RightHand", Vector3(-0.6634, 1.0588, 0.0002)],
-"hand_l": ["LeftHand", Vector3(0.6634, 1.0588, 0.0002)],
-"chest": ["UpperChest", Vector3(-0.0000, 1.5251, 0.1154)],
-"head": ["Head", Vector3(-0.0000, 1.9193, -0.0023)]
+"hand_r": ["RightHand", Vector3(-0.5893, 1.2348, 0.3219)],
+"hand_l": ["LeftHand", Vector3(0.5893, 1.2348, 0.3219)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.4736, 0.0906)],
+"head": ["Head", Vector3(-0.0000, 1.9670, 0.0462)]
 }
 lantern_light = false
 

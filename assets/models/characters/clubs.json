@@ -1,46 +1,57 @@
 {
  "name": "clubs",
  "style": "clubs",
- "tris": 4664,
- "height": 1.655215454760008,
+ "tris": 236468,
+ "height": 1.667258381843567,
  "garments": {},
- "tris_max": 4664,
+ "tris_max": 236468,
  "materials": [
-  "Cloth",
-  "Metal"
+  "clubs_beard",
+  "clubs_belt",
+  "clubs_boots",
+  "clubs_brows",
+  "clubs_buckle",
+  "clubs_cloak",
+  "clubs_cornea",
+  "clubs_eyes",
+  "clubs_hair",
+  "clubs_lashes",
+  "clubs_shirt",
+  "clubs_skin",
+  "clubs_trousers"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5365286520414726,
-    -0.0007416074091614513,
-    0.8947430291034258
+    0.4782559272863334,
+    0.24895076049701192,
+    1.0209074699605625
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5365286520414726,
-    -0.0007416074091614513,
-    0.8947430291034258
+    -0.4782559272863334,
+    0.24895076049701192,
+    1.0209074699605625
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.09485714285714286,
-    1.2532999999999999
+    0.0784165,
+    1.2103615
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.001897142857142857,
-    1.5772371428571428
+    0.039260500000000004,
+    1.6218585
    ]
   }
  },
@@ -74,5 +85,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

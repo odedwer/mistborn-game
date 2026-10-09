@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://de3xmyhd3bfx4"
+uid="uid://cr2u4t11426oe"
 path="res://.godot/imported/marsh.glb-a56b6824c4344d22d5feaa2fbb67aa49.scn"
 
 [deps]
@@ -41,10 +41,50 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"marsh_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/boots.tres"
+},
+"marsh_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/brows.tres"
+},
+"marsh_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/cornea.tres"
+},
+"marsh_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/eyes.tres"
+},
+"marsh_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/hair.tres"
+},
+"marsh_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/lashes.tres"
+},
+"marsh_robe": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/robe.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/robe.tres"
+},
+"marsh_sash": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/sash.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/sash.tres"
+},
+"marsh_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/marsh/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/marsh/skin.tres"
 }
 }
 }

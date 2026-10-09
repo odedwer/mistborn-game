@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=3]
+
+[ext_resource type="Shader" path="res://assets/models/characters/materials/hd_cloth.gdshader" id="1"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/leather_albedo.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/leather_normal.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/shared/leather_roughness.png" id="4"]
+
+[resource]
+resource_name = "sazed_boots"
+shader = ExtResource("1")
+shader_parameter/albedo_color = Color(0.1000, 0.0700, 0.0500, 1)
+shader_parameter/uv_scale = Vector2(6, 6)
+shader_parameter/normal_scale = 0.8
+shader_parameter/metallic = 0.0
+shader_parameter/dye_slot = 0
+shader_parameter/albedo_texture = ExtResource("2")
+shader_parameter/normal_texture = ExtResource("3")
+shader_parameter/roughness_texture = ExtResource("4")

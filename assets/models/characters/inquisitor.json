@@ -1,47 +1,56 @@
 {
  "name": "inquisitor",
  "style": "inquisitor",
- "tris": 4116,
- "height": 1.9944059496716777,
+ "tris": 210032,
+ "height": 2.000929832458496,
  "garments": {},
- "tris_max": 4116,
+ "tris_max": 210032,
  "materials": [
-  "Cloth",
-  "Metal",
-  "Obsidian"
+  "inquisitor_boots",
+  "inquisitor_brows",
+  "inquisitor_cornea",
+  "inquisitor_eyes",
+  "inquisitor_gloves",
+  "inquisitor_lashes",
+  "inquisitor_obsidian",
+  "inquisitor_robe",
+  "inquisitor_sash",
+  "inquisitor_shaft",
+  "inquisitor_skin",
+  "inquisitor_spike"
  ],
  "tassel_chains": [],
  "sockets": {
-  "chest": {
-   "bone": "UpperChest",
-   "pos": [
-    0.0,
-    0.11428571428571428,
-    1.49
-   ]
-  },
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.6562999594183686,
-    0.0009639518942135524,
-    1.02368699266294
+    0.571527442080971,
+    0.3137775026145224,
+    1.2156294456946073
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.6562999594183686,
-    0.0009639518942135524,
-    1.02368699266294
+    -0.5813383943231549,
+    0.3172439038291792,
+    1.2163210230746226
+   ]
+  },
+  "chest": {
+   "bone": "UpperChest",
+   "pos": [
+    0.0,
+    0.0907512,
+    1.4500504000000003
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0022857142857142855,
-    1.9002857142857144
+    0.04602500000000001,
+    1.9397010000000003
    ]
   }
  },
@@ -75,5 +84,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

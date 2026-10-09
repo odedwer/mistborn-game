@@ -7,10 +7,10 @@
 script = ExtResource("1")
 character_id = &"breeze"
 sockets = {
-"hand_r": ["RightHand", Vector3(-0.5664, 0.9379, -0.0008)],
-"hand_l": ["LeftHand", Vector3(0.5664, 0.9379, -0.0008)],
-"chest": ["UpperChest", Vector3(-0.0000, 1.3137, 0.0994)],
-"head": ["Head", Vector3(-0.0000, 1.6532, -0.0020)]
+"hand_r": ["RightHand", Vector3(-0.4953, 1.0534, 0.2666)],
+"hand_l": ["LeftHand", Vector3(0.5038, 1.0538, 0.2697)],
+"chest": ["UpperChest", Vector3(-0.0000, 1.2565, 0.0907)],
+"head": ["Head", Vector3(-0.0000, 1.6889, 0.0431)]
 }
 lantern_light = false
 

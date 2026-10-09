@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bbmgpdipx26ls"
+uid="uid://chn0ejrveh7pk"
 path="res://.godot/imported/obligator_2.glb-5a52cca415f53a3303f2e7515c570886.scn"
 
 [deps]
@@ -41,10 +41,45 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"obligator_2_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/boots.tres"
+},
+"obligator_2_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/brows.tres"
+},
+"obligator_2_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/cornea.tres"
+},
+"obligator_2_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/eyes.tres"
+},
+"obligator_2_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/lashes.tres"
+},
+"obligator_2_robe": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/robe.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/robe.tres"
+},
+"obligator_2_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/skin.tres"
+},
+"obligator_2_trim": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/obligator_2/trim.tres",
+"use_external/path": "res://assets/models/characters/materials/obligator_2/trim.tres"
 }
 }
 }

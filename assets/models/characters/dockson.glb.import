@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bem7xobpba01o"
+uid="uid://c6y3gaguthtj3"
 path="res://.godot/imported/dockson.glb-0d797e63c3a1f4216d393bb5c38d6876.scn"
 
 [deps]
@@ -41,10 +41,65 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"dockson_beard": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/beard.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/beard.tres"
+},
+"dockson_belt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/belt.tres"
+},
+"dockson_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/boots.tres"
+},
+"dockson_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/brows.tres"
+},
+"dockson_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/buckle.tres"
+},
+"dockson_coat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/coat.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/coat.tres"
+},
+"dockson_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/cornea.tres"
+},
+"dockson_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/eyes.tres"
+},
+"dockson_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/hair.tres"
+},
+"dockson_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/lashes.tres"
+},
+"dockson_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/skin.tres"
+},
+"dockson_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/dockson/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/dockson/trousers.tres"
 }
 }
 }

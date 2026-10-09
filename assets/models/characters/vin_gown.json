@@ -1,45 +1,54 @@
 {
  "name": "vin_gown",
  "style": "gown",
- "tris": 4824,
- "height": 1.6689747963123196,
+ "tris": 182976,
+ "height": 1.6043407917022705,
  "garments": {},
- "tris_max": 4824,
+ "tris_max": 182976,
  "materials": [
-  "Cloth"
+  "vin_gown_bodice",
+  "vin_gown_boots",
+  "vin_gown_brows",
+  "vin_gown_cornea",
+  "vin_gown_eyes",
+  "vin_gown_gown",
+  "vin_gown_hair",
+  "vin_gown_lashes",
+  "vin_gown_skin",
+  "vin_gown_trim"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5163251231565412,
-    -0.0007371398946484339,
-    0.8893530108558151
+    0.4492895896633614,
+    0.21854872796226585,
+    0.9398953563449426
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5163251231565412,
-    -0.0007371398946484339,
-    0.8893530108558151
+    -0.4492895896633614,
+    0.21854872796226585,
+    0.9398953563449426
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.09428571428571429,
-    1.24575
+    0.12934041599999999,
+    1.1598945360000001
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0018857142857142857,
-    1.5677357142857142
+    0.03954920800000001,
+    1.5691340880000002
    ]
   }
  },
@@ -73,5 +82,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

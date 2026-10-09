@@ -1,45 +1,201 @@
 {
  "name": "spook",
  "style": "spook",
- "tris": 4596,
- "height": 1.781103589075913,
+ "tris": 227790,
+ "height": 1.7384276390075684,
  "garments": {},
- "tris_max": 4596,
+ "tris_max": 227790,
  "materials": [
-  "Cloth"
+  "spook_belt",
+  "spook_boots",
+  "spook_brows",
+  "spook_buckle",
+  "spook_cloak",
+  "spook_cornea",
+  "spook_eyes",
+  "spook_hair",
+  "spook_lashes",
+  "spook_shirt",
+  "spook_skin",
+  "spook_trousers"
  ],
- "tassel_chains": [],
+ "tassel_chains": [
+  [
+   "Tassel_00_0",
+   "Tassel_00_1",
+   "Tassel_00_2",
+   "Tassel_00_3"
+  ],
+  [
+   "Tassel_01_0",
+   "Tassel_01_1",
+   "Tassel_01_2",
+   "Tassel_01_3"
+  ],
+  [
+   "Tassel_02_0",
+   "Tassel_02_1",
+   "Tassel_02_2",
+   "Tassel_02_3"
+  ],
+  [
+   "Tassel_03_0",
+   "Tassel_03_1",
+   "Tassel_03_2",
+   "Tassel_03_3"
+  ],
+  [
+   "Tassel_04_0",
+   "Tassel_04_1",
+   "Tassel_04_2",
+   "Tassel_04_3"
+  ],
+  [
+   "Tassel_05_0",
+   "Tassel_05_1",
+   "Tassel_05_2",
+   "Tassel_05_3"
+  ],
+  [
+   "Tassel_06_0",
+   "Tassel_06_1",
+   "Tassel_06_2",
+   "Tassel_06_3"
+  ],
+  [
+   "Tassel_07_0",
+   "Tassel_07_1",
+   "Tassel_07_2",
+   "Tassel_07_3"
+  ],
+  [
+   "Tassel_08_0",
+   "Tassel_08_1",
+   "Tassel_08_2",
+   "Tassel_08_3"
+  ],
+  [
+   "Tassel_09_0",
+   "Tassel_09_1",
+   "Tassel_09_2",
+   "Tassel_09_3"
+  ],
+  [
+   "Tassel_10_0",
+   "Tassel_10_1",
+   "Tassel_10_2",
+   "Tassel_10_3"
+  ],
+  [
+   "Tassel_11_0",
+   "Tassel_11_1",
+   "Tassel_11_2",
+   "Tassel_11_3"
+  ],
+  [
+   "Tassel_12_0",
+   "Tassel_12_1",
+   "Tassel_12_2",
+   "Tassel_12_3"
+  ],
+  [
+   "Tassel_13_0",
+   "Tassel_13_1",
+   "Tassel_13_2",
+   "Tassel_13_3"
+  ],
+  [
+   "Tassel_14_0",
+   "Tassel_14_1",
+   "Tassel_14_2",
+   "Tassel_14_3"
+  ],
+  [
+   "Tassel_15_0",
+   "Tassel_15_1",
+   "Tassel_15_2",
+   "Tassel_15_3"
+  ],
+  [
+   "Tassel_16_0",
+   "Tassel_16_1",
+   "Tassel_16_2",
+   "Tassel_16_3"
+  ],
+  [
+   "Tassel_17_0",
+   "Tassel_17_1",
+   "Tassel_17_2",
+   "Tassel_17_3"
+  ],
+  [
+   "Tassel_18_0",
+   "Tassel_18_1",
+   "Tassel_18_2",
+   "Tassel_18_3"
+  ],
+  [
+   "Tassel_19_0",
+   "Tassel_19_1",
+   "Tassel_19_2",
+   "Tassel_19_3"
+  ],
+  [
+   "Tassel_20_0",
+   "Tassel_20_1",
+   "Tassel_20_2",
+   "Tassel_20_3"
+  ],
+  [
+   "Tassel_21_0",
+   "Tassel_21_1",
+   "Tassel_21_2",
+   "Tassel_21_3"
+  ],
+  [
+   "Tassel_22_0",
+   "Tassel_22_1",
+   "Tassel_22_2",
+   "Tassel_22_3"
+  ],
+  [
+   "Tassel_23_0",
+   "Tassel_23_1",
+   "Tassel_23_2",
+   "Tassel_23_3"
+  ]
+ ],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5778412481821454,
-    0.00038126046085089956,
-    0.9247432485675579
+    0.5106890424029603,
+    0.27498139846931174,
+    1.0404154597732767
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5778412481821454,
-    0.00038126046085089956,
-    0.9247432485675579
+    -0.5106890424029603,
+    0.27498139846931174,
+    1.0404154597732767
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10057142857142859,
-    1.3288
+    0.0987072,
+    1.2559168
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0020114285714285716,
-    1.6722514285714285
+    0.047774800000000006,
+    1.6867687999999998
    ]
   }
  },
@@ -73,5 +229,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

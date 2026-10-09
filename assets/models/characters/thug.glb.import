@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://csjww25uamwpc"
+uid="uid://fgjgan8b575h"
 path="res://.godot/imported/thug.glb-970f8f58c90d2fbe5a77f17ba071d0f1.scn"
 
 [deps]
@@ -41,13 +41,68 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"thug_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/belt.tres"
+},
+"thug_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/boots.tres"
+},
+"thug_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/brows.tres"
+},
+"thug_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/buckle.tres"
+},
+"thug_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/cornea.tres"
+},
+"thug_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/eyes.tres"
+},
+"thug_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/hair.tres"
+},
+"thug_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/lashes.tres"
+},
+"thug_shaft": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/shaft.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/shaft.tres"
+},
+"thug_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/skin.tres"
+},
+"thug_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/trousers.tres"
+},
+"thug_vest": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/thug/vest.tres",
+"use_external/path": "res://assets/models/characters/materials/thug/vest.tres"
 }
 }
 }
 gltf/naming_version=2
 gltf/embedded_image_handling=1
-gltf/texture_map_mode=1
+gltf/texture_map_mode=0

@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://assets/models/characters/materials/hd_hair.gdshader" id="1"]
+[ext_resource type="Texture2D" path="res://assets/models/characters/textures/sazed/brows.png" id="2"]
+
+[resource]
+resource_name = "sazed_brows"
+shader = ExtResource("1")
+shader_parameter/dye_slot = 0
+shader_parameter/roughness = 0.55
+shader_parameter/specular = 0.35
+shader_parameter/mean_luma = 0.00658
+shader_parameter/albedo_texture = ExtResource("2")

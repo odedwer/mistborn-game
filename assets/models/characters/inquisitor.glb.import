@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dpchl05b2brlu"
+uid="uid://cocf4o423y32o"
 path="res://.godot/imported/inquisitor.glb-780f3c6461338cb85a6c68eef83df11d.scn"
 
 [deps]
@@ -41,20 +41,65 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"inquisitor_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/boots.tres"
 },
-"Metal": {
+"inquisitor_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/brows.tres"
 },
-"Obsidian": {
+"inquisitor_cornea": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/obsidian.tres",
-"use_external/path": "res://assets/models/characters/materials/obsidian.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/cornea.tres"
+},
+"inquisitor_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/eyes.tres"
+},
+"inquisitor_gloves": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/gloves.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/gloves.tres"
+},
+"inquisitor_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/lashes.tres"
+},
+"inquisitor_obsidian": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/obsidian.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/obsidian.tres"
+},
+"inquisitor_robe": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/robe.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/robe.tres"
+},
+"inquisitor_sash": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/sash.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/sash.tres"
+},
+"inquisitor_shaft": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/shaft.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/shaft.tres"
+},
+"inquisitor_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/skin.tres"
+},
+"inquisitor_spike": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/inquisitor/spike.tres",
+"use_external/path": "res://assets/models/characters/materials/inquisitor/spike.tres"
 }
 }
 }

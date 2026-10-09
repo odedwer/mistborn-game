@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://788wj8pemqat"
+uid="uid://d1hwxdkfvprf3"
 path="res://.godot/imported/spook.glb-f428469a20a110b6d822985809ce506a.scn"
 
 [deps]
@@ -41,10 +41,65 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"spook_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/belt.tres"
+},
+"spook_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/boots.tres"
+},
+"spook_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/brows.tres"
+},
+"spook_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/buckle.tres"
+},
+"spook_cloak": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/cloak.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/cloak.tres"
+},
+"spook_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/cornea.tres"
+},
+"spook_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/eyes.tres"
+},
+"spook_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/hair.tres"
+},
+"spook_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/lashes.tres"
+},
+"spook_shirt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/shirt.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/shirt.tres"
+},
+"spook_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/skin.tres"
+},
+"spook_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/spook/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/spook/trousers.tres"
 }
 }
 }

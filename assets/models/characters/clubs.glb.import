@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://s074i3oax0lj"
+uid="uid://b61x6q81uhyh6"
 path="res://.godot/imported/clubs.glb-21f6e2c0d5ce76c3fbd4e43cdacb940c.scn"
 
 [deps]
@@ -41,15 +41,70 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"clubs_beard": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/beard.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/beard.tres"
 },
-"Metal": {
+"clubs_belt": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/belt.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/belt.tres"
+},
+"clubs_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/boots.tres"
+},
+"clubs_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/brows.tres"
+},
+"clubs_buckle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/buckle.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/buckle.tres"
+},
+"clubs_cloak": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/cloak.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/cloak.tres"
+},
+"clubs_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/cornea.tres"
+},
+"clubs_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/eyes.tres"
+},
+"clubs_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/hair.tres"
+},
+"clubs_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/lashes.tres"
+},
+"clubs_shirt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/shirt.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/shirt.tres"
+},
+"clubs_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/skin.tres"
+},
+"clubs_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/clubs/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/clubs/trousers.tres"
 }
 }
 }

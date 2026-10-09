@@ -1,46 +1,51 @@
 {
  "name": "obligator",
  "style": "obligator",
- "tris": 4396,
- "height": 1.8148429340177101,
+ "tris": 176576,
+ "height": 1.810049057006836,
  "garments": {},
- "tris_max": 4396,
+ "tris_max": 176576,
  "materials": [
-  "Cloth",
-  "Metal"
+  "obligator_boots",
+  "obligator_brows",
+  "obligator_cornea",
+  "obligator_eyes",
+  "obligator_lashes",
+  "obligator_robe",
+  "obligator_skin"
  ],
  "tassel_chains": [],
  "sockets": {
   "hand_r": {
    "bone": "RightHand",
    "pos": [
-    0.5752539079501306,
-    -0.0008130876413697868,
-    0.973988071848957
+    0.5259033492782685,
+    0.2834481447676587,
+    1.098563538777043
    ]
   },
   "hand_l": {
    "bone": "LeftHand",
    "pos": [
-    -0.5752539079501306,
-    -0.0008130876413697868,
-    0.973988071848957
+    -0.5259033492782685,
+    0.2834481447676587,
+    1.098563538777043
    ]
   },
   "chest": {
    "bone": "UpperChest",
    "pos": [
     0.0,
-    0.10400000000000001,
-    1.3741
+    0.0883825,
+    1.31016
    ]
   },
   "head": {
    "bone": "Head",
    "pos": [
     0.0,
-    -0.0020800000000000003,
-    1.7292600000000002
+    0.044107499999999994,
+    1.7590475000000003
    ]
   }
  },
@@ -74,5 +79,6 @@
   "pull",
   "drink",
   "talk"
- ]
+ ],
+ "realistic": true
 }

@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dc78mipwmbuvl"
+uid="uid://d2ydsqb4sqsju"
 path="res://.godot/imported/breeze.glb-7105c6947bce93c6bcb0748213cfeab8.scn"
 
 [deps]
@@ -41,15 +41,65 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"breeze_boots": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/boots.tres"
 },
-"Metal": {
+"breeze_brows": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/metal.tres",
-"use_external/path": "res://assets/models/characters/materials/metal.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/brows.tres"
+},
+"breeze_coat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/coat.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/coat.tres"
+},
+"breeze_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/cornea.tres"
+},
+"breeze_cravat": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/cravat.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/cravat.tres"
+},
+"breeze_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/eyes.tres"
+},
+"breeze_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/hair.tres"
+},
+"breeze_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/lashes.tres"
+},
+"breeze_shaft": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/shaft.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/shaft.tres"
+},
+"breeze_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/skin.tres"
+},
+"breeze_steel": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/steel.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/steel.tres"
+},
+"breeze_trousers": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/breeze/trousers.tres",
+"use_external/path": "res://assets/models/characters/materials/breeze/trousers.tres"
 }
 }
 }

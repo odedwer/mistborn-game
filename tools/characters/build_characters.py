@@ -29,7 +29,7 @@ import chars_npc  # noqa: E402
 
 BUILDERS = {**chars.BUILDERS, **chars_npc.BUILDERS}
 # characters rebuilt from MakeHuman bodies by mh_build.py (not by this script)
-HD = ("kelsier", "vin", "guard", "skaa_man", "skaa_woman", "noble_man", "noble_woman")
+HD = ("kelsier", "vin", "guard", "skaa_man", "skaa_woman", "noble_man", "noble_woman", "hazekiller", "thug", "coinshot", "inquisitor", "dockson", "breeze", "ham", "clubs", "spook", "sazed", "marsh", "elend", "obligator", "obligator_2", "vin_gown")
 
 MAT_PBR = {  # name: (base rgba, metallic, roughness, emission)
     "Cloth": ((0.5, 0.5, 0.5, 1), 0.0, 0.85, None),

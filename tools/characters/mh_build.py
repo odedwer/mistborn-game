@@ -138,7 +138,7 @@ SPECS = {
         dyes={"Coat": 1},
         loose={"Coat": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}},
         collar="cravat",
-        rings=[dict(name="Cravat", z0=-0.07, z1=0.06, bulge=0.02, color=(0.85, 0.82, 0.76), kind="linen")],
+        rings=[dict(name="Cravat", z0=-0.025, z1=0.06, bulge=0.02, color=(0.85, 0.82, 0.76), kind="linen")],
         skirts=[dict(name="tails", optional=True, material="coat", hem_drop=0.52, flare=0.05, front_gap=170.0,
                      folds=4),
                 dict(name="longcoat", optional=True, material="coat", hem_drop=0.6, flare=0.1, front_gap=26.0,
@@ -161,7 +161,7 @@ SPECS = {
         dyes={"Bodice": 1},
         loose={"Bodice": {"Spine": 1.2, "Chest": 1.2, "UpperChest": 1.1}},
         collar="trim",
-        rings=[dict(name="Trim", z0=-0.06, z1=0.0, bulge=0.01, color=(0.85, 0.8, 0.7), kind="linen", dye=2)],
+        rings=[dict(name="Trim", z0=-0.02, z1=0.0, bulge=0.01, color=(0.85, 0.8, 0.7), kind="linen", dye=2)],
         skirts=[dict(name="Gown", color=(0.36, 0.22, 0.4), kind="linen", dye=1, hem_z=0.02, flare=0.34,
                      front_gap=0.0, folds=12, fold_amp=0.022),
                 dict(name="bustle", optional=True, material="gown", hem_drop=0.4, flare=0.08, back_flare=0.2,
@@ -190,6 +190,139 @@ SPECS = {
         cloak=dict(color=(0.2, 0.21, 0.225), hem_z=0.3, split_z=0.86, span=180.0),
     ),
 }
+
+
+ROBE = dict(hem_z=0.05, flare=0.14, front_gap=0.0, folds=10, fold_amp=0.016)
+
+
+def _spec(style, body, skin, tint, eyes, hair, garments, **kw):
+    d = dict(style=style, body=body, skin=skin, skin_tint=tint, eyes=eyes, brows=kw.pop("brows", "eyebrow001"),
+             lashes="Eyelashes01", hair=hair, garments=garments)
+    d.update(kw)
+    return d
+
+
+M = "middleage_caucasian_male"
+Y = "young_caucasian_male"
+SHOES = ("boots", 0.009, "leather", (0.05, 0.035, 0.025))
+SPECS.update({
+    "hazekiller": _spec(
+        "haze", dict(gender=1.0, age=0.55, muscle=0.68, weight=0.5, height=0.55), M, (0.98, 0.93, 0.88), "brown",
+        ("short02", (0.09, 0.07, 0.05)),
+        {"Shirt": ("shirt", 0.009, "wool", (0.16, 0.14, 0.12)), "Trousers": ("trousers", 0.008, "wool", (0.1, 0.09, 0.08)),
+         "Boots": SHOES, "Jerkin": ("cuirass", 0.022, "leather", (0.16, 0.1, 0.06)),
+         "Gloves": ("gloves", 0.004, "leather", (0.08, 0.055, 0.035))},
+        collar="shirt", belt=dict(color=(0.06, 0.04, 0.025)),
+        skirts=[dict(name="Skirt", material="jerkin", hem_drop=0.3, flare=0.05, front_gap=0.0, folds=5)],
+        props=[dict(name="Staff", kind="staff")], beards=["Full_beard"]),
+    "thug": _spec(
+        "thug", dict(gender=1.0, age=0.5, muscle=0.95, weight=0.72, height=0.72, proportions=0.4), M, (0.97, 0.9, 0.84),
+        "brown", ("short01", (0.08, 0.06, 0.045)),
+        {"Vest": ("vest", 0.012, "leather", (0.14, 0.09, 0.055)), "Trousers": ("trousers", 0.009, "wool", (0.12, 0.1, 0.08)),
+         "Boots": SHOES},
+        belt=dict(color=(0.06, 0.04, 0.025)), props=[dict(name="Club", kind="club")]),
+    "coinshot": _spec(
+        "coinshot", dict(gender=1.0, age=0.48, muscle=0.6, weight=0.38, height=0.55), Y, (1.0, 0.95, 0.9), "grey",
+        ("short03", (0.1, 0.075, 0.05)),
+        {"Coat": ("shirt", 0.011, "wool", (0.12, 0.13, 0.15)), "Trousers": ("trousers", 0.008, "wool", (0.08, 0.08, 0.09)),
+         "Boots": SHOES, "Gloves": ("gloves", 0.004, "leather", (0.05, 0.04, 0.035))},
+        loose={"Coat": {"Spine": 1.6, "Chest": 1.6, "UpperChest": 1.3, "Hips": 1.5}}, collar="coat",
+        belt=dict(color=(0.05, 0.035, 0.025)), props=[dict(name="Pouch", kind="pouch", color=(0.12, 0.08, 0.05))],
+        cloak=dict(color=(0.18, 0.19, 0.21), hem_z=0.62, split_z=1.0, span=170.0)),
+    "inquisitor": _spec(
+        "inquisitor", dict(gender=1.0, age=0.6, muscle=0.6, weight=0.4, height=0.68, proportions=0.5), M,
+        (0.88, 0.86, 0.84), "grey", (None, (0.05, 0.05, 0.05)),
+        {"Robe": ("shirt", 0.014, "wool", (0.06, 0.06, 0.065)), "Boots": SHOES,
+         "Gloves": ("gloves", 0.004, "leather", (0.04, 0.035, 0.03))},
+        loose={"Robe": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}}, collar="robe",
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)],
+        rings=[dict(name="Sash", at="waist", z0=0.02, z1=0.09, bulge=0.004, color=(0.35, 0.05, 0.05), bone="Hips")],
+        props=[dict(name="Axe", kind="axe")], spikes=True, brows="eyebrow001"),
+    "dockson": _spec(
+        "dockson", dict(gender=1.0, age=0.6, muscle=0.5, weight=0.5, height=0.48), M, (1.0, 0.94, 0.9), "brown",
+        ("short02", (0.12, 0.09, 0.06)),
+        {"Coat": ("shirt", 0.012, "wool", (0.2, 0.17, 0.13)), "Trousers": ("trousers", 0.008, "wool", (0.12, 0.11, 0.1)),
+         "Boots": SHOES},
+        loose={"Coat": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}}, collar="coat",
+        belt=dict(color=(0.07, 0.05, 0.03)), beards=["Full_beard"],
+        skirts=[dict(name="Tails", material="coat", hem_drop=0.45, flare=0.06, front_gap=30.0, folds=6)]),
+    "breeze": _spec(
+        "breeze", dict(gender=1.0, age=0.68, muscle=0.4, weight=0.78, height=0.5), M, (1.0, 0.95, 0.92), "brown",
+        ("short04", (0.14, 0.1, 0.07)),
+        {"Coat": ("shirt", 0.013, "wool", (0.24, 0.16, 0.26)), "Trousers": ("trousers", 0.008, "wool", (0.1, 0.09, 0.1)),
+         "Boots": SHOES},
+        loose={"Coat": {"Spine": 1.6, "Chest": 1.6, "UpperChest": 1.4, "Hips": 1.5}}, collar="cravat",
+        rings=[dict(name="Cravat", z0=-0.025, z1=0.06, bulge=0.025, color=(0.86, 0.82, 0.74), kind="linen")],
+        skirts=[dict(name="Tails", material="coat", hem_drop=0.5, flare=0.06, front_gap=150.0, folds=4)],
+        props=[dict(name="Cane", kind="cane")]),
+    "ham": _spec(
+        "ham", dict(gender=1.0, age=0.55, muscle=0.92, weight=0.6, height=0.62), M, (0.98, 0.92, 0.86), "brown",
+        ("short01", (0.1, 0.075, 0.05)),
+        {"Vest": ("vest", 0.01, "linen", (0.34, 0.3, 0.24)), "Trousers": ("trousers", 0.008, "wool", (0.16, 0.14, 0.11)),
+         "Boots": SHOES},
+        belt=dict(color=(0.07, 0.05, 0.03))),
+    "clubs": _spec(
+        "clubs", dict(gender=1.0, age=0.85, muscle=0.45, weight=0.45, height=0.42), "old_caucasian_male",
+        (0.98, 0.93, 0.88), "grey", ("short02", (0.42, 0.4, 0.38)),
+        {"Shirt": ("shirt", 0.01, "linen", (0.28, 0.25, 0.2)), "Trousers": ("trousers", 0.008, "wool", (0.14, 0.12, 0.1)),
+         "Boots": SHOES},
+        loose={"Shirt": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}}, collar="shirt",
+        belt=dict(color=(0.07, 0.05, 0.03)), beards=["Moustache"],
+        capes=[dict(name="Cloak", hem_rel=-0.45, span=220.0, color=(0.2, 0.18, 0.15), folds=8)]),
+    "spook": _spec(
+        "spook", dict(gender=1.0, age=0.4, muscle=0.4, weight=0.25, height=0.6, proportions=0.6), Y, (1.0, 0.95, 0.9),
+        "grey", ("short04", (0.12, 0.09, 0.06)),
+        {"Shirt": ("shirt", 0.009, "linen", (0.22, 0.2, 0.17)), "Trousers": ("trousers", 0.007, "wool", (0.12, 0.11, 0.1)),
+         "Boots": SHOES},
+        loose={"Shirt": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}}, collar="shirt",
+        belt=dict(color=(0.07, 0.05, 0.03)),
+        cloak=dict(color=(0.17, 0.18, 0.19), hem_z=0.42, split_z=0.98, span=176.0)),
+    "sazed": _spec(
+        "sazed", dict(gender=1.0, age=0.6, muscle=0.45, weight=0.35, height=0.7, proportions=0.5), "middleage_african_male",
+        (1.0, 1.0, 1.0), "brown", (None, (0.05, 0.05, 0.05)),
+        {"Robe": ("shirt", 0.014, "linen", (0.38, 0.22, 0.12)), "Boots": SHOES},
+        loose={"Robe": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}}, collar="trim",
+        rings=[dict(name="Trim", z0=-0.02, z1=0.02, bulge=0.012, color=(0.55, 0.42, 0.12), kind="linen"),
+               dict(name="Sash", at="waist", z0=0.02, z1=0.09, bulge=0.004, color=(0.5, 0.36, 0.1), bone="Hips")],
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)]),
+    "marsh": _spec(
+        "marsh", dict(gender=1.0, age=0.6, muscle=0.55, weight=0.38, height=0.58), M, (0.96, 0.92, 0.88), "grey",
+        ("short02", (0.08, 0.07, 0.06)),
+        {"Robe": ("shirt", 0.013, "wool", (0.2, 0.17, 0.13)), "Boots": SHOES},
+        loose={"Robe": {"Spine": 1.9, "Chest": 1.9, "UpperChest": 1.5, "Hips": 1.7}}, collar="robe",
+        rings=[dict(name="Sash", at="waist", z0=0.02, z1=0.08, bulge=0.004, color=(0.1, 0.08, 0.06), bone="Hips")],
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)]),
+    "elend": _spec(
+        "elend", dict(gender=1.0, age=0.5, muscle=0.45, weight=0.45, height=0.56), Y, (1.0, 0.96, 0.93), "brown",
+        ("short03", (0.13, 0.095, 0.065)),
+        {"Coat": ("shirt", 0.013, "wool", (0.12, 0.12, 0.16)), "Trousers": ("trousers", 0.008, "wool", (0.09, 0.09, 0.1)),
+         "Boots": SHOES},
+        loose={"Coat": {"Spine": 1.8, "Chest": 1.8, "UpperChest": 1.5, "Hips": 1.6}}, collar="cravat",
+        rings=[dict(name="Cravat", z0=-0.025, z1=0.05, bulge=0.016, color=(0.82, 0.78, 0.7), kind="linen")],
+        skirts=[dict(name="Tails", material="coat", hem_drop=0.48, flare=0.05, front_gap=40.0, folds=5)],
+        props=[dict(name="Book", kind="book", hand="L", color=(0.25, 0.1, 0.06))]),
+    "obligator": _spec(
+        "obligator", dict(gender=1.0, age=0.65, muscle=0.4, weight=0.5, height=0.55), M, (0.97, 0.93, 0.9), "grey",
+        (None, (0.05, 0.05, 0.05)),
+        {"Robe": ("shirt", 0.014, "wool", (0.24, 0.24, 0.25)), "Boots": SHOES},
+        loose={"Robe": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}}, collar="robe",
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)]),
+    "obligator_2": _spec(
+        "obligator_b", dict(gender=1.0, age=0.72, muscle=0.35, weight=0.55, height=0.48), M, (0.96, 0.92, 0.89), "brown",
+        (None, (0.05, 0.05, 0.05)),
+        {"Robe": ("shirt", 0.014, "wool", (0.18, 0.18, 0.2)), "Boots": SHOES},
+        loose={"Robe": {"Spine": 2.0, "Chest": 2.0, "UpperChest": 1.6, "Hips": 1.8}}, collar="trim",
+        rings=[dict(name="Trim", z0=-0.02, z1=0.02, bulge=0.012, color=(0.5, 0.48, 0.45), kind="linen")],
+        skirts=[dict(name="RobeSkirt", material="robe", **ROBE)]),
+})
+SPECS["vin_gown"] = dict(SPECS["vin"], style="gown",
+                         garments={"Bodice": ("shirt", 0.006, "linen", (0.3, 0.32, 0.4)),
+                                   "Boots": ("boots", 0.006, "leather", (0.05, 0.04, 0.035))},
+                         loose={}, collar="trim", belt=None, dagger=None, cloak=None,
+                         rings=[dict(name="Trim", z0=-0.02, z1=0.0, bulge=0.01, color=(0.8, 0.78, 0.74), kind="linen")],
+                         skirts=[dict(name="Gown", color=(0.3, 0.32, 0.4), kind="linen", hem_z=0.02, flare=0.32,
+                                      front_gap=0.0, folds=12, fold_amp=0.022)])
+SPECS["vin_gown"].pop("skirt", None)
 
 
 # ---------------------------------------------------------------------- regions
@@ -226,6 +359,10 @@ def region_of(kind: str, v: np.ndarray, w: dict, S) -> bool:
     if kind == "cuirass":   # breast and back plates: the trunk between waist and collarbones
         if b in ("Spine", "Chest", "UpperChest") or (b == "Hips" and z > waist - 0.04):
             return z < S.head("Neck")[2] - 0.05
+        return False
+    if kind == "vest":      # sleeveless: the trunk to the hips, arms bare
+        if b in ("Spine", "Chest", "UpperChest") or (b == "Hips" and z > waist - 0.1):
+            return z < S.head("Neck")[2] - 0.02
         return False
     if kind == "pauldron":  # shoulder caps
         if b.endswith(("Shoulder", "UpperArm")):
@@ -564,8 +701,13 @@ def cloak_chains(S, geo, spec, parent="Chest"):
             pts.append(line[i - 1] + (line[i] - line[i - 1]) * np.clip(t, 0, 1))
         names = [f"Tassel_{k:02d}_{j}" for j in range(CHAIN)]
         par = parent
+        seg = max((split - hem) / CHAIN, 0.02)
         for j in range(CHAIN):
-            S.add(names[j], par, pts[j], pts[j + 1])
+            a_, b_ = pts[j], pts[j + 1]
+            if np.linalg.norm(b_ - a_) < 0.01:      # Blender drops zero-length bones
+                b_ = a_ + np.array([0.0, 0.0, -seg])
+                pts[j + 1] = b_
+            S.add(names[j], par, a_, b_)
             par = names[j]
         out.append(dict(bones=names, cols=(c0, c0 + 4), xy=line[:, :2]))
         k += 1
@@ -892,6 +1034,9 @@ def build_prop(human, S, col, arm, name, pr):
         rods(objname, mat_of, [(o + g * 0.05, o - g * 0.92, 0.012, 0.011, 10, "shaft", 1.0),
                                (o + g * 0.05, o + g * 0.1, 0.02, 0.02, 10, "steel", 1.0)], hand, arm, p)
         return None
+    if kind == "club":     # a heavy cudgel
+        rods(objname, mat_of, [(o - g * 0.08, o + g * 0.55, 0.02, 0.038, 10, "shaft", 1.0)], hand, arm, p)
+        return None
     if kind == "staff":    # a quarterstaff through the fist
         rods(objname, mat_of, [(o - g * 0.75, o + g * 1.1, 0.018, 0.017, 10, "shaft", 1.0)], hand, arm, p)
         return None
@@ -1121,7 +1266,11 @@ def build(name):
     tres = lambda n: f"{RES}/textures/{name}/{n}"  # noqa: E731
 
     human = mh.Human(mh.macro_weights(**spec["body"]))
-    human.relax_hands(grip="R" if (spec.get("dagger") or spec.get("spear")) else "")
+    grips = "R" if (spec.get("dagger") or spec.get("spear")) else ""
+    for pr in spec.get("props", []):
+        if pr["kind"] in ("cane", "staff", "axe", "club", "book"):
+            grips += pr.get("hand", "R")
+    human.relax_hands(grip=grips)
     S = human.skeleton()
     verts, faces, fuv, weights = human.body_mesh()
     col = Collider(verts, faces, weights, pad=0.014, shoulder_z=S.head("LeftUpperArm")[2] - 0.05)

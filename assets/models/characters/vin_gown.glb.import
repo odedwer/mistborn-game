@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cfwd7ltwo8rar"
+uid="uid://hv1kx5ra26gk"
 path="res://.godot/imported/vin_gown.glb-1604eb245030875355c07e8899df82d4.scn"
 
 [deps]
@@ -41,10 +41,55 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"Cloth": {
+"vin_gown_bodice": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://assets/models/characters/materials/cloth.tres",
-"use_external/path": "res://assets/models/characters/materials/cloth.tres"
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/bodice.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/bodice.tres"
+},
+"vin_gown_boots": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/boots.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/boots.tres"
+},
+"vin_gown_brows": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/brows.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/brows.tres"
+},
+"vin_gown_cornea": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/cornea.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/cornea.tres"
+},
+"vin_gown_eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/eyes.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/eyes.tres"
+},
+"vin_gown_gown": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/gown.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/gown.tres"
+},
+"vin_gown_hair": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/hair.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/hair.tres"
+},
+"vin_gown_lashes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/lashes.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/lashes.tres"
+},
+"vin_gown_skin": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/skin.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/skin.tres"
+},
+"vin_gown_trim": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://assets/models/characters/materials/vin_gown/trim.tres",
+"use_external/path": "res://assets/models/characters/materials/vin_gown/trim.tres"
 }
 }
 }
