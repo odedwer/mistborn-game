@@ -441,6 +441,15 @@ static func _roof_trim(data: ChunkBuildData, lot: ChunkLayout.Lot, rise: float, 
 			wood.add_quad(bot_a, bot_b, top_b, top_a, out, fc * 0.8, fc)
 		else:
 			wood.add_quad(bot_b, bot_a, top_a, top_b, out, fc * 0.8, fc)
+		# iron gutter along the fascia, and a downpipe at one end
+		var iron := data.mb(M.IRON)
+		var gc := Color(0.35, 0.33, 0.31)
+		var g0: Vector3 = pt.call(u0, ye - 0.2, ve + sgn * 0.02)
+		var g1: Vector3 = pt.call(u1, ye - 0.06, ve + sgn * 0.12)
+		iron.add_box(Vector3(minf(g0.x, g1.x), g0.y, minf(g0.z, g1.z)), Vector3(maxf(g0.x, g1.x), g1.y, maxf(g0.z, g1.z)),
+				gc * 0.7, gc, gc * 0.8, true)
+		var dp: Vector3 = pt.call(u0 + 0.35, 0.0, vm + sgn * (half + 0.08))
+		iron.add_box(dp - Vector3(0.045, 0.0, 0.045), dp + Vector3(0.045, ye - 0.2, 0.045), gc * 0.7, gc, gc, true)
 		var wall_a: Vector3 = pt.call(u0, h - 0.22, vm + sgn * half)
 		var wall_b: Vector3 = pt.call(u1, h - 0.22, vm + sgn * half)
 		wood.add_quad(bot_a, bot_b, wall_b, wall_a, Vector3.DOWN, fc * 0.45, fc * 0.45)
