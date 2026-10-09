@@ -347,9 +347,17 @@ static func _flat_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNu
 		[Vector3(r.position.x, h, r.position.y + pt), Vector3(r.position.x + pt, h + ph, r.end.y - pt)],
 		[Vector3(r.end.x - pt, h, r.position.y + pt), Vector3(r.end.x, h + ph, r.end.y - pt)],
 	]
+	# coping: a pale stone cap overhanging the parapet by 5 cm (visual only;
+	# the collider stays the parapet's own box)
+	var cope := data.mb(M.ASHLAR)
+	var cc := Color(0.8, 0.77, 0.72) * clampf(0.7 + lot.tint * 0.35, 0.75, 1.0)
 	for b: Array in boxes:
 		walls.add_box(b[0], b[1], c, c * 0.8, cols[3])
 		data.add_box_shape_lohi(b[0], b[1])
+		var lo: Vector3 = b[0]
+		var hi: Vector3 = b[1]
+		cope.add_box(Vector3(lo.x - 0.05, hi.y, lo.z - 0.05), Vector3(hi.x + 0.05, hi.y + 0.08, hi.z + 0.05),
+				cc * 0.8, cc * 0.9, cc, true)
 	# Chimneys.
 	var cr: Array = lot.style.get("chimneys", [1, 2])
 	var n := rng.randi_range(int(cr[0]), int(cr[1]))
