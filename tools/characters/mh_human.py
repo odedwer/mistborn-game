@@ -287,6 +287,28 @@ class Human:
                 M[:3, :3] = R
                 M[:3, 3] = w0 - R @ w0
                 self._lbs({b: M for b in hand})
+        # close the splay: MakeHuman's rest hand has its fingers fanned
+        # apart, which reads as a claw once they curl; turn the index, ring
+        # and little fingers most of the way towards the middle finger
+        for s in ("L", "R"):
+            p, _, _ = self._palm(s)
+            ref = self._j(f"finger3-1.{s}", "tail") - self._j(f"finger3-1.{s}")
+            ref -= p * np.dot(ref, p)
+            ref /= np.linalg.norm(ref)
+            tr = {}
+            for f in (2, 4, 5):
+                h = self._j(f"finger{f}-1.{s}")
+                d = self._j(f"finger{f}-1.{s}", "tail") - h
+                d -= p * np.dot(d, p)
+                d /= np.linalg.norm(d)
+                ang = np.arctan2(np.dot(np.cross(d, ref), p), np.dot(d, ref)) * 0.7
+                M = np.eye(4)
+                R = _rot(p, ang)
+                M[:3, :3] = R
+                M[:3, 3] = h - R @ h
+                for k in (1, 2, 3):
+                    tr[f"finger{f}-{k}.{s}"] = M
+            self._lbs(tr)
         # per finger: degrees at its three joints (thumb first)
         angles = {1: (4, 10, 12), 2: (9, 16, 12), 3: (11, 19, 14), 4: (13, 22, 15), 5: (15, 25, 16)}
         for s in ("L", "R"):
