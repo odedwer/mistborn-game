@@ -22,7 +22,7 @@ func _floor(at: Vector3, size: float) -> StaticBody3D:
 
 func test_member_positioned_after_add_stays_home() -> void:
 	var spot := Vector3(400.0, 12.0, -350.0)   # a small "roof", far from the origin
-	var roof := _floor(spot, 10.0)
+	var roof := _floor(spot, 14.0)   # wider than the 5.5 m wander envelope
 	var parent := Node3D.new()                  # a chunk root at the world origin
 	add_child(parent)
 	var members: Array[CrowdMember] = []
@@ -34,8 +34,10 @@ func test_member_positioned_after_add_stays_home() -> void:
 		m.global_position = spot + Vector3(cos(ang), 0.0, sin(ang)) * 2.5
 		members.append(m)
 	await physics_frames(400)
+	# home is 2.5 m out and wandering reaches 3 m from home (+ jostling):
+	# 6 m still tells "stayed on its roof" from "teleported to the origin"
 	for m in members:
-		assert_lt(Vector2(m.global_position.x - spot.x, m.global_position.z - spot.z).length(), 5.0,
+		assert_lt(Vector2(m.global_position.x - spot.x, m.global_position.z - spot.z).length(), 6.0,
 				"member stays on its roof (at %s)" % m.global_position)
 		assert_gt(m.global_position.y, spot.y - 1.0, "member did not fall (y %.1f)" % m.global_position.y)
 	parent.queue_free()
