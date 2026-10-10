@@ -335,7 +335,11 @@ def dominant(w: dict) -> str:
     return max(w.items(), key=lambda kv: kv[1])[0] if w else "Hips"
 
 
-def region_of(kind: str, v: np.ndarray, w: dict, S) -> bool:
+# robes keep the high collar; every other shirt opens in a V at the throat
+HIGH_COLLAR = {"inquisitor", "sazed", "marsh", "obligator", "obligator_2"}
+
+
+def region_of(kind: str, v: np.ndarray, w: dict, S, collar: str = "high") -> bool:
     b = dominant(w)
     z = v[2]
     waist = S.head("Spine")[2] - 0.02
@@ -350,7 +354,10 @@ def region_of(kind: str, v: np.ndarray, w: dict, S) -> bool:
             return np.linalg.norm(v - wr) > 0.05
         if b == "Hips":
             return z > waist - 0.12
-        return z < S.head("Neck")[2] - 0.01
+        neck = S.head("Neck")
+        if collar == "v" and v[1] > neck[1] and z > neck[2] - 0.11 + 1.3 * abs(v[0] - neck[0]):
+            return False
+        return z < neck[2] - 0.01
     if kind == "trousers":
         if b == "Hips":
             return z < waist + 0.02
@@ -1500,7 +1507,8 @@ def build(name):
     covered = np.zeros(len(verts), bool)
     garment_objs = []
     for gname, (region, off, kind, gcol) in spec["garments"].items():
-        inside = np.array([region_of(region, verts[i], weights[i], S) for i in range(len(verts))])
+        collar = "high" if name in HIGH_COLLAR else "v"
+        inside = np.array([region_of(region, verts[i], weights[i], S, collar) for i in range(len(verts))])
         gfaces, guv = [], []
         for f, u in zip(faces, fuv):
             if all(inside[i] for i in f):

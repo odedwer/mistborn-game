@@ -1,10 +1,10 @@
 {
  "name": "vin_gown",
  "style": "gown",
- "tris": 182976,
+ "tris": 182544,
  "height": 1.6043407917022705,
  "garments": {},
- "tris_max": 182976,
+ "tris_max": 182544,
  "materials": [
   "vin_gown_bodice",
   "vin_gown_boots",

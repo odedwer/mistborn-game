@@ -487,6 +487,7 @@ The player asked for a Spider-Man 2 or Horizon look instead of "lego people". Th
   - `wrinkle`: outward-only fold bands at elbows, cuffs, knees, ankle pooling and the waist, plus long slack folds down the limbs;
   - `smooth_edges`: cut hems are relaxed so necklines and armholes no longer staircase;
   - the vest is cut geometrically, with straps, armholes and a scoop neck, instead of a strapless tube.
+  - shirts open in a V at the throat instead of a uniform turtleneck; robed characters (`HIGH_COLLAR`) keep the high collar.
   
   Still open: true slack (sleeves and trouser legs wider than the limb) would need a cloth sim on a loosened copy.
 - **Hands — fixed.** MakeHuman's rest hand fans the fingers apart, so they read as a claw once curled. `relax_hands` now turns the index, ring and little fingers 70% of the way towards the middle finger before curling them.

@@ -1,10 +1,10 @@
 {
  "name": "skaa_woman",
  "style": "skaa",
- "tris": 81676,
+ "tris": 81572,
  "height": 1.5442863702774048,
  "garments": {},
- "tris_max": 81676,
+ "tris_max": 81572,
  "materials": [
   "skaa_woman_basket",
   "skaa_woman_belt",

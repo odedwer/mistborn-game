@@ -1,10 +1,10 @@
 {
  "name": "guard",
  "style": "guard",
- "tris": 251028,
+ "tris": 250212,
  "height": 1.8130329847335815,
  "garments": {},
- "tris_max": 251028,
+ "tris_max": 250212,
  "materials": [
   "guard_belt",
   "guard_boots",

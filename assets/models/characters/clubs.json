@@ -1,10 +1,10 @@
 {
  "name": "clubs",
  "style": "clubs",
- "tris": 236468,
+ "tris": 235828,
  "height": 1.667258381843567,
  "garments": {},
- "tris_max": 236468,
+ "tris_max": 235828,
  "materials": [
   "clubs_beard",
   "clubs_belt",

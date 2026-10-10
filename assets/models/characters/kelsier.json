@@ -1,10 +1,10 @@
 {
  "name": "kelsier",
  "style": "kelsier",
- "tris": 277068,
+ "tris": 276524,
  "height": 1.8588632345199585,
  "garments": {},
- "tris_max": 277068,
+ "tris_max": 276524,
  "materials": [
   "kelsier_belt",
   "kelsier_boots",

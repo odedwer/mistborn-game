@@ -1,10 +1,10 @@
 {
  "name": "noble_woman",
  "style": "gown",
- "tris": 91064,
+ "tris": 90964,
  "height": 1.611869215965271,
  "garments": {},
- "tris_max": 91064,
+ "tris_max": 90964,
  "materials": [
   "noble_woman_bodice",
   "noble_woman_boots",
