@@ -44,7 +44,10 @@ static func build_lot(data: ChunkBuildData, lot: ChunkLayout.Lot) -> void:
 	var walls := data.mb(wm)
 	var lo := Vector3(r.position.x, 0.0, r.position.y)
 	var hi := Vector3(r.end.x, h, r.end.y)
-	walls.add_banded_box(lo, hi, 3.2, cols[0], cols[1], cols[2], cols[3], lot.shared, false)
+	# Party walls are kept (not skipped like the trim): each faces into the
+	# neighbour, hidden inside it, and shows as a blank firewall where this
+	# lot rises above a lower neighbour instead of leaving a hole.
+	walls.add_banded_box(lo, hi, 3.2, cols[0], cols[1], cols[2], cols[3], 0, false)
 	# Plinth of dark stone.
 	var trim := data.mb(M.TRIM)
 	var dark := Color(0.5, 0.49, 0.48) * lot.tint
@@ -474,6 +477,78 @@ static func _roof_trim(data: ChunkBuildData, lot: ChunkLayout.Lot, rise: float, 
 				wood.add_quad(e1 + down, e0 + down, e0, e1, out_u, fc * 0.75, fc)
 
 
+## Dormers: small gabled window boxes standing out of the slopes of
+## taller gable roofs, a row per slope, clear of the chimneys and the gable
+## ends. Each is a wall-material box whose back buries itself in the roof,
+## a slate mini-gable on top and a lit-or-dark attic window in front.
+static func _dormers(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumberGenerator, rise: float,
+		along_x: bool, sc: Color, cols: Array[Color], chim_u: Array[float]) -> void:
+	if rise < 2.2 or rng.randf() > float(lot.style.get("dormers", 0.55)):
+		return
+	var r := lot.rect
+	var h := lot.height
+	var u_lo := r.position.x if along_x else r.position.y
+	var u_hi := r.end.x if along_x else r.end.y
+	var vm := r.get_center().y if along_x else r.get_center().x
+	var half := (r.size.y if along_x else r.size.x) * 0.5
+	var count := mini(int(floor((u_hi - u_lo - 2.0) / 3.4)), 3)
+	if count < 1:
+		return
+	var pt := func(u: float, y: float, v: float) -> Vector3:
+		return Vector3(u, y, v) if along_x else Vector3(v, y, u)
+	var U := Vector3.RIGHT if along_x else Vector3.BACK
+	var V := Vector3.BACK if along_x else Vector3.RIGHT
+	var w := 1.5
+	var wall_h := clampf(rise * 0.45, 1.0, 1.6)
+	var mini_rise := clampf(rise * 0.16, 0.4, 0.6)
+	var roof_y := func(d: float) -> float: return h + rise * (1.0 - d / half)
+	var d_f := half * 0.8
+	var y_b: float = roof_y.call(d_f) - 0.1
+	var y_t := y_b + wall_h
+	# back far enough that the mini-gable's rear triangle is under the slates
+	var d_b := half * (1.0 - (y_t + mini_rise + 0.15 - h) / rise)
+	if d_b < 0.2:
+		return
+	var walls := data.mb(wall_mat(lot))
+	var wc := cols[2]
+	var lit_p := float(lot.style.get("lit", 0.15)) * 0.8
+	var win := data.db(M.WINDOW)
+	var spacing := (u_hi - u_lo) / float(count)
+	for sgn: float in [-1.0, 1.0]:
+		if rng.randf() < 0.3:
+			continue
+		for i in count:
+			var uc := u_lo + (float(i) + 0.5) * spacing
+			var blocked := false
+			for cu: float in chim_u:
+				if absf(cu - uc) < w * 0.5 + 0.9:
+					blocked = true
+			if blocked:
+				continue
+			var a: Vector3 = pt.call(uc - w * 0.5, y_b, vm + sgn * d_b)
+			var b: Vector3 = pt.call(uc + w * 0.5, y_t, vm + sgn * d_f)
+			var lo := Vector3(minf(a.x, b.x), y_b, minf(a.z, b.z))
+			var hi := Vector3(maxf(a.x, b.x), y_t, maxf(a.z, b.z))
+			walls.add_box(lo, hi, wc * 0.85, wc, wc)
+			data.add_box_shape_lohi(lo, hi)
+			data.mb(M.SLATE).add_gable_roof(Vector2(lo.x, lo.z), Vector2(hi.x, hi.z), y_t, mini_rise,
+					not along_x, 0.25, sc, walls, wc * 0.85)
+			# attic window, with a scaled-down timber frame
+			var n := V * sgn
+			var rv := U * sgn
+			var ww := 0.8
+			var wh := wall_h - 0.55
+			var y0 := y_b + 0.32
+			var fc: Vector3 = pt.call(uc, 0.0, vm + sgn * d_f)
+			var p0 := fc - rv * ww * 0.5 + n * 0.04 + Vector3.UP * y0
+			var p1 := fc + rv * ww * 0.5 + n * 0.04 + Vector3.UP * y0
+			var lit := rng.randf_range(0.5, 0.9) if rng.randf() < lit_p else 0.0
+			var c := Color(lit, rng.randf(), 0.0, 1.0)
+			win.add_quad(p0, p1, p1 + Vector3.UP * wh, p0 + Vector3.UP * wh, n, c, c)
+			data.add_instance(&"window_frame_wood",
+					Transform3D(Basis(rv * (ww / 1.0), Vector3.UP * (wh / 1.6), n), fc + Vector3.UP * y0))
+
+
 static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomNumberGenerator, cols: Array[Color]) -> void:
 	var r := lot.rect
 	var h := lot.height
@@ -504,6 +579,7 @@ static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomN
 	# Chimneys on the ridge line.
 	var cr: Array = lot.style.get("chimneys", [1, 2])
 	var n := rng.randi_range(int(cr[0]), int(cr[1]))
+	var chim_u: Array[float] = []
 	for i in n:
 		var t := rng.randf_range(0.12, 0.88)
 		if i == 0 and n > 1:
@@ -518,6 +594,11 @@ static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomN
 			z = lerpf(z0 + 0.8, z1 - 0.8, t)
 			x = (x0 + x1) * 0.5 + side * (x1 - x0) * 0.5
 		_chimney(data, rng, x, z, h + rise * 0.3, h + rise + rng.randf_range(0.5, 1.6), lot)
+		chim_u.append(x if along_x else z)
+	# Own RNG: must not shift the roof-furniture draws (metal anchors).
+	var drng := RandomNumberGenerator.new()
+	drng.seed = lot.lot_seed ^ 0x0D07
+	_dormers(data, lot, drng, rise, along_x, sc, cols, chim_u)
 	var metal_scale := float(lot.style.get("roof_metal", 1.0))
 	if rng.randf() < 0.18 * metal_scale:
 		var p: Vector3
@@ -531,4 +612,3 @@ static func _gable_roof(data: ChunkBuildData, lot: ChunkLayout.Lot, rng: RandomN
 		var p2 := Vector3((x0 + x1) * 0.5, h + rise, (z0 + z1) * 0.5)
 		data.add_instance(&"lightning_rod", Transform3D(Basis(), p2))
 		data.add_metal(p2 + Vector3.UP * 3.0, 6.0)
-	# Dormer-ish roof lantern glow: skipped for cost; windows carry the light.

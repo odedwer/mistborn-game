@@ -485,5 +485,6 @@ The player asked for a Spider-Man 2 or Horizon look instead of "lego people". Th
 - **Clothing still reads as fitted knit**: garments follow the body. Real folds need a loose-garment pass, such as a cloth sim on a slack copy, or fold normal maps by bone.
 - **Hands — fixed.** MakeHuman's rest hand fans the fingers apart, so they read as a claw once curled. `relax_hands` now turns the index, ring and little fingers 70% of the way towards the middle finger before curling them.
 - **Animation**: the procedural clips are the next "indie" tell. Motion-capture data such as CMU or Mixamo is not reachable through the registries.
-- **Roofs — mostly done.** Gables have ridge caps, fascia boards with soffits and barge boards. Flat roofs have stone coping on the parapets. Gable eaves have iron gutters and downpipes. Dormers are still open.
+- **Roofs — done.** Gables have ridge caps, fascia boards with soffits and barge boards. Flat roofs have stone coping on the parapets. Gable eaves have iron gutters and downpipes. Taller gables carry rows of dormers (attic windows, own RNG so mission anchors are unchanged).
+- **Party-wall holes — fixed.** Adjoining lots both skipped their shared wall, leaving a hole above a lower neighbour (visible at the opening spawn). Main walls now keep shared faces; they sit hidden inside the neighbour and show as a blank firewall above it.
 - **Test flake**: `test_crowd_member::test_member_positioned_after_add_stays_home` once ended 5.02 m from home against a 5.0 m bound under full parallel load. It passed on rerun and in isolation.
