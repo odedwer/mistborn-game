@@ -427,8 +427,15 @@ def make_anims(style: str, S: Skel):
         p["l_shrug"] = base.get("l_shrug", 0.0) + 1.5 * br
         p["head_pitch"] = base.get("head_pitch", 0.0) + 1.2 * br
         p["hips_z"] = -0.005 * k + 0.002 * k * math.sin(ph)
-        p["hips_x"] = 0.01 * k * math.sin(ph / 1.0 + 1)
-        p["hips_roll"] = -0.8 * math.sin(ph + 1)
+        # a slow weight shift from foot to foot (one per loop), the hips
+        # drifting over the standing leg and rolling with it, the head
+        # counter-rolling to stay level
+        ws = math.sin(ph + 1)
+        p["hips_x"] = 0.018 * k * ws
+        p["hips_roll"] = -1.6 * ws
+        p["spine_side"] = 1.0 * ws
+        p["head_roll"] = base.get("head_roll", 0.0) + 0.8 * ws
+        p["head_yaw"] = base.get("head_yaw", 0.0) + 2.5 * math.sin(ph + 2.2)  # loop-periodic
         p["r_fx"], p["l_fx"] = base["r_fx"] + 0.01 * k, base["l_fx"] - 0.01 * k
         p["r_fy"], p["l_fy"] = 0.03 * k, -0.02 * k
         p["r_flex"] = base.get("r_flex", 0.0) + 1.5 * br
