@@ -21,6 +21,7 @@ import math
 import os
 import sys
 import time
+import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -364,10 +365,23 @@ def region_of(kind: str, v: np.ndarray, w: dict, S) -> bool:
         if b in ("Spine", "Chest", "UpperChest") or (b == "Hips" and z > waist - 0.04):
             return z < S.head("Neck")[2] - 0.05
         return False
-    if kind == "vest":      # sleeveless: the trunk to the hips, arms bare
-        if b in ("Spine", "Chest", "UpperChest") or (b == "Hips" and z > waist - 0.1):
-            return z < S.head("Neck")[2] - 0.02
-        return False
+    if kind == "vest":      # sleeveless: straps over the shoulders, round armholes, a V neck
+        if b == "Head" or b.endswith(("Hand", "LowerArm", "UpperLeg", "LowerLeg", "Foot", "Toes")):
+            return False
+        if b == "Hips" and z < waist - 0.1:
+            return False
+        neck = S.head("Neck")
+        if z > neck[2] - 0.01:
+            return False
+        for side in ("Left", "Right"):
+            ua = S.head(side + "UpperArm")
+            if abs(v[0]) > abs(ua[0]) - 0.03:          # outer shoulder and the arm
+                return False
+            if math.hypot(v[0] - ua[0], z - (ua[2] - 0.03)) < 0.1 and v[0] * ua[0] > 0:
+                return False                             # armhole
+        if v[1] > neck[1] and z > neck[2] - 0.15 + 1.6 * abs(v[0] - neck[0]):
+            return False                                 # V neck
+        return True
     if kind == "pauldron":  # shoulder caps
         if b.endswith(("Shoulder", "UpperArm")):
             sh = S.head(("Left" if b.startswith("Left") else "Right") + "UpperArm")
@@ -1278,6 +1292,184 @@ def build_belt(S, col, arm, name, spec, tdir, mdir, tres):
 
 
 # ---------------------------------------------------------------------- build
+def smooth_edges(gv: np.ndarray, gf, iters: int = 80) -> np.ndarray:
+    """Straightens a garment's cut edges: the cut follows body faces, so a
+    neckline or armhole is a staircase of face boundaries. Each open edge
+    loop is relaxed along itself, then lifted back out of the surface so
+    the straightened hem never sinks under the skin."""
+    from collections import defaultdict
+    cnt = defaultdict(int)
+    for f in gf:
+        for a, b in zip(f, f[1:] + f[:1]):
+            cnt[(min(a, b), max(a, b))] += 1
+    nb = defaultdict(list)
+    for (a, b), c in cnt.items():
+        if c == 1:
+            nb[a].append(b)
+            nb[b].append(a)
+    ids = [i for i in nb if len(nb[i]) == 2]
+    if not ids:
+        return gv
+    norms = vertex_normals(gv, gf)
+    orig = gv.copy()
+    out = gv.copy()
+    L = np.array([nb[i] for i in ids])
+    ia = np.array(ids)
+    for _ in range(iters):
+        out[ia] = 0.5 * out[ia] + 0.25 * (out[L[:, 0]] + out[L[:, 1]])
+    # lift: never below the original edge's tangent plane
+    lift = np.einsum("ij,ij->i", orig[ia] - out[ia], norms[ia])
+    out[ia] += norms[ia] * np.maximum(lift, 0.0)[:, None]
+    return out
+
+
+def bridge(gv: np.ndarray, gw: list, S, drape: bool = True) -> np.ndarray:
+    """Cloth spans hollows instead of following them: torso vertices are
+    pushed out (never in) to the convex hull of their horizontal slice
+    (sternum, pecs, abs, spine groove), smoothed over height and angle, and
+    on the front the cloth falls from the chest with a limited inward slope
+    instead of tucking under it. Fades out just above the belt line so the
+    belt still sits over the cloth."""
+    from scipy.spatial import ConvexHull
+    from scipy.ndimage import gaussian_filter
+    torso = np.array([dominant(w) in ("Hips", "Spine", "Chest", "UpperChest") for w in gw])
+    if torso.sum() < 50:
+        return gv
+    tv = gv[torso]
+    z_lo, z_hi = float(tv[:, 2].min()), float(tv[:, 2].max())
+    dz, na = 0.01, 72
+    nz = int((z_hi - z_lo) / dz) + 1
+    th_bins = np.linspace(-np.pi, np.pi, na, endpoint=False)
+    R = np.zeros((nz, na))
+    # a fixed axis (hips to neck), so radii stay comparable across slices
+    h0, h1 = np.asarray(S.head("Hips"), float), np.asarray(S.head("Neck"), float)
+    C = np.zeros((nz, 2))
+    for k in range(nz):
+        z = z_lo + k * dz
+        t = np.clip((z - h0[2]) / max(h1[2] - h0[2], 1e-3), 0.0, 1.0)
+        C[k] = (h0 + (h1 - h0) * t)[:2]
+    for k in range(nz):
+        z = z_lo + k * dz
+        pts = tv[np.abs(tv[:, 2] - z) < 0.012][:, :2]
+        if len(pts) < 6:
+            R[k] = R[k - 1] if k else 0.0
+            continue
+        c = C[k]
+        try:
+            hull = pts[ConvexHull(pts).vertices]
+        except Exception:
+            R[k] = np.linalg.norm(pts - c, axis=1).max()
+            continue
+        a, b = hull - c, np.roll(hull, -1, 0) - c
+        for j, t in enumerate(th_bins):
+            dvec = np.array([np.cos(t), np.sin(t)])
+            # ray / edge intersection: c + s*d = a + u*(b-a)
+            e = b - a
+            den = dvec[0] * (-e[:, 1]) - dvec[1] * (-e[:, 0])
+            ok = np.abs(den) > 1e-9
+            sv = np.where(ok, (a[:, 0] * (-e[:, 1]) - a[:, 1] * (-e[:, 0])) / np.where(ok, den, 1), -1)
+            u = np.where(ok, (dvec[0] * a[:, 1] - dvec[1] * a[:, 0]) / np.where(ok, den, 1), -1)
+            hit = sv[(sv > 0) & (u >= -1e-6) & (u <= 1 + 1e-6)]
+            R[k, j] = hit.max() if len(hit) else 0.0
+    if drape:
+        # front: from the top down, the cloth may angle inward at most 0.3 m/m
+        front = np.abs(((th_bins - np.pi / 2) + np.pi) % (2 * np.pi) - np.pi) < np.radians(65)
+        for k in range(nz - 2, -1, -1):
+            R[k, front] = np.maximum(R[k, front], R[k + 1, front] - 0.3 * dz)
+    R = gaussian_filter(R, (3.0, 3.0), mode=("nearest", "wrap"))
+    full, none = S.head("Spine")[2] + 0.06, S.head("Spine")[2] + 0.005
+    out = gv.copy()
+    for i in np.nonzero(torso)[0]:
+        p = gv[i]
+        k = min(max(int(round((p[2] - z_lo) / dz)), 0), nz - 1)
+        q = p[:2] - C[k]
+        r = np.linalg.norm(q)
+        if r < 1e-6:
+            continue
+        t = np.arctan2(q[1], q[0])
+        f = (t + np.pi) / (2 * np.pi) * na
+        j0 = int(f) % na
+        w = f - int(f)
+        target = R[k, j0] * (1 - w) + R[k, (j0 + 1) % na] * w
+        fade = np.clip((p[2] - none) / (full - none), 0.0, 1.0)
+        if target > r:
+            out[i, :2] = C[k] + q / r * (r + (target - r) * fade)
+    return out
+
+
+def wrinkle(gv: np.ndarray, gf, gw: list, S, region: str, seed: int) -> np.ndarray:
+    """Outward-only fold relief so garments read as loose cloth rather than
+    a knit: ripple bands where cloth bunches (elbow, cuff, knee, ankle
+    pooling, blousing over the waist) and long slack folds down the limbs.
+    Oblique, wavy crests (phase varies around the limb), metres along the
+    vertex normal; never inward, so the clearance tests still hold."""
+    rng = np.random.default_rng(seed)
+    n = vertex_normals(gv, gf)
+    d = np.zeros(len(gv))
+    dom = [dominant(w) for w in gw]
+
+    def frame(a):
+        e1 = np.cross(a, [0.0, 1.0, 0.0])
+        if np.linalg.norm(e1) < 1e-3:
+            e1 = np.cross(a, [1.0, 0.0, 0.0])
+        e1 /= np.linalg.norm(e1)
+        return e1, np.cross(a, e1)
+
+    def band(bones, J, a, s0, sig, lam, amp, rmax=0.16):
+        a = np.asarray(a, float) / np.linalg.norm(a)
+        e1, e2 = frame(a)
+        ph1, ph2 = rng.random(2) * 6.283
+        for i, p in enumerate(gv):
+            if dom[i] not in bones:
+                continue
+            q = p - J
+            sv = float(q @ a)
+            r = q - sv * a
+            if np.linalg.norm(r) > rmax:
+                continue
+            th = np.arctan2(r @ e2, r @ e1)
+            env = np.exp(-((sv - s0) / sig) ** 2)
+            if env < 0.02:
+                continue
+            phi = 1.6 * np.sin(th + ph1) + 0.9 * np.sin(2 * th + ph2)
+            d[i] += amp * env * (0.5 + 0.5 * np.sin(6.2832 * sv / lam + phi)) ** 3
+
+    def slack(bones, J, a, length, amp, k=5):
+        a = np.asarray(a, float) / np.linalg.norm(a)
+        e1, e2 = frame(a)
+        ph = rng.random() * 6.283
+        for i, p in enumerate(gv):
+            if dom[i] not in bones:
+                continue
+            q = p - J
+            sv = float(q @ a)
+            if not 0.0 <= sv <= length:
+                continue
+            r = q - sv * a
+            th = np.arctan2(r @ e2, r @ e1)
+            env = np.sin(np.pi * sv / length)
+            d[i] += amp * env * (0.5 + 0.5 * np.sin(k * th + ph + 3.0 * sv)) ** 4
+
+    for side in ("Left", "Right"):
+        B = lambda *b: {side + x for x in b}  # noqa: E731
+        if region == "shirt":
+            el, wr = S.head(side + "LowerArm"), S.head(side + "Hand")
+            band(B("UpperArm", "LowerArm"), el, S.dir(side + "LowerArm"), 0.0, 0.07, 0.045, 0.007)
+            band(B("LowerArm", "Hand"), wr, S.dir(side + "LowerArm"), -0.05, 0.05, 0.04, 0.006)
+            slack(B("UpperArm"), S.head(side + "UpperArm"), S.dir(side + "UpperArm"),
+                  S.length(side + "UpperArm"), 0.004)
+        elif region == "trousers":
+            kn, an = S.head(side + "LowerLeg"), S.head(side + "Foot")
+            band(B("UpperLeg", "LowerLeg"), kn, S.dir(side + "LowerLeg"), 0.0, 0.08, 0.05, 0.007)
+            band(B("LowerLeg", "Foot"), an, S.dir(side + "LowerLeg"), -0.08, 0.08, 0.045, 0.008)
+            slack(B("UpperLeg"), S.head(side + "UpperLeg"), S.dir(side + "UpperLeg"),
+                  S.length(side + "UpperLeg"), 0.005, k=4)
+            slack(B("LowerLeg"), kn, S.dir(side + "LowerLeg"), S.length(side + "LowerLeg"), 0.004, k=4)
+    if region == "shirt":
+        band({"Hips", "Spine"}, S.head("Spine"), [0.0, 0.0, 1.0], 0.02, 0.06, 0.05, 0.006, rmax=0.3)
+    return gv + n * (d * 2.4)[:, None]
+
+
 def build(name):
     global SUBDIV_DROP
     t0 = time.time()
@@ -1320,8 +1512,13 @@ def build(name):
         k = np.array([loose.get(dominant(weights[i]).removeprefix("Left").removeprefix("Right"), 1.0) for i in ids])
         gv = verts[ids] + norms[ids] * (off * k)[:, None]
         gf = [tuple(remap[i] for i in f) for f in gfaces]
+        gv = smooth_edges(gv, gf)
+        if region in ("shirt", "vest", "cuirass"):
+            gv = bridge(gv, [weights[i] for i in ids], S, drape=kind != "metal")
         gv = taubin(gv, gf, {"shirt": 120, "trousers": 40, "boots": 6, "cuirass": 120, "pauldron": 60,
                              "gloves": 10}.get(region, 20))
+        if region in ("shirt", "trousers"):
+            gv = wrinkle(gv, gf, [weights[i] for i in ids], S, region, zlib.crc32((name + gname).encode()))
         o = make_obj(gname, gv, gf, guv,
                      [weights[i] for i in ids], gltf_mat(name + "_" + gname.lower()), arm)
         subdivide(o, 1)

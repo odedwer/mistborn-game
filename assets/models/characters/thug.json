@@ -1,10 +1,10 @@
 {
  "name": "thug",
  "style": "thug",
- "tris": 136054,
+ "tris": 135822,
  "height": 2.0650267601013184,
  "garments": {},
- "tris_max": 136054,
+ "tris_max": 135822,
  "materials": [
   "thug_belt",
   "thug_boots",

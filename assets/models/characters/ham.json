@@ -1,10 +1,10 @@
 {
  "name": "ham",
  "style": "ham",
- "tris": 135434,
+ "tris": 135234,
  "height": 1.9172945022583008,
  "garments": {},
- "tris_max": 135434,
+ "tris_max": 135234,
  "materials": [
   "ham_belt",
   "ham_boots",

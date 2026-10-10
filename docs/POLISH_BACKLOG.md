@@ -482,7 +482,13 @@ The player asked for a Spider-Man 2 or Horizon look instead of "lego people". Th
 
 ### Still open
 - **Network-blocked photoscans**: `polyhaven.com`, `dl.polyhaven.org` and `ambientcg.com` are denied by the environment's network policy. Allowing them would replace the procedural sets with CC0 photoscans. `tools/fetch_assets.py` already exists.
-- **Clothing still reads as fitted knit**: garments follow the body. Real folds need a loose-garment pass, such as a cloth sim on a slack copy, or fold normal maps by bone.
+- **Clothing — partly done.** Garments now get a loose-cloth pass in `mh_build.py`:
+  - `bridge`: torso cloth spans the hollows (convex hull per slice on a fixed spine axis) and falls from the chest instead of following pecs and abs;
+  - `wrinkle`: outward-only fold bands at elbows, cuffs, knees, ankle pooling and the waist, plus long slack folds down the limbs;
+  - `smooth_edges`: cut hems are relaxed so necklines and armholes no longer staircase;
+  - the vest is cut geometrically, with straps, armholes and a scoop neck, instead of a strapless tube.
+  
+  Still open: true slack (sleeves and trouser legs wider than the limb) would need a cloth sim on a loosened copy.
 - **Hands — fixed.** MakeHuman's rest hand fans the fingers apart, so they read as a claw once curled. `relax_hands` now turns the index, ring and little fingers 70% of the way towards the middle finger before curling them.
 - **Animation**: the procedural clips are the next "indie" tell. Motion-capture data such as CMU or Mixamo is not reachable through the registries.
 - **Roofs — done.** Gables have ridge caps, fascia boards with soffits and barge boards. Flat roofs have stone coping on the parapets. Gable eaves have iron gutters and downpipes. Taller gables carry rows of dormers (attic windows, own RNG so mission anchors are unchanged).
